@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import subprocess
 import sys
 import cv2
@@ -54,7 +55,7 @@ def motion_detection(ip, user, password):
             contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             
             for contour in contours:
-                if cv2.contourArea(contour) > 500:
+                if cv2.contourArea(contour) > 1000:
                     (x, y, w, h) = cv2.boundingRect(contour)
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                     display_frame = frame
@@ -71,7 +72,8 @@ def motion_detection(ip, user, password):
                 except ValueError:
                     continue  # Skip frame if reshaping fails
         
-        cv2.imshow('Motion Detection', display_frame)
+        resized_frame = cv2.resize(display_frame, (1800, 1000))
+        cv2.imshow('Motion Detection', resized_frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     

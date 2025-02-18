@@ -58,14 +58,14 @@ def motion_detection(ip, user, password):
 
         # Draw rectangles around moving objects
         for contour in contours:
-            if cv2.contourArea(contour) > 100:  # Filter out small contours
+            if cv2.contourArea(contour) > 50:  # Filter out small contours
                 (x, y, w, h) = cv2.boundingRect(contour)
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 1)
                 #cv2.drawContours(frame, [contour], -1, (255, 0, 0), 2) # draw contour
 
         # Display the frame
-        resized_frame = cv2.resize(frame, (1800, 1000))
-        cv2.imshow('Motion Detection', resized_frame)
+        frame = cv2.resize(frame, (1800, 1000)) # resize frame to big
+        cv2.imshow('Motion Detection', frame)
 
         # Break the loop if 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
