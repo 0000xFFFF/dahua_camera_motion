@@ -5,11 +5,15 @@ import numpy as np
 
 def start_ffmpeg(ip, user, password, channel):
     """Start ffmpeg process for a given RTSP channel."""
-    width, height = (704, 576) if channel == 0 else (1920, 1080)
+    if channel == 0:
+        width, height, subtype = 704, 576, 0
+    else:
+        width, height, subtype = 352, 288, 1
+    
     command = [
         "ffmpeg",
         "-rtsp_transport", "tcp",
-        "-i", f"rtsp://{user}:{password}@{ip}:554/cam/realmonitor?channel={channel}&subtype=0",
+        "-i", f"rtsp://{user}:{password}@{ip}:554/cam/realmonitor?channel={channel}&subtype={subtype}",
         "-f", "image2pipe",
         "-pix_fmt", "bgr24",
         "-vcodec", "rawvideo",
@@ -37,9 +41,14 @@ def motion_detection(ip, user, password):
         for ch in range(7):
             raw_frame = processes[ch].stdout.read(frame_sizes[ch])
             if len(raw_frame) != frame_sizes[ch]:
-                continue
+                continue  # Skip incomplete frames
 
-            frame = np.frombuffer(raw_frame, dtype='uint8').reshape((frame_sizes[ch] // (3 * (704 if ch == 0 else 1920)), (704 if ch == 0 else 1920), 3)).copy()
+            try:
+                frame = np.frombuffer(raw_frame, dtype='uint8')
+                frame = frame.reshape((height, width, 3)).copy()
+            except ValueError:
+                continue  # Skip if reshaping fails
+            
             fgmask = fgbg[ch].apply(frame)
             _, thresh = cv2.threshold(fgmask, 128, 255, cv2.THRESH_BINARY)
             contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -55,7 +64,12 @@ def motion_detection(ip, user, password):
                 break
 
         if display_frame is None:
-            display_frame = np.frombuffer(processes[0].stdout.read(frame_sizes[0]), dtype='uint8').reshape((576, 704, 3)).copy()
+            raw_frame = processes[0].stdout.read(frame_sizes[0])
+            if len(raw_frame) == frame_sizes[0]:
+                try:
+                    display_frame = np.frombuffer(raw_frame, dtype='uint8').reshape((576, 704, 3)).copy()
+                except ValueError:
+                    continue  # Skip frame if reshaping fails
         
         cv2.imshow('Motion Detection', display_frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
