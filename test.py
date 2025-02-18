@@ -29,7 +29,7 @@ def start_ffmpeg(ip, user, password):
 def motion_detection(ip, user, password):
     """Detect motion in the video stream and draw rectangles around moving objects."""
     process = start_ffmpeg(ip, user, password)
-    width, height = 640, 480  # Adjust based on your camera resolution
+    width, height = 1920, 1080  # Adjust based on your camera resolution
     frame_size = width * height * 3
 
     # Initialize background subtractor
