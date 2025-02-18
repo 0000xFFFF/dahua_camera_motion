@@ -8,7 +8,7 @@ def start_ffmpeg(ip, user, password, channel):
     if channel == 0:
         width, height, subtype = 704, 576, 0
     else:
-        width, height, subtype = 352, 288, 1
+        width, height, subtype = 1920, 1080, 0
     
     command = [
         "ffmpeg",
