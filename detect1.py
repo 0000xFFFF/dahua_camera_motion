@@ -13,6 +13,7 @@ def start_ffmpeg(ip, user, password):
         "ffmpeg",
         "-rtsp_transport", "tcp",
         "-i", f"rtsp://{user}:{password}@{ip}:554/cam/realmonitor?channel=0&subtype=0",
+        "-vf", "crop=704:384:0:0",
         "-f", "image2pipe",
         "-pix_fmt", "bgr24",
         "-vcodec", "rawvideo",
@@ -29,7 +30,7 @@ def start_ffmpeg(ip, user, password):
 def motion_detection(ip, user, password):
     """Detect motion in the video stream and draw rectangles around moving objects."""
     process = start_ffmpeg(ip, user, password)
-    width, height = 704, 576  # Adjust based on your camera resolution
+    width, height = 704, 384  # Adjust based on your camera resolution
     frame_size = width * height * 3
 
     # Initialize background subtractor
@@ -63,7 +64,8 @@ def motion_detection(ip, user, password):
                 #cv2.drawContours(frame, [contour], -1, (255, 0, 0), 2) # draw contour
 
         # Display the frame
-        cv2.imshow('Motion Detection', frame)
+        resized_frame = cv2.resize(frame, (1800, 1000))
+        cv2.imshow('Motion Detection', resized_frame)
 
         # Break the loop if 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
