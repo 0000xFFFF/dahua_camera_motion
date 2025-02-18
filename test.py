@@ -12,7 +12,7 @@ def start_ffmpeg(ip, user, password):
     command = [
         "ffmpeg",
         "-rtsp_transport", "tcp",
-        "-i", f"rtsp://{user}:{password}@{ip}:554/cam/realmonitor?channel=1&subtype=0",
+        "-i", f"rtsp://{user}:{password}@{ip}:554/cam/realmonitor?channel=0&subtype=0",
         "-f", "image2pipe",
         "-pix_fmt", "bgr24",
         "-vcodec", "rawvideo",
@@ -29,7 +29,7 @@ def start_ffmpeg(ip, user, password):
 def motion_detection(ip, user, password):
     """Detect motion in the video stream and draw rectangles around moving objects."""
     process = start_ffmpeg(ip, user, password)
-    width, height = 1920, 1080  # Adjust based on your camera resolution
+    width, height = 704, 576  # Adjust based on your camera resolution
     frame_size = width * height * 3
 
     # Initialize background subtractor
