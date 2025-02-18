@@ -57,9 +57,10 @@ def motion_detection(ip, user, password):
 
         # Draw rectangles around moving objects
         for contour in contours:
-            if cv2.contourArea(contour) > 500:  # Filter out small contours
+            if cv2.contourArea(contour) > 100:  # Filter out small contours
                 (x, y, w, h) = cv2.boundingRect(contour)
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                #cv2.drawContours(frame, [contour], -1, (255, 0, 0), 2) # draw contour
 
         # Display the frame
         cv2.imshow('Motion Detection', frame)
