@@ -2,6 +2,43 @@
 import cv2
 import numpy as np
 
+def get_minimap_position(zoom_rect, frame_dims, minimap_dims, margin=10):
+    """Determine the best position for the minimap based on zoom area."""
+    zoom_x, zoom_y, zoom_w, zoom_h = zoom_rect
+    frame_w, frame_h = frame_dims
+    minimap_w, minimap_h = minimap_dims
+    
+    # Calculate center of zoom area
+    zoom_center_x = zoom_x + zoom_w / 2
+    zoom_center_y = zoom_y + zoom_h / 2
+    
+    # Normalize coordinates to 0-1 range
+    norm_x = zoom_center_x / frame_w
+    norm_y = zoom_center_y / frame_h
+    
+    # Determine which corner to use (opposite to the action)
+    # Divide screen into quadrants
+    if norm_x < 0.5:
+        if norm_y < 0.5:
+            # Action in top-left, place minimap in bottom-right
+            pos_x = frame_w - minimap_w - margin
+            pos_y = frame_h - minimap_h - margin
+        else:
+            # Action in bottom-left, place minimap in top-right
+            pos_x = frame_w - minimap_w - margin
+            pos_y = margin
+    else:
+        if norm_y < 0.5:
+            # Action in top-right, place minimap in bottom-left
+            pos_x = margin
+            pos_y = frame_h - minimap_h - margin
+        else:
+            # Action in bottom-right, place minimap in top-left
+            pos_x = margin
+            pos_y = margin
+            
+    return int(pos_x), int(pos_y)
+
 def motion_detection(ip, user, password):
     """Detect motion in the RTSP stream using OpenCV and zoom in on motion area."""
     rtsp_url = f"rtsp://{user}:{password}@{ip}:554/cam/realmonitor?channel=0&subtype=0"
@@ -17,6 +54,10 @@ def motion_detection(ip, user, password):
     # Define minimap size
     minimap_width = 300
     minimap_height = 160
+
+    # Define display dimensions
+    display_width = 1800
+    display_height = 1000
 
     while True:
         ret, frame = cap.read()
@@ -59,7 +100,7 @@ def motion_detection(ip, user, password):
             # Get zoomed portion
             zx, zy, zw, zh = zoom_rect
             zoomed_frame = frame[zy:zy+zh, zx:zx+zw]
-            main_display = cv2.resize(zoomed_frame, (1800, 1000))
+            main_display = cv2.resize(zoomed_frame, (display_width, display_height))
             
             # Create minimap
             minimap = cv2.resize(frame, (minimap_width, minimap_height))
@@ -87,10 +128,20 @@ def motion_detection(ip, user, password):
                                                cv2.BORDER_CONSTANT, 
                                                value=(255, 255, 255))
             
+            # Get dynamic position for minimap
+            minimap_x, minimap_y = get_minimap_position(
+                zoom_rect,
+                (crop_width, crop_height),
+                (minimap_padded.shape[1], minimap_padded.shape[0])
+            )
+            
+            # Scale minimap position to display size
+            display_minimap_x = int(minimap_x * display_width / crop_width)
+            display_minimap_y = int(minimap_y * display_height / crop_height)
+            
             # Place minimap on main display
-            margin = 10
-            roi = main_display[margin:margin+minimap_padded.shape[0], 
-                             margin:margin+minimap_padded.shape[1]]
+            roi = main_display[display_minimap_y:display_minimap_y+minimap_padded.shape[0], 
+                             display_minimap_x:display_minimap_x+minimap_padded.shape[1]]
             
             # Create a mask for the minimap region
             minimap_gray = cv2.cvtColor(minimap_padded, cv2.COLOR_BGR2GRAY)
@@ -100,7 +151,7 @@ def motion_detection(ip, user, password):
             np.copyto(roi, minimap_padded)
             
         else:
-            main_display = cv2.resize(frame, (1800, 1000))
+            main_display = cv2.resize(frame, (display_width, display_height))
         
         cv2.imshow('Motion Detection', main_display)
         
