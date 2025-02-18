@@ -42,8 +42,9 @@ def motion_detection(ip, user, password):
             print("Error reading frame from ffmpeg.")
             break
 
-        # Convert the raw frame to a numpy array
+        # Convert the raw frame to a numpy array and make it writable
         frame = np.frombuffer(raw_frame, dtype='uint8').reshape((height, width, 3))
+        frame = frame.copy()  # Make the frame writable
 
         # Apply background subtraction
         fgmask = fgbg.apply(frame)
