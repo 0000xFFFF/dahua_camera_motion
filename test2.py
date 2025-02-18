@@ -4,15 +4,15 @@ import numpy as np
 import sys
 
 def start_capture(ip, user, password, channel):
+
+    subtype = 0
+    if channel != 0:
+        subtype = 1
+
     """Start OpenCV VideoCapture for a given RTSP channel."""
-    if channel == 0:
-        width, height = 704, 576
-    else:
-        width, height = 1920, 1080
-    
-    rtsp_url = f"rtsp://{user}:{password}@{ip}:554/cam/realmonitor?channel={channel}&subtype=0"
+    rtsp_url = f"rtsp://{user}:{password}@{ip}:554/cam/realmonitor?channel={channel}&subtype={subtype}"
     cap = cv2.VideoCapture(rtsp_url)
-    return cap, width, height
+    return cap
 
 def motion_detection(ip, user, password):
     """Detect motion in multiple RTSP streams and display accordingly."""
@@ -21,7 +21,7 @@ def motion_detection(ip, user, password):
 
     # Start capturing from all channels
     for ch in range(7):
-        caps[ch], width, height = start_capture(ip, user, password, ch)
+        caps[ch] = start_capture(ip, user, password, ch)
     
     while True:
         display_frame = None
@@ -50,8 +50,8 @@ def motion_detection(ip, user, password):
             if not ret:
                 continue  # Skip if no fallback frame is available
         
-        resized_frame = cv2.resize(display_frame, (1800, 1000))
-        cv2.imshow('Motion Detection', resized_frame)
+        display_frame = cv2.resize(display_frame, (1800, 1000))
+        cv2.imshow('Motion Detection', display_frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     
