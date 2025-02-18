@@ -14,6 +14,14 @@ def motion_detection(ip, user, password):
 
     while True:
         ret, frame = cap.read()
+
+        # Crop the frame
+        crop_width = 704
+        crop_height = 384
+        crop_x = 0
+        crop_y = 0
+        frame = frame[crop_y:crop_y + crop_height, crop_x:crop_x + crop_width]
+
         if not ret:
             print("Error: Failed to grab frame.")
             break
@@ -27,6 +35,8 @@ def motion_detection(ip, user, password):
                 x, y, w, h = cv2.boundingRect(contour)
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
+
+        frame = cv2.resize(frame, (1800, 1000)) # resize
         cv2.imshow('Motion Detection', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
