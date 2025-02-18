@@ -35,7 +35,7 @@ def motion_detection(ip, user, password):
         max_area = 0
         best_rect = None
         for contour in contours:
-            if cv2.contourArea(contour) > 20:
+            if cv2.contourArea(contour) > 10:
                 x, y, w, h = cv2.boundingRect(contour)
                 if cv2.contourArea(contour) > max_area:
                     max_area = cv2.contourArea(contour)
