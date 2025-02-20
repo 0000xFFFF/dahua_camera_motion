@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(description='Dahua Camera Motion Detection usin
 parser.add_argument('-i', '--ip', metavar='<ip>', type=str, help="IP to connect to")
 parser.add_argument('-u', '--username', metavar='<user>', type=str, help="Account username")
 parser.add_argument('-p', '--password', metavar='<pass>', type=str, help="Account password")
-parser.add_argument('-a', '--area', default=100, metavar='<area>', type=int, help="Contour area for detection")
+parser.add_argument('-a', '--area', default=10, metavar='<area>', type=int, help="Contour area for detection")
 parser.add_argument('-ww', '--width', default=1920, metavar='<px>', type=int, help="Window width")
 parser.add_argument('-wh', '--height', default=1080, metavar='<px>', type=int, help="Window height")
 parser.add_argument('-fs', '--fullscreen', action="store_true", help="Start in fullscreen mode")
