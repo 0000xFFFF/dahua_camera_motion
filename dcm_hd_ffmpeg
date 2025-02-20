@@ -59,9 +59,10 @@ def start_capture(channel):
     ffmpeg_cmd = [
         "ffmpeg",
         "-rtsp_transport", "tcp",  # Use TCP for better reliability
-        "-i", rtsp_url,
+        "-i", rtsp_url,            # Input RTSP stream
         "-f", "rawvideo",          # Output raw video
         "-pix_fmt", "bgr24",       # Convert to OpenCV format
+        #"-r", "30",                # Target frame rate
         "-vsync", "drop",          # Avoid buffering lag
         "-an",                     # No audio
         "pipe:1"                   # Output to stdout
