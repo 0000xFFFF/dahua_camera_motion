@@ -21,7 +21,7 @@ def mask_timestamp(frame):
     cv2.rectangle(frame, top_left, bottom_right, (0, 0, 0), -1)
     return frame
 
-def detect_motion(frame1, frame2, threshold=25, min_area=2000, blur_size=15):
+def detect_motion(frame1, frame2, threshold=128, min_area=2000, blur_size=15):
     """Detect motion between two frames with reduced sensitivity."""
     # Mask timestamps before motion detection
     frame1_masked = mask_timestamp(frame1.copy())
@@ -123,12 +123,9 @@ def motion_detection(ip, user, password):
                         cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 
                 # Add channel and motion status overlay
-                cv2.putText(display_frame, f"Channel: {current_ch}", (10, 30),
-                          cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-                cv2.putText(display_frame, f"Motion: {'Yes' if motion else 'No'}", (10, 60),
-                          cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-                cv2.putText(display_frame, f"Auto Switch: {'On' if auto_switch else 'Off'}", (10, 90),
-                          cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                #cv2.putText(display_frame, f"Channel: {current_ch}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                #cv2.putText(display_frame, f"Motion: {'Yes' if motion else 'No'}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                #cv2.putText(display_frame, f"Auto Switch: {'On' if auto_switch else 'Off'}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         
         # If we didn't get any valid frames, wait and continue
         if not valid_frame_read:
