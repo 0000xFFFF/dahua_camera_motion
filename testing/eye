@@ -34,6 +34,7 @@ def get_minimap_position(frame_dims, minimap_dims, margin=10):
 
 def start_capture(channel):
     """Start a new capture for the specified channel."""
+    print(f"Initializing capture on channel: {channel}")
     rtsp_url = f"rtsp://{args.username}:{args.password}@{args.ip}:554/cam/realmonitor?channel={channel}&subtype=0"
     cap = cv2.VideoCapture(rtsp_url)
     if not cap.isOpened():
@@ -156,8 +157,7 @@ def motion_detection():
                          1)
 
         # Add current channel number to minimap
-        cv2.putText(minimap_padded, f"CH: {current_channel}", (5, 15),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        #cv2.putText(minimap_padded, f"CH: {current_channel}", (5, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
         
         # Get minimap position and place it
         minimap_x, minimap_y = get_minimap_position(
