@@ -70,11 +70,8 @@ def read_frame(process, width=1920, height=1080):
 def motion_detection():
     """Detect motion in channel 0 and switch to appropriate channel display."""
 
-    # Initialize channel 0 separately for minimap
-    cap0 = start_capture(0)
-
     # Initialize captures for all channels
-    caps = {channel: start_capture(channel) for channel in range(1, 7)}
+    caps = {channel: start_capture(channel) for channel in range(0, 7)}
 
     # Initialize motion detection
     fgbg = cv2.createBackgroundSubtractorMOG2(history=500, varThreshold=16, detectShadows=True)
@@ -86,10 +83,10 @@ def motion_detection():
 
     while True:
         # Read and process channel 0 for motion detection
-        frame0 = read_frame(cap0, 704, 576)
+        frame0 = read_frame(caps[0], 704, 576)
         if frame0 is None:
             print("Error: Failed to grab frame from channel 0")
-            cap0 = start_capture(0)
+            caps[0] = start_capture(0)
             continue
 
         # Make writable
@@ -139,13 +136,13 @@ def motion_detection():
             continue
 
 
-        main_frame = main_frame.copy()  # <-- FIX: Make it writable
-
         # Read from other channels to avoid buffering
         for channel in range(1, 7):
             if current_channel != channel:
                 _ = read_frame(caps[channel])
 
+        # Make frame writable
+        main_frame = main_frame.copy()
 
         # Resize main frame to display size
         main_display = cv2.resize(main_frame, (args.width, args.height))
@@ -191,7 +188,6 @@ def motion_detection():
     # Cleanup
     for cap in caps.values():
         cap.terminate()
-    cap0.terminate()
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
