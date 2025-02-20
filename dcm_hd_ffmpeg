@@ -125,7 +125,7 @@ def motion_detection():
                 current_channel = new_channel
 
         # Read frame from current channel
-        main_frame = read_frame(caps[current_channel], args.width, args.height)
+        main_frame = read_frame(caps[current_channel], 1920, 1080)
         if main_frame is None:
             print(f"Error: Failed to grab frame from channel {current_channel}")
             caps[current_channel] = start_capture(current_channel)
