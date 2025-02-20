@@ -1,9 +1,24 @@
 #!/usr/bin/env python3
 import cv2
+import argparse
 
-def motion_detection(ip, user, password):
+parser = argparse.ArgumentParser(description='dahua camera motion detection')
+parser.add_argument('-ww', '--width', default=1920, metavar='<px>', type=int, help="window pixels width")
+parser.add_argument('-wh', '--height', default=1080, metavar='<px>', type=int, help="window pixels height")
+parser.add_argument('-fs', '--fullscreen', action="store_true", help="start window in fullscreen mode")
+parser.add_argument('-i', '--ip', metavar='<ip>', type=str, help="ip to connect to")
+parser.add_argument('-u', '--username', metavar='<user>', type=str, help="account username")
+parser.add_argument('-p', '--password', metavar='<pass>', type=str, help="account password")
+parser.add_argument('-a', '--area', default=10, metavar='<area>', type=int, help="contour area for detection (drawing rectangle)")
+args = parser.parse_args()
+
+if args.fullscreen:
+    cv2.namedWindow('Motion', cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty('Motion', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+def motion_detection():
     """Detect motion in the RTSP stream using OpenCV."""
-    rtsp_url = f"rtsp://{user}:{password}@{ip}:554/cam/realmonitor?channel=0&subtype=0"
+    rtsp_url = f"rtsp://{args.username}:{args.password}@{args.ip}:554/cam/realmonitor?channel=0&subtype=0"
     cap = cv2.VideoCapture(rtsp_url)
 
     if not cap.isOpened():
@@ -31,13 +46,14 @@ def motion_detection(ip, user, password):
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
-            if cv2.contourArea(contour) > 10:
+            if cv2.contourArea(contour) > args.area:
                 x, y, w, h = cv2.boundingRect(contour)
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.drawContours(frame, [contour], -1, (255, 0, 0), 1)
 
 
         frame = cv2.resize(frame, (1800, 1000)) # resize
-        cv2.imshow('Motion Detection', frame)
+        cv2.imshow('Motion', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -46,10 +62,5 @@ def motion_detection(ip, user, password):
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) != 4:
-        print(f"Usage: python {sys.argv[0]} <IP> <USER> <PASS>")
-        sys.exit(1)
-
-    motion_detection(sys.argv[1], sys.argv[2], sys.argv[3])
+    motion_detection()
 
