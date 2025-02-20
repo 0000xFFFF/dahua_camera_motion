@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+import cv2
+import numpy as np
+import subprocess
+import argparse
+
+parser = argparse.ArgumentParser(description='dahua camera motion detection')
+parser.add_argument('-i', '--ip', metavar='<ip>', type=str, help="ip to connect to")
+parser.add_argument('-u', '--username', metavar='<user>', type=str, help="account username")
+parser.add_argument('-p', '--password', metavar='<pass>', type=str, help="account password")
+parser.add_argument('-a', '--area', default=10, metavar='<area>', type=int, help="contour area for detection")
+parser.add_argument('-ww', '--width', default=1920, metavar='<px>', type=int, help="window pixels width")
+parser.add_argument('-wh', '--height', default=1080, metavar='<px>', type=int, help="window pixels height")
+parser.add_argument('-fs', '--fullscreen', action="store_true", help="start window in fullscreen mode")
+parser.add_argument('-d', '--detect', action="store_true", help="detect screen size with xrandr and set width & height")
+parser.add_argument('-r', '--resolution', default=0, metavar='<index>', type=int, help="index of resolution to use (default: 0)")
+args = parser.parse_args()
+
+if args.fullscreen:
+    cv2.namedWindow('Motion', cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty('Motion', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+if args.detect:
+    output = subprocess.run("xrandr | grep '*' | awk '{print $1}'", shell=True, capture_output=True, text=True)
+    resolutions = output.stdout.strip().split("\n")
+    print(f"detected resolutions: {resolutions}")
+    resolution = resolutions[args.resolution].split("x")
+    print(f"using resolution: {resolution}")
+    args.width, args.height = int(resolution[0]), int(resolution[1])
+
+def get_minimap_position(frame_dims, minimap_dims, margin=10):
+    """Determine position for the minimap (always top-left for consistency)."""
+    return margin, margin
+
+def start_capture(channel):
+    """Start a new capture for the specified channel."""
+    rtsp_url = f"rtsp://{args.username}:{args.password}@{args.ip}:554/cam/realmonitor?channel={channel}&subtype=0"
+    cap = cv2.VideoCapture(rtsp_url)
+    if not cap.isOpened():
+        print(f"Error: Could not open RTSP stream for channel {channel}")
+    return cap
+
+def motion_detection():
+    """Detect motion in channel 0 and switch to appropriate channel display."""
+    # Initialize captures for all channels
+    caps = {}
+    for channel in range(7):  # Channels 0-6
+        caps[channel] = start_capture(channel)
+        if not caps[channel].isOpened():
+            print(f"Failed to open channel {channel}")
+            return
+
+    # Initialize motion detection for channel 0
+    fgbg = cv2.createBackgroundSubtractorMOG2(history=500, varThreshold=16, detectShadows=True)
+    current_channel = 0
+
+    # Define minimap size
+    minimap_width = 300
+    minimap_height = 160
+
+    # Crop dimensions for channel 0
+    crop_width = 704
+    crop_height = 384
+    crop_x = 0
+    crop_y = 0
+
+    while True:
+        # Read and process channel 0 for motion detection
+        ret0, frame0 = caps[0].read()
+        if not ret0:
+            print("Error: Failed to grab frame from channel 0")
+            caps[0] = start_capture(0)
+            continue
+
+        # Crop channel 0 frame for motion detection
+        crop_frame = frame0[crop_y:crop_y + crop_height, crop_x:crop_x + crop_width]
+        
+        # Motion detection processing
+        fgmask = fgbg.apply(crop_frame)
+        _, thresh = cv2.threshold(fgmask, 128, 255, cv2.THRESH_BINARY)
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Find the largest motion area
+        max_area = 0
+        motion_region = None
+        for contour in contours:
+            if cv2.contourArea(contour) > args.area:
+                x, y, w, h = cv2.boundingRect(contour)
+                area = w * h
+                if area > max_area:
+                    max_area = area
+                    motion_region = (x, y, w, h)
+
+        # Determine which channel to show based on motion position
+        if motion_region:
+            x, y, w, h = motion_region
+            # Calculate relative position in frame
+            rel_x = x / crop_width
+            rel_y = y / crop_height
+            
+            # Map position to channels (example mapping)
+            if rel_y < 0.33:  # Top third
+                if rel_x < 0.33: new_channel = 1
+                elif rel_x < 0.66: new_channel = 2
+                else: new_channel = 3
+            elif rel_y < 0.66:  # Middle third
+                if rel_x < 0.33: new_channel = 4
+                elif rel_x < 0.66: new_channel = 5
+                else: new_channel = 6
+            else:  # Bottom third
+                new_channel = 0
+            
+            if new_channel != current_channel:
+                print(f"Switching to channel {new_channel}")
+                current_channel = new_channel
+        
+        # Read frame from current channel
+        ret, main_frame = caps[current_channel].read()
+        if not ret:
+            print(f"Error: Failed to grab frame from channel {current_channel}")
+            caps[current_channel] = start_capture(current_channel)
+            continue
+
+        # Resize main frame to display size
+        main_display = cv2.resize(main_frame, (args.width, args.height))
+        
+        # Create and add minimap
+        minimap = cv2.resize(crop_frame, (minimap_width, minimap_height))
+        
+        # Add padding around minimap
+        padding = 2
+        minimap_padded = cv2.copyMakeBorder(minimap, 
+                                           padding, padding, 
+                                           padding, padding, 
+                                           cv2.BORDER_CONSTANT, 
+                                           value=(255, 255, 255))
+        
+        # If there's motion, draw rectangle on minimap
+        if motion_region:
+            x, y, w, h = motion_region
+            mini_scale_x = minimap_width / crop_width
+            mini_scale_y = minimap_height / crop_height
+            mini_rect_x = int(x * mini_scale_x)
+            mini_rect_y = int(y * mini_scale_y)
+            mini_rect_w = int(w * mini_scale_x)
+            mini_rect_h = int(h * mini_scale_y)
+            cv2.rectangle(minimap_padded, 
+                         (mini_rect_x, mini_rect_y), 
+                         (mini_rect_x + mini_rect_w, mini_rect_y + mini_rect_h), 
+                         (0, 255, 0), 
+                         1)
+
+        # Add channel number to minimap
+        cv2.putText(minimap_padded, f"CH: {current_channel}", (5, 15),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        
+        # Get minimap position and place it
+        minimap_x, minimap_y = get_minimap_position(
+            (args.width, args.height),
+            (minimap_padded.shape[1], minimap_padded.shape[0])
+        )
+        
+        # Place minimap on main display
+        roi = main_display[minimap_y:minimap_y+minimap_padded.shape[0], 
+                         minimap_x:minimap_x+minimap_padded.shape[1]]
+        np.copyto(roi, minimap_padded)
+        
+        cv2.imshow('Motion', main_display)
+        
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
+            break
+        elif key in [ord(str(i)) for i in range(7)]:
+            current_channel = int(chr(key))
+
+    # Cleanup
+    for cap in caps.values():
+        cap.release()
+    cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    motion_detection()
