@@ -75,19 +75,25 @@ def motion_detection():
     minimap_width = 300
     minimap_height = 160
 
-    # Crop dimensions for channel 0
-    crop_width = 704
-    crop_height = 384
-    crop_x = 0
-    crop_y = 0
+
 
     while True:
         # Read and process channel 0 for motion detection
-        frame0 = read_frame(cap0, crop_width, crop_height)
+        frame0 = read_frame(cap0, 704, 576)
         if frame0 is None:
             print("Error: Failed to grab frame from channel 0")
             cap0 = start_capture(0)
             continue
+
+        # Make writable
+        frame0 = frame0.copy()
+
+        # Crop dimensions for channel 0
+        crop_width = 704
+        crop_height = 384
+        crop_x = 0
+        crop_y = 0
+        frame0 = frame0[crop_y:crop_y + crop_height, crop_x:crop_x + crop_width]
 
         # Motion detection processing
         fgmask = fgbg.apply(frame0)
