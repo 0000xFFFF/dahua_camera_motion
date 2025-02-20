@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
+import sys
 import cv2
 import numpy as np
+import argparse
 
-# Define display dimensions
-display_width = 1920
-display_height = 1080
+# Argument parsing
+parser = argparse.ArgumentParser(description='dahua camera motion detection')
+parser.add_argument('-ww', '--width', default=1920, metavar='num', type=int, help="window pixels width")
+parser.add_argument('-wh', '--height', default=1080, metavar='num', type=int, help="window pixels height")
+parser.add_argument('-fs', '--fullscreen', action="store_true", help="start window in fullscreen mode")
+parser.add_argument('-i', '--ip', metavar='ip', type=str, help="ip to connect to")
+parser.add_argument('-u', '--user', metavar='user', type=str, help="account username")
+parser.add_argument('-p', '--password', metavar='pass', type=str, help="account password")
+args = parser.parse_args()
 
-# Create a window and set it to fullscreen
-cv2.namedWindow('Motion', cv2.WINDOW_NORMAL)
-cv2.setWindowProperty('Motion', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+if args.fullscreen:
+    cv2.namedWindow('Motion', cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty('Motion', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 def get_minimap_position(zoom_rect, frame_dims, minimap_dims, margin=10):
     """Determine the best position for the minimap based on zoom area."""
@@ -47,9 +55,9 @@ def get_minimap_position(zoom_rect, frame_dims, minimap_dims, margin=10):
             
     return int(pos_x), int(pos_y)
 
-def motion_detection(ip, user, password):
+def motion_detection():
     """Detect motion in the RTSP stream using OpenCV and zoom in on motion area."""
-    rtsp_url = f"rtsp://{user}:{password}@{ip}:554/cam/realmonitor?channel=0&subtype=0"
+    rtsp_url = f"rtsp://{args.user}:{args.password}@{args.ip}:554/cam/realmonitor?channel=0&subtype=0"
     cap = cv2.VideoCapture(rtsp_url)
     if not cap.isOpened():
         print("Error: Could not open RTSP stream.")
@@ -105,7 +113,7 @@ def motion_detection(ip, user, password):
             # Get zoomed portion
             zx, zy, zw, zh = zoom_rect
             zoomed_frame = frame[zy:zy+zh, zx:zx+zw]
-            main_display = cv2.resize(zoomed_frame, (display_width, display_height))
+            main_display = cv2.resize(zoomed_frame, (args.width, args.height))
             
             # Create minimap
             minimap = cv2.resize(frame, (minimap_width, minimap_height))
@@ -141,8 +149,8 @@ def motion_detection(ip, user, password):
             )
             
             # Scale minimap position to display size
-            display_minimap_x = int(minimap_x * display_width / crop_width)
-            display_minimap_y = int(minimap_y * display_height / crop_height)
+            display_minimap_x = int(minimap_x * args.width / crop_width)
+            display_minimap_y = int(minimap_y * args.height / crop_height)
             
             # Place minimap on main display
             roi = main_display[display_minimap_y:display_minimap_y+minimap_padded.shape[0], 
@@ -156,7 +164,7 @@ def motion_detection(ip, user, password):
             np.copyto(roi, minimap_padded)
             
         else:
-            main_display = cv2.resize(frame, (display_width, display_height))
+            main_display = cv2.resize(frame, (args.width, args.height))
         
         cv2.imshow('Motion', main_display)
         
@@ -167,9 +175,4 @@ def motion_detection(ip, user, password):
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) != 4:
-        print(f"Usage: python {sys.argv[0]} <IP> <USER> <PASS>")
-        sys.exit(1)
-    
-    motion_detection(sys.argv[1], sys.argv[2], sys.argv[3])
+    motion_detection()
