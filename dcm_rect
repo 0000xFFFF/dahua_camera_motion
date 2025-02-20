@@ -10,6 +10,7 @@ parser.add_argument('-i', '--ip', metavar='<ip>', type=str, help="ip to connect 
 parser.add_argument('-u', '--username', metavar='<user>', type=str, help="account username")
 parser.add_argument('-p', '--password', metavar='<pass>', type=str, help="account password")
 parser.add_argument('-a', '--area', default=10, metavar='<area>', type=int, help="contour area for detection (drawing rectangle)")
+parser.add_argument('-pad', '--padding', default=5, metavar='<px>', type=int, help="rectangle padding")
 args = parser.parse_args()
 
 if args.fullscreen:
@@ -48,8 +49,8 @@ def motion_detection():
         for contour in contours:
             if cv2.contourArea(contour) > args.area:
                 x, y, w, h = cv2.boundingRect(contour)
+                x, y, w, h = x - args.padding, y - args.padding, w + 2 * args.padding, h + 2 * args.padding
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                cv2.drawContours(frame, [contour], -1, (255, 0, 0), 1)
 
 
         frame = cv2.resize(frame, (1800, 1000)) # resize
