@@ -16,6 +16,13 @@ parser.add_argument('-d', '--detect', action="store_true", help="Detect screen s
 parser.add_argument('-r', '--resolution', default=0, metavar='<index>', type=int, help="Resolution index (default: 0)")
 args = parser.parse_args()
 
+USE_SUBTYPE1 = False
+W_0, H_0 = 704, 576
+W_HD, H_HD = 1920, 1080
+
+if USE_SUBTYPE1:
+    W_HD, H_HD = 352, 288
+
 if args.fullscreen:
     cv2.namedWindow('Motion', cv2.WINDOW_NORMAL)
     cv2.setWindowProperty('Motion', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
@@ -41,7 +48,13 @@ def start_capture(channel):
     """Start an FFmpeg process for the specified channel."""
     print(f"Initializing FFmpeg capture on channel: {channel}")
 
-    rtsp_url = f"rtsp://{args.username}:{args.password}@{args.ip}:554/cam/realmonitor?channel={channel}&subtype=0"
+    subtype = 0
+
+    if USE_SUBTYPE1:
+        if channel != 0:
+            subtype = 1
+
+    rtsp_url = f"rtsp://{args.username}:{args.password}@{args.ip}:554/cam/realmonitor?channel={channel}&subtype={subtype}"
 
     ffmpeg_cmd = [
         "ffmpeg",
@@ -56,7 +69,7 @@ def start_capture(channel):
 
     return subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=10**8)
 
-def read_frame(process, width=1920, height=1080):
+def read_frame(process, width, height):
     """Reads a frame from an FFmpeg subprocess."""
     frame_size = width * height * 3  # BGR24 format (3 bytes per pixel)
     raw_frame = process.stdout.read(frame_size)
@@ -83,7 +96,7 @@ def motion_detection():
 
     while True:
         # Read and process channel 0 for motion detection
-        frame0 = read_frame(caps[0], 704, 576)
+        frame0 = read_frame(caps[0], W_0, H_0)
         if frame0 is None:
             print("Error: Failed to grab frame from channel 0")
             caps[0] = start_capture(0)
@@ -129,7 +142,7 @@ def motion_detection():
                 current_channel = new_channel
 
         # Read frame from current channel
-        main_frame = read_frame(caps[current_channel], 1920, 1080)
+        main_frame = read_frame(caps[current_channel], W_HD, H_HD)
         if main_frame is None:
             print(f"Error: Failed to grab frame from channel {current_channel}")
             caps[current_channel] = start_capture(current_channel)
@@ -139,7 +152,7 @@ def motion_detection():
         # Read from other channels to avoid buffering
         for channel in range(1, 7):
             if current_channel != channel:
-                _ = read_frame(caps[channel])
+                _ = read_frame(caps[channel], W_HD, H_HD)
 
         # Make frame writable
         main_frame = main_frame.copy()
