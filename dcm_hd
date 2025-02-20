@@ -43,6 +43,13 @@ def start_capture(channel):
 
 def motion_detection():
     """Detect motion in channel 0 and switch to appropriate channel display."""
+
+    # Initialize channel 0 separately for minimap
+    cap0 = start_capture(0)
+    if not cap0.isOpened():
+        print("Failed to open channel 0")
+        return
+
     # Initialize captures for all channels
     caps = {}
     # Only initialize channels 1-6 for main display
@@ -51,12 +58,6 @@ def motion_detection():
         if not caps[channel].isOpened():
             print(f"Failed to open channel {channel}")
             return
-            
-    # Initialize channel 0 separately for minimap
-    cap0 = start_capture(0)
-    if not cap0.isOpened():
-        print("Failed to open channel 0")
-        return
 
     # Initialize motion detection for channel 0
     fgbg = cv2.createBackgroundSubtractorMOG2(history=500, varThreshold=16, detectShadows=True)
@@ -117,7 +118,7 @@ def motion_detection():
                 else: new_channel = 6
             
             if new_channel != current_channel:
-                print(f"Switching to channel {new_channel}")
+                #print(f"Switching to channel {new_channel}")
                 current_channel = new_channel
         
 
@@ -131,7 +132,7 @@ def motion_detection():
         # Read from other channels to avoid buffering
         for channel in range(1, 7):  # Channels 1-6
             if current_channel != channel:
-                ret, f = caps[channel].read()
+                _ = caps[channel].read()
 
         # Resize main frame to display size
         main_display = cv2.resize(main_frame, (args.width, args.height))
