@@ -1,0 +1,218 @@
+#!/usr/bin/env python3
+import cv2
+import numpy as np
+import subprocess
+import argparse
+import threading
+import queue
+from collections import deque
+from threading import Lock
+
+parser = argparse.ArgumentParser(description='Dahua Camera Motion Detection using FFmpeg')
+parser.add_argument('-i', '--ip', metavar='<ip>', type=str, help="IP to connect to")
+parser.add_argument('-u', '--username', metavar='<user>', type=str, help="Account username")
+parser.add_argument('-p', '--password', metavar='<pass>', type=str, help="Account password")
+parser.add_argument('-a', '--area', default=10, metavar='<area>', type=int, help="Contour area for detection")
+parser.add_argument('-ww', '--width', default=1920, metavar='<px>', type=int, help="Window width")
+parser.add_argument('-wh', '--height', default=1080, metavar='<px>', type=int, help="Window height")
+parser.add_argument('-fs', '--fullscreen', action="store_true", help="Start in fullscreen mode")
+parser.add_argument('-d', '--detect', action="store_true", help="Detect screen size with xrandr")
+parser.add_argument('-r', '--resolution', default=0, metavar='<index>', type=int, help="Resolution index (default: 0)")
+args = parser.parse_args()
+
+USE_SUBTYPE1 = False
+W_0, H_0 = 704, 576
+W_HD, H_HD = 1920, 1080
+
+if USE_SUBTYPE1:
+    W_HD, H_HD = 352, 288
+
+class FrameReader:
+    def __init__(self, channel, width, height, args):
+        self.channel = channel
+        self.width = width
+        self.height = height
+        self.args = args
+        self.frame_queue = deque(maxlen=2)  # Only keep latest 2 frames
+        self.process = None
+        self.running = False
+        self.lock = Lock()
+        self.start_capture()
+
+    def start_capture(self):
+        subtype = 1 if USE_SUBTYPE1 and self.channel != 0 else 0
+        rtsp_url = f"rtsp://{self.args.username}:{self.args.password}@{self.args.ip}:554/cam/realmonitor?channel={self.channel}&subtype={subtype}"
+        
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-rtsp_transport", "tcp",
+            "-fflags", "discardcorrupt",
+            "-i", rtsp_url,
+            "-f", "rawvideo",
+            "-pix_fmt", "bgr24",
+            "-vsync", "drop",
+            "-an",
+            "pipe:1"
+        ]
+        
+        self.process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=10**8)
+
+    def read_frames(self):
+        self.running = True
+        while self.running:
+            try:
+                frame_size = self.width * self.height * 3
+                raw_frame = self.process.stdout.read(frame_size)
+                
+                if not raw_frame:
+                    print(f"Restarting capture for channel {self.channel}")
+                    self.process.terminate()
+                    self.start_capture()
+                    continue
+
+                frame = np.frombuffer(raw_frame, np.uint8).reshape((self.height, self.width, 3))
+                with self.lock:
+                    self.frame_queue.append(frame.copy())
+            except Exception as e:
+                print(f"Error reading frame from channel {self.channel}: {e}")
+                continue
+
+    def get_latest_frame(self):
+        with self.lock:
+            return self.frame_queue[-1].copy() if self.frame_queue else None
+
+    def stop(self):
+        self.running = False
+        if self.process:
+            self.process.terminate()
+
+def get_minimap_position(frame_dims, minimap_dims, margin=10):
+    return margin, margin
+
+def motion_detection():
+    # Initialize frame readers for all channels
+    readers = {}
+    threads = []
+    
+    # Channel 0 (motion detection camera)
+    readers[0] = FrameReader(0, W_0, H_0, args)
+    threads.append(threading.Thread(target=readers[0].read_frames))
+    
+    # Channels 1-6 (HD cameras)
+    for channel in range(1, 7):
+        readers[channel] = FrameReader(channel, W_HD, H_HD, args)
+        threads.append(threading.Thread(target=readers[channel].read_frames))
+    
+    # Start all threads
+    for thread in threads:
+        thread.daemon = True
+        thread.start()
+
+    if args.fullscreen:
+        cv2.namedWindow('Motion', cv2.WINDOW_NORMAL)
+        cv2.setWindowProperty('Motion', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+    # Initialize motion detection
+    fgbg = cv2.createBackgroundSubtractorMOG2(history=500, varThreshold=16, detectShadows=True)
+    current_channel = 1
+
+    # Define minimap size
+    minimap_width = 300
+    minimap_height = 160
+
+    try:
+        while True:
+            # Get frame from channel 0 for motion detection
+            frame0 = readers[0].get_latest_frame()
+            if frame0 is None:
+                continue
+
+            # Crop dimensions for channel 0
+            crop_height = 384
+            crop_width = 704
+            frame0 = frame0[0:crop_height, 0:crop_width]
+
+            # Motion detection processing
+            fgmask = fgbg.apply(frame0)
+            _, thresh = cv2.threshold(fgmask, 128, 255, cv2.THRESH_BINARY)
+            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            # Find the largest motion area
+            max_area = 0
+            motion_region = None
+            for contour in contours:
+                if cv2.contourArea(contour) > args.area:
+                    x, y, w, h = cv2.boundingRect(contour)
+                    area = w * h
+                    if area > max_area:
+                        max_area = area
+                        motion_region = (x, y, w, h)
+
+            # Determine which channel to show based on motion position
+            if motion_region:
+                x, y, w, h = motion_region
+                rel_x = x / crop_width
+                rel_y = y / crop_height
+                new_channel = 1 + int(rel_x * 3) + (3 if rel_y >= 0.5 else 0)
+                if new_channel != current_channel:
+                    current_channel = new_channel
+
+            # Get frame from current channel
+            main_frame = readers[current_channel].get_latest_frame()
+            if main_frame is None:
+                continue
+
+            # Resize main frame to display size
+            main_display = cv2.resize(main_frame, (args.width, args.height))
+
+            # Process minimap
+            minimap = cv2.resize(frame0, (minimap_width, minimap_height))
+            padding = 2
+            minimap_padded = cv2.copyMakeBorder(
+                minimap, padding, padding, padding, padding,
+                cv2.BORDER_CONSTANT, value=(255, 255, 255)
+            )
+
+            # Draw motion rectangle on minimap
+            if motion_region:
+                x, y, w, h = motion_region
+                mini_scale_x = minimap_width / crop_width
+                mini_scale_y = minimap_height / crop_height
+                mini_rect_x = int(x * mini_scale_x)
+                mini_rect_y = int(y * mini_scale_y)
+                mini_rect_w = int(w * mini_scale_x)
+                mini_rect_h = int(h * mini_scale_y)
+                cv2.rectangle(
+                    minimap_padded,
+                    (mini_rect_x, mini_rect_y),
+                    (mini_rect_x + mini_rect_w, mini_rect_y + mini_rect_h),
+                    (0, 255, 0),
+                    1
+                )
+
+            # Place minimap on main display
+            minimap_x, minimap_y = get_minimap_position(
+                (args.width, args.height),
+                (minimap_padded.shape[1], minimap_padded.shape[0])
+            )
+            main_display[minimap_y:minimap_y+minimap_padded.shape[0],
+                        minimap_x:minimap_x+minimap_padded.shape[1]] = minimap_padded
+
+            cv2.imshow('Motion', main_display)
+
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
+                break
+            elif key in [ord(str(i)) for i in range(1, 7)]:
+                current_channel = int(chr(key))
+
+    finally:
+        # Cleanup
+        for reader in readers.values():
+            reader.stop()
+        for thread in threads:
+            thread.join()
+        cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    motion_detection()
