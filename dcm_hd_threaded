@@ -68,8 +68,8 @@ class FrameReader:
 
     def stop(self):
         self.running = False
-        if self.process:
-            self.process.terminate()
+        if self.cap.isOpened:
+            self.cap.release()
 
 def get_minimap_position(frame_dims, minimap_dims, margin=10):
     return margin, margin
