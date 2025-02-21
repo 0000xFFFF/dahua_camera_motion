@@ -96,28 +96,25 @@ public:
     void readFrames() {
         running = true;
         cv::Mat frame;
-        
+
         while (running) {
-            if (!cap.isOpened()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            if (!cap.read(frame)) {  // Handle read failure gracefully
+                std::cerr << "Failed to read frame from channel " << channel << std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Avoid tight loop
                 continue;
             }
 
-            if (cap.read(frame)) {
-                if (!frame.empty()) {
-                    std::lock_guard<std::mutex> lock(mtx);
-                    if (frame_queue.size() >= MAX_QUEUE_SIZE) {
-                        frame_queue.pop_front();
-                    }
-                    frame_queue.push_back(frame.clone());
-                    cv.notify_one();
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                if (frame_queue.size() >= MAX_QUEUE_SIZE) {
+                    frame_queue.pop_front();
                 }
+                frame_queue.push_back(frame.clone());
             }
-
-            // Add small sleep to prevent busy-waiting
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            cv.notify_one();
         }
     }
+
 
     cv::Mat getLatestFrame() {
         std::unique_lock<std::mutex> lock(mtx);
@@ -129,18 +126,15 @@ public:
         return !frame_queue.empty() ? frame_queue.back().clone() : cv::Mat();
     }
 
+
     void stop() {
-        running = false;
-        cv.notify_all();  // Wake up any waiting threads
-        try {
-            std::lock_guard<std::mutex> lock(mtx);
-            frame_queue.clear();
-            if (cap.isOpened()) {
-                cap.release();
-            }
-        } catch (...) {
-            // Prevent exceptions from escaping
-            std::cerr << "Error during FrameReader cleanup" << std::endl;
+        running = false;  // Stop the loop
+
+        // Wake up waiting threads so they do not block
+        cv.notify_all();
+
+        if (cap.isOpened()) {
+            cap.release();
         }
     }
 
@@ -345,37 +339,21 @@ public:
     }
 
 
+
     void stop() {
-        if (!running) return;  // Prevent multiple stops
-        
-        running = false;  // Signal threads to stop
-        
-        // First destroy all windows
-        cv::destroyAllWindows();
-        
-        // Give a small delay to ensure windows are destroyed
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        
-        // Stop all readers first
+        running = false;  // Stop main loop
+
         for (auto& reader : readers) {
-            if (reader) {
-                reader->stop();
-            }
+            reader->stop();  // Stop reading frames
         }
-        
-        // Join all threads with timeout
+
         for (auto& thread : threads) {
             if (thread.joinable()) {
-                // Add timeout to prevent hanging
-                if (thread.joinable()) {
-                    thread.join();
-                }
+                thread.join();  // Ensure threads have exited
             }
         }
-        
-        // Clear containers
-        threads.clear();
-        readers.clear();
+
+        cv::destroyAllWindows();  // Close all OpenCV windows
     }
 
     ~MotionDetector() {
