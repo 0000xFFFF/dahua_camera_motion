@@ -44,11 +44,13 @@ class FrameReader:
         subtype = 1 if USE_SUBTYPE1 and self.channel != 0 else 0
         rtsp_url = f"rtsp://{self.args.username}:{self.args.password}@{self.args.ip}:554/cam/realmonitor?channel={self.channel}&subtype={subtype}"
         os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp|buffer_size;65536"
-        cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
-        if not cap.isOpened():
+        self.cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
+
+        if not self.cap.isOpened():
             print(f"Error: Could not open RTSP stream for channel {self.channel}")
-        self.cap = cap
+            self.cap = None  # Avoid accessing invalid cap object
+        else:
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
 
 
     def read_frames(self):
@@ -62,14 +64,22 @@ class FrameReader:
                 print(f"Error reading frame from channel {self.channel}: {e}")
                 continue
 
+        # Cleanup when the loop exits
+        with self.lock:
+            if self.cap is not None:
+                self.cap.release()
+                self.cap = None
+
     def get_latest_frame(self):
         with self.lock:
             return self.frame_queue[-1].copy() if self.frame_queue else None
 
     def stop(self):
         self.running = False
-        if self.cap.isOpened:
-            self.cap.release()
+        if self.cap is not None:  # Ensure cap is initialized
+            with self.lock:  # Ensure no race conditions
+                self.cap.release()
+            self.cap = None  # Prevent further access
 
 def get_minimap_position(frame_dims, minimap_dims, margin=10):
     return margin, margin
@@ -191,13 +201,35 @@ def motion_detection():
             elif key in [ord(str(i)) for i in range(1, 7)]:
                 current_channel = int(chr(key))
 
+    except Exception as e:
+        print(f"Error in motion detection loop: {e}")
     finally:
-        # Cleanup
+        # Proper cleanup sequence
+        print("Shutting down...")
+        
+        # First stop all frame readers
         for reader in readers.values():
-            reader.stop()
+            reader.running = False
+        
+        # Wait a moment for threads to notice the stop signal
+        import time
+        time.sleep(0.5)
+        
+        # Now release all capture objects
+        for reader in readers.values():
+            with reader.lock:
+                if reader.cap is not None:
+                    reader.cap.release()
+                    reader.cap = None
+        
+        # Wait for all threads to complete
         for thread in threads:
-            thread.join()
+            if thread.is_alive():
+                thread.join(timeout=1.0)
+        
+        # Finally destroy windows
         cv2.destroyAllWindows()
+        print("Cleanup complete")
 
 if __name__ == "__main__":
     motion_detection()
