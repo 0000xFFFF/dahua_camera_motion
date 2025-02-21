@@ -243,7 +243,7 @@ public:
                     // Find largest motion area
                     double max_area = 0;
                     for (const auto& contour : contours) {
-                        if (cv::contourArea(contour) > motion_area) {
+                        if (cv::contourArea(contour) >= motion_area) {
                             cv::Rect rect = cv::boundingRect(contour);
                             double area = rect.width * rect.height;
                             if (area > max_area) {
