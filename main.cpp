@@ -83,6 +83,11 @@ public:
         // Set FFMPEG options for better stream handling
         cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('H', '2', '6', '4'));
         cap.set(cv::CAP_PROP_BUFFERSIZE, 2);
+
+        // use GPU
+        cap.set(cv::CAP_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY); // Use any available hardware acceleration
+        cap.set(cv::CAP_PROP_HW_DEVICE, 0); // Use default GPU
+
         
         // Set environment variable for RTSP transport
         putenv((char*)"OPENCV_FFMPEG_CAPTURE_OPTIONS=rtsp_transport;udp");
@@ -159,6 +164,7 @@ private:
     std::vector<std::thread> threads;
     cv::Ptr<cv::BackgroundSubtractorMOG2> fgbg;
     int current_channel;
+    int motion_area;
     bool enableInfo;
     bool enableMotion;
     bool enableMinimap;
@@ -171,8 +177,8 @@ private:
 
 public:
     MotionDetector(const std::string& ip, const std::string& username, 
-                   const std::string& password, int motion_area)
-        : current_channel(1), enableInfo(false), enableMotion(true), enableMinimap(false) {
+                   const std::string& password, int area)
+        : current_channel(1), enableInfo(false), enableMotion(true), enableMinimap(false), motion_area(area) {
         
         // Initialize background subtractor
         fgbg = cv::createBackgroundSubtractorMOG2(500, 16, true);
@@ -237,12 +243,14 @@ public:
                     // Find largest motion area
                     double max_area = 0;
                     for (const auto& contour : contours) {
-                        cv::Rect rect = cv::boundingRect(contour);
-                        double area = rect.width * rect.height;
-                        if (area > max_area) {
-                            max_area = area;
-                            motion_region = rect;
-                            motion_detected = true;
+                        if (cv::contourArea(contour) > motion_area) {
+                            cv::Rect rect = cv::boundingRect(contour);
+                            double area = rect.width * rect.height;
+                            if (area > max_area) {
+                                max_area = area;
+                                motion_region = rect;
+                                motion_detected = true;
+                            }
                         }
                     }
 
