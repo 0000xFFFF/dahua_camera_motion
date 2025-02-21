@@ -125,7 +125,7 @@ public:
                 if (frame_queue.size() >= MAX_QUEUE_SIZE) {
                     frame_queue.pop_front();
                 }
-                frame_queue.push_back(frame.clone());
+                frame_queue.emplace_back(std::move(frame));
                 cv.notify_one();
             } else {
                 std::cerr << "Failed to grab frame from channel " << channel << std::endl;
