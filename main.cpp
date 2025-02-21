@@ -138,12 +138,11 @@ public:
 
     cv::Mat getLatestFrame() {
         std::unique_lock<std::mutex> lock(mtx);
-        if (frame_queue.empty()) {
-            if (cv.wait_for(lock, std::chrono::milliseconds(100)) == std::cv_status::timeout) {
-                return cv::Mat();
-            }
-        }
-        return !frame_queue.empty() ? frame_queue.back().clone() : cv::Mat();
+        if (frame_queue.empty()) return cv::Mat();
+
+        cv::Mat latest = std::move(frame_queue.back()); // Avoid deep copy
+        frame_queue.clear(); // Drop all old frames
+        return latest;
     }
 
 
