@@ -15,11 +15,19 @@
 #include <memory>
 #include <stdexcept>
 #include <csignal>
+#include <sched.h>
 
 // Constants
 constexpr bool USE_SUBTYPE1 = false;
 constexpr int W_0 = 704, H_0 = 576;
 constexpr int W_HD = 1920, H_HD = 1080;
+
+void setThreadAffinity(int core_id) {
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core_id, &cpuset);
+    sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
+}
 
 // Helper function to execute shell commands
 std::string exec(const char* cmd) {
@@ -88,7 +96,6 @@ public:
         cap.set(cv::CAP_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY); // Use any available hardware acceleration
         cap.set(cv::CAP_PROP_HW_DEVICE, 0); // Use default GPU
 
-        
         // Set environment variable for RTSP transport
         putenv((char*)"OPENCV_FFMPEG_CAPTURE_OPTIONS=rtsp_transport;udp");
         
@@ -101,6 +108,8 @@ public:
     void readFrames() {
         running = true;
         cv::Mat frame;
+
+        setThreadAffinity(channel % std::thread::hardware_concurrency()); // Assign different core to each camera
 
         while (running) {
             if (!cap.isOpened()) {
