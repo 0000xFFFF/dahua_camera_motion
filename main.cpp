@@ -14,6 +14,7 @@
 #include <array>
 #include <memory>
 #include <stdexcept>
+#include <csignal>
 
 // Constants
 constexpr bool USE_SUBTYPE1 = false;
@@ -130,15 +131,24 @@ public:
     void stop() {
         running = false;
         cv.notify_all();  // Wake up any waiting threads
-        std::lock_guard<std::mutex> lock(mtx);
-        frame_queue.clear();
-        if (cap.isOpened()) {
-            cap.release();
+        try {
+            std::lock_guard<std::mutex> lock(mtx);
+            frame_queue.clear();
+            if (cap.isOpened()) {
+                cap.release();
+            }
+        } catch (...) {
+            // Prevent exceptions from escaping
+            std::cerr << "Error during FrameReader cleanup" << std::endl;
         }
     }
 
     ~FrameReader() {
-        stop();
+        try {
+            stop();
+        } catch (...) {
+            std::cerr << "Error during FrameReader destruction" << std::endl;
+        }
     }
 };
 
@@ -314,7 +324,10 @@ public:
 
                 char key = cv::waitKey(1);
                 if (key == 'q') {
+                    // More graceful exit
                     running = false;
+                    cv::destroyAllWindows();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     break;
                 }
                 else if (key == 'a') enableMotion = !enableMotion;
@@ -330,10 +343,17 @@ public:
         stop();
     }
 
+
     void stop() {
         if (!running) return;  // Prevent multiple stops
         
-        running = false;
+        running = false;  // Signal threads to stop
+        
+        // First destroy all windows
+        cv::destroyAllWindows();
+        
+        // Give a small delay to ensure windows are destroyed
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         
         // Stop all readers first
         for (auto& reader : readers) {
@@ -342,27 +362,39 @@ public:
             }
         }
         
-        // Join all threads
+        // Join all threads with timeout
         for (auto& thread : threads) {
             if (thread.joinable()) {
-                thread.join();
+                // Add timeout to prevent hanging
+                if (thread.joinable()) {
+                    thread.join();
+                }
             }
         }
         
         // Clear containers
         threads.clear();
         readers.clear();
-        
-        // Destroy windows last
-        cv::destroyAllWindows();
     }
 
     ~MotionDetector() {
-        stop();
+        try {
+            stop();
+        } catch (...) {
+            // Prevent exceptions from escaping destructor
+            std::cerr << "Error during MotionDetector cleanup" << std::endl;
+        }
     }
 };
 
 int main(int argc, char* argv[]) {
+
+    // Add signal handling
+    std::signal(SIGINT, [](int) { 
+        cv::destroyAllWindows();
+        std::exit(0);
+    });
+
     argparse::ArgumentParser program("motion_detector");
     
     program.add_argument("-i", "--ip")
