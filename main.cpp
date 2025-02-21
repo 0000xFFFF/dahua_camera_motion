@@ -77,6 +77,7 @@ public:
                 const std::string& username, const std::string& password)
         : channel(ch), width(w), height(h) {
         
+        std::cout << "start capture: " << ch << std::endl;
         std::string rtsp_url = constructRtspUrl(ip, username, password);
         
         // Set FFMPEG options for better stream handling
@@ -171,7 +172,7 @@ private:
 public:
     MotionDetector(const std::string& ip, const std::string& username, 
                    const std::string& password, int motion_area)
-        : current_channel(1), enableInfo(true), enableMotion(true), enableMinimap(true) {
+        : current_channel(1), enableInfo(false), enableMotion(true), enableMinimap(false) {
         
         // Initialize background subtractor
         fgbg = cv::createBackgroundSubtractorMOG2(500, 16, true);
