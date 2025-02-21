@@ -124,6 +124,7 @@ def motion_detection():
     minimap_width = 300
     minimap_height = 160
 
+    enableInfo = True
     enableMotion = True
     enableMinimap = True
 
@@ -207,12 +208,20 @@ def motion_detection():
                 )
                 main_display[minimap_y:minimap_y+minimap_padded.shape[0],
                             minimap_x:minimap_x+minimap_padded.shape[1]] = minimap_padded
+            if enableInfo:
+                cv2.putText(main_display, f"Motion: {'Yes' if enableMotion else 'No'}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                cv2.putText(main_display, f"Minimap: {'Yes' if enableMinimap else 'No'}", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+
 
             cv2.imshow('Motion', main_display)
 
             key = cv2.waitKey(1) & 0xFF
+
             if key == ord('a'):
                 enableMotion = not enableMotion
+            elif key == ord('i'):
+                enableInfo = not enableInfo
             elif key == ord('m'):
                 enableMinimap = not enableMinimap
             elif key == ord('q'):
