@@ -43,15 +43,19 @@ class FrameReader:
         subtype = 1 if USE_SUBTYPE1 and self.channel != 0 else 0
         rtsp_url = f"rtsp://{self.args.username}:{self.args.password}@{self.args.ip}:554/cam/realmonitor?channel={self.channel}&subtype={subtype}"
         
+
         ffmpeg_cmd = [
             "ffmpeg",
-            "-rtsp_transport", "tcp",
-            "-fflags", "discardcorrupt",
+            "-rtsp_transport", "tcp",  # Use TCP for a more stable stream
+            "-fflags", "discardcorrupt",  # Discard corrupt frames
             "-i", rtsp_url,
+            "-preset", "ultrafast",  # Use the fastest encoding preset
+            "-tune", "zerolatency",  # Reduce latency (optional)
             "-f", "rawvideo",
             "-pix_fmt", "bgr24",
-            "-vsync", "drop",
-            "-an",
+            "-vsync", "vfr",  # Variable frame rate to drop unneeded frames
+            "-an",  # No audio
+            #"-r", "10",  # Reduce frame rate (adjust as needed)
             "pipe:1"
         ]
         
@@ -120,6 +124,9 @@ def motion_detection():
     minimap_width = 300
     minimap_height = 160
 
+    enableMotion = True
+    enableMinimap = True
+
     try:
         while True:
             # Get frame from channel 0 for motion detection
@@ -132,30 +139,32 @@ def motion_detection():
             crop_width = 704
             frame0 = frame0[0:crop_height, 0:crop_width]
 
-            # Motion detection processing
-            fgmask = fgbg.apply(frame0)
-            _, thresh = cv2.threshold(fgmask, 128, 255, cv2.THRESH_BINARY)
-            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            # Find the largest motion area
-            max_area = 0
             motion_region = None
-            for contour in contours:
-                if cv2.contourArea(contour) > args.area:
-                    x, y, w, h = cv2.boundingRect(contour)
-                    area = w * h
-                    if area > max_area:
-                        max_area = area
-                        motion_region = (x, y, w, h)
+            if enableMotion:
+                # Motion detection processing
+                fgmask = fgbg.apply(frame0)
+                _, thresh = cv2.threshold(fgmask, 128, 255, cv2.THRESH_BINARY)
+                contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            # Determine which channel to show based on motion position
-            if motion_region:
-                x, y, w, h = motion_region
-                rel_x = x / crop_width
-                rel_y = y / crop_height
-                new_channel = 1 + int(rel_x * 3) + (3 if rel_y >= 0.5 else 0)
-                if new_channel != current_channel:
-                    current_channel = new_channel
+                # Find the largest motion area
+                max_area = 0
+                for contour in contours:
+                    if cv2.contourArea(contour) > args.area:
+                        x, y, w, h = cv2.boundingRect(contour)
+                        area = w * h
+                        if area > max_area:
+                            max_area = area
+                            motion_region = (x, y, w, h)
+
+                # Determine which channel to show based on motion position
+                if motion_region:
+                    x, y, w, h = motion_region
+                    rel_x = x / crop_width
+                    rel_y = y / crop_height
+                    new_channel = 1 + int(rel_x * 3) + (3 if rel_y >= 0.5 else 0)
+                    if new_channel != current_channel:
+                        current_channel = new_channel
 
             # Get frame from current channel
             main_frame = readers[current_channel].get_latest_frame()
@@ -191,17 +200,22 @@ def motion_detection():
                 )
 
             # Place minimap on main display
-            minimap_x, minimap_y = get_minimap_position(
-                (args.width, args.height),
-                (minimap_padded.shape[1], minimap_padded.shape[0])
-            )
-            main_display[minimap_y:minimap_y+minimap_padded.shape[0],
-                        minimap_x:minimap_x+minimap_padded.shape[1]] = minimap_padded
+            if enableMinimap:
+                minimap_x, minimap_y = get_minimap_position(
+                    (args.width, args.height),
+                    (minimap_padded.shape[1], minimap_padded.shape[0])
+                )
+                main_display[minimap_y:minimap_y+minimap_padded.shape[0],
+                            minimap_x:minimap_x+minimap_padded.shape[1]] = minimap_padded
 
             cv2.imshow('Motion', main_display)
 
             key = cv2.waitKey(1) & 0xFF
-            if key == ord('q'):
+            if key == ord('a'):
+                enableMotion = not enableMotion
+            elif key == ord('m'):
+                enableMinimap = not enableMinimap
+            elif key == ord('q'):
                 break
             elif key in [ord(str(i)) for i in range(1, 7)]:
                 current_channel = int(chr(key))
