@@ -41,6 +41,7 @@ class FrameReader:
         self.start_capture()
 
     def start_capture(self):
+        print(f"start capture: {self.channel}")
         subtype = 1 if USE_SUBTYPE1 and self.channel != 0 else 0
         rtsp_url = f"rtsp://{self.args.username}:{self.args.password}@{self.args.ip}:554/cam/realmonitor?channel={self.channel}&subtype={subtype}"
         os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp|buffer_size;65536"
