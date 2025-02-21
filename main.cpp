@@ -98,23 +98,29 @@ public:
         cv::Mat frame;
 
         while (running) {
-            if (!cap.read(frame)) {  // Handle read failure gracefully
-                std::cerr << "Failed to read frame from channel " << channel << std::endl;
-                std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Avoid tight loop
-                continue;
+            if (!cap.isOpened()) {
+                std::cerr << "Camera " << channel << " is not open. Exiting thread." << std::endl;
+                break;
             }
 
-            {
+            // Use grab + retrieve instead of read() to prevent blocking
+            if (cap.grab()) {  // Grabs the frame (non-blocking)
+                cap.retrieve(frame);  // Retrieves the frame (blocking only if available)
+
                 std::lock_guard<std::mutex> lock(mtx);
                 if (frame_queue.size() >= MAX_QUEUE_SIZE) {
                     frame_queue.pop_front();
                 }
                 frame_queue.push_back(frame.clone());
+                cv.notify_one();
+            } else {
+                std::cerr << "Failed to grab frame from channel " << channel << std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));  // Prevent CPU overuse
             }
-            cv.notify_one();
         }
-    }
 
+        std::cout << "Exiting readFrames() thread for channel " << channel << std::endl;
+    }
 
     cv::Mat getLatestFrame() {
         std::unique_lock<std::mutex> lock(mtx);
@@ -130,12 +136,12 @@ public:
     void stop() {
         running = false;  // Stop the loop
 
-        // Wake up waiting threads so they do not block
-        cv.notify_all();
-
         if (cap.isOpened()) {
             cap.release();
         }
+
+        // Wake up waiting threads so they do not block
+        cv.notify_all();
     }
 
     ~FrameReader() {
@@ -339,22 +345,22 @@ public:
     }
 
 
-
     void stop() {
-        running = false;  // Stop main loop
+        running = false;
 
         for (auto& reader : readers) {
-            reader->stop();  // Stop reading frames
+            reader->stop();
         }
 
         for (auto& thread : threads) {
             if (thread.joinable()) {
-                thread.join();  // Ensure threads have exited
+                thread.join();
             }
         }
 
-        cv::destroyAllWindows();  // Close all OpenCV windows
+        cv::destroyAllWindows();
     }
+
 
     ~MotionDetector() {
         try {
