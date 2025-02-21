@@ -132,7 +132,11 @@ public:
             }
         }
 
-        std::cout << "Exiting readFrames() thread for channel " << channel << std::endl;
+        if (cap.isOpened()) {
+            cap.release();
+        }
+
+        //std::cout << "Exiting readFrames() thread for channel " << channel << std::endl;
     }
 
     cv::Mat getLatestFrame() {
@@ -147,10 +151,6 @@ public:
 
     void stop() {
         running = false;  // Stop the loop
-
-        if (cap.isOpened()) {
-            cap.release();
-        }
 
         // Wake up waiting threads so they do not block
         cv.notify_all();
@@ -361,15 +361,18 @@ public:
         running = false;
 
         for (auto& reader : readers) {
+            //std::cout << "stop reader" << std::endl;
             reader->stop();
         }
 
         for (auto& thread : threads) {
             if (thread.joinable()) {
+                //std::cout << "th join" << std::endl;
                 thread.join();
             }
         }
 
+        //std::cout << "close all wins" << std::endl;
         cv::destroyAllWindows();
     }
 
