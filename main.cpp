@@ -333,10 +333,7 @@ public:
 
                 char key = cv::waitKey(1);
                 if (key == 'q') {
-                    // More graceful exit
                     running = false;
-                    cv::destroyAllWindows();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     break;
                 }
                 else if (key == 'a') enableMotion = !enableMotion;
