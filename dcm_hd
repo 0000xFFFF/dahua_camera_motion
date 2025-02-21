@@ -125,17 +125,11 @@ def motion_detection():
                 current_channel = new_channel
         
 
-        # Read frame from current channel
-        ret, main_frame = caps[current_channel].read()
-        if not ret:
-            print(f"Error: Failed to grab frame from channel {current_channel}")
-            caps[current_channel] = start_capture(current_channel)
-            continue
-
-        # Read from other channels to avoid buffering
-        for channel in range(1, 7):  # Channels 1-6
-            if current_channel != channel:
-                _ = caps[channel].read()
+        main_frame = None
+        for i in range(1, 7):
+            ret, frame = caps[i].read()
+            if i == current_channel:
+                main_frame = frame
 
         # Resize main frame to display size
         main_display = cv2.resize(main_frame, (args.width, args.height))
