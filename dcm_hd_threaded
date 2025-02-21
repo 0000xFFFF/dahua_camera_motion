@@ -116,9 +116,9 @@ def motion_detection():
     minimap_width = 300
     minimap_height = 160
 
-    enableInfo = True
+    enableInfo = False
     enableMotion = True
-    enableMinimap = True
+    enableMinimap = False
 
     try:
         while True:
@@ -168,32 +168,32 @@ def motion_detection():
             main_display = cv2.resize(main_frame, (args.width, args.height))
 
             # Process minimap
-            minimap = cv2.resize(frame0, (minimap_width, minimap_height))
-            padding = 2
-            minimap_padded = cv2.copyMakeBorder(
-                minimap, padding, padding, padding, padding,
-                cv2.BORDER_CONSTANT, value=(255, 255, 255)
-            )
-
-            # Draw motion rectangle on minimap
-            if motion_region:
-                x, y, w, h = motion_region
-                mini_scale_x = minimap_width / crop_width
-                mini_scale_y = minimap_height / crop_height
-                mini_rect_x = int(x * mini_scale_x)
-                mini_rect_y = int(y * mini_scale_y)
-                mini_rect_w = int(w * mini_scale_x)
-                mini_rect_h = int(h * mini_scale_y)
-                cv2.rectangle(
-                    minimap_padded,
-                    (mini_rect_x, mini_rect_y),
-                    (mini_rect_x + mini_rect_w, mini_rect_y + mini_rect_h),
-                    (0, 255, 0),
-                    1
+            if enableMinimap:
+                minimap = cv2.resize(frame0, (minimap_width, minimap_height))
+                padding = 2
+                minimap_padded = cv2.copyMakeBorder(
+                    minimap, padding, padding, padding, padding,
+                    cv2.BORDER_CONSTANT, value=(255, 255, 255)
                 )
 
-            # Place minimap on main display
-            if enableMinimap:
+                # Draw motion rectangle on minimap
+                if motion_region:
+                    x, y, w, h = motion_region
+                    mini_scale_x = minimap_width / crop_width
+                    mini_scale_y = minimap_height / crop_height
+                    mini_rect_x = int(x * mini_scale_x)
+                    mini_rect_y = int(y * mini_scale_y)
+                    mini_rect_w = int(w * mini_scale_x)
+                    mini_rect_h = int(h * mini_scale_y)
+                    cv2.rectangle(
+                        minimap_padded,
+                        (mini_rect_x, mini_rect_y),
+                        (mini_rect_x + mini_rect_w, mini_rect_y + mini_rect_h),
+                        (0, 255, 0),
+                        1
+                    )
+
+                # Place minimap on main display
                 minimap_x, minimap_y = get_minimap_position(
                     (args.width, args.height),
                     (minimap_padded.shape[1], minimap_padded.shape[0])
