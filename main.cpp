@@ -44,13 +44,24 @@ std::string exec(const char* cmd) {
 }
 
 // Get screen resolution using xrandr
-std::pair<int, int> detect_screen_size() {
+std::pair<int, int> detect_screen_size(const int& index) {
     try {
-        std::string xrandr_output = exec("xrandr | grep ' connected' | head -n 1 | grep -o '[0-9]\\+x[0-9]\\+' | head -n 1");
-        size_t x_pos = xrandr_output.find('x');
+        std::string xrandr_output = exec("xrandr | grep '*' | awk '{print $1}'");
+        std::vector<std::string> resolutions;
+        std::stringstream ss(xrandr_output);
+        std::string res;
+        std::cout << "detected resolutions:" << std::endl;
+        while (std::getline(ss, res, '\n')) {
+            std::cout << res << std::endl;
+            resolutions.push_back(res);
+        }
+        const std::string& use = resolutions[index];
+        std::cout << "using: " << use << std::endl;
+
+        size_t x_pos = use.find('x');
         if (x_pos != std::string::npos) {
-            int width = std::stoi(xrandr_output.substr(0, x_pos));
-            int height = std::stoi(xrandr_output.substr(x_pos + 1));
+            int width = std::stoi(use.substr(0, x_pos));
+            int height = std::stoi(use.substr(x_pos + 1));
             return {width, height};
         }
     } catch (const std::exception& e) {
@@ -426,6 +437,10 @@ int main(int argc, char* argv[]) {
         .help("Detect screen size with xrandr")
         .default_value(false)
         .implicit_value(true);
+    program.add_argument("-r", "--resolution")
+        .help("index of resolution to use (default: 0)")
+        .default_value(0)
+        .scan<'i', int>();
 
     try {
         program.parse_args(argc, argv);
@@ -435,7 +450,7 @@ int main(int argc, char* argv[]) {
         
         // Override width/height with detected screen size if requested
         if (program.get<bool>("detect")) {
-            auto [detected_width, detected_height] = detect_screen_size();
+            auto [detected_width, detected_height] = detect_screen_size(program.get<int>("resolution"));
             width = detected_width;
             height = detected_height;
             std::cout << "Detected screen size: " << width << "x" << height << std::endl;
