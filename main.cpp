@@ -1,20 +1,19 @@
-#include <opencv2/opencv.hpp>
-#include <thread>
-#include <mutex>
-#include <deque>
-#include <atomic>
-#include <memory>
-#include <vector>
-#include <cstring>
-#include <iostream>
-#include <condition_variable>
 #include <argparse/argparse.hpp>
-#include <cstdio>
 #include <array>
-#include <memory>
-#include <stdexcept>
+#include <atomic>
+#include <condition_variable>
 #include <csignal>
+#include <cstdio>
+#include <cstring>
+#include <deque>
+#include <iostream>
+#include <memory>
+#include <mutex>
+#include <opencv2/opencv.hpp>
 #include <sched.h>
+#include <stdexcept>
+#include <thread>
+#include <vector>
 
 // Constants
 constexpr bool USE_SUBTYPE1 = false;
@@ -71,7 +70,7 @@ std::pair<int, int> detect_screen_size(const int& index) {
 }
 
 class FrameReader {
-private:
+  private:
     int channel;
     int width;
     int height;
@@ -82,36 +81,36 @@ private:
     std::condition_variable cv;
     static constexpr size_t MAX_QUEUE_SIZE = 2;
 
-    std::string constructRtspUrl(const std::string& ip, const std::string& username, 
-                               const std::string& password) {
+    std::string constructRtspUrl(const std::string& ip, const std::string& username,
+                                 const std::string& password) {
         int subtype = (USE_SUBTYPE1 && channel != 0) ? 1 : 0;
-        return "rtsp://" + username + ":" + password + "@" + ip + 
-               ":554/cam/realmonitor?channel=" + std::to_string(channel) + 
+        return "rtsp://" + username + ":" + password + "@" + ip +
+               ":554/cam/realmonitor?channel=" + std::to_string(channel) +
                "&subtype=" + std::to_string(subtype);
     }
 
-public:
-    FrameReader(int ch, int w, int h, const std::string& ip, 
+  public:
+    FrameReader(int ch, int w, int h, const std::string& ip,
                 const std::string& username, const std::string& password)
         : channel(ch), width(w), height(h) {
-        
+
         std::cout << "start capture: " << ch << std::endl;
         std::string rtsp_url = constructRtspUrl(ip, username, password);
-        
+
         // Set FFMPEG options for better stream handling
         cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('H', '2', '6', '4'));
         cap.set(cv::CAP_PROP_BUFFERSIZE, 2);
 
         // use GPU
         cap.set(cv::CAP_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY); // Use any available hardware acceleration
-        cap.set(cv::CAP_PROP_HW_DEVICE, 0); // Use default GPU
+        cap.set(cv::CAP_PROP_HW_DEVICE, 0);                                // Use default GPU
 
         // Set environment variable for RTSP transport
         putenv((char*)"OPENCV_FFMPEG_CAPTURE_OPTIONS=rtsp_transport;udp");
-        
+
         if (!cap.open(rtsp_url, cv::CAP_FFMPEG)) {
-            throw std::runtime_error("Failed to open RTSP stream for channel " + 
-                                   std::to_string(channel));
+            throw std::runtime_error("Failed to open RTSP stream for channel " +
+                                     std::to_string(channel));
         }
     }
 
@@ -128,8 +127,8 @@ public:
             }
 
             // Use grab + retrieve instead of read() to prevent blocking
-            if (cap.grab()) {  // Grabs the frame (non-blocking)
-                cap.retrieve(frame);  // Retrieves the frame (blocking only if available)
+            if (cap.grab()) {        // Grabs the frame (non-blocking)
+                cap.retrieve(frame); // Retrieves the frame (blocking only if available)
 
                 std::lock_guard<std::mutex> lock(mtx);
                 if (frame_queue.size() >= MAX_QUEUE_SIZE) {
@@ -139,7 +138,7 @@ public:
                 cv.notify_one();
             } else {
                 std::cerr << "Failed to grab frame from channel " << channel << std::endl;
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));  // Prevent CPU overuse
+                std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Prevent CPU overuse
             }
         }
 
@@ -147,7 +146,7 @@ public:
             cap.release();
         }
 
-        //std::cout << "Exiting readFrames() thread for channel " << channel << std::endl;
+        // std::cout << "Exiting readFrames() thread for channel " << channel << std::endl;
     }
 
     cv::Mat getLatestFrame() {
@@ -155,13 +154,12 @@ public:
         if (frame_queue.empty()) return cv::Mat();
 
         cv::Mat latest = std::move(frame_queue.back()); // Avoid deep copy
-        frame_queue.clear(); // Drop all old frames
+        frame_queue.clear();                            // Drop all old frames
         return latest;
     }
 
-
     void stop() {
-        running = false;  // Stop the loop
+        running = false; // Stop the loop
 
         // Wake up waiting threads so they do not block
         cv.notify_all();
@@ -177,7 +175,7 @@ public:
 };
 
 class MotionDetector {
-private:
+  private:
     std::vector<std::unique_ptr<FrameReader>> readers;
     std::vector<std::thread> threads;
     cv::Ptr<cv::BackgroundSubtractorMOG2> fgbg;
@@ -188,23 +186,23 @@ private:
     bool enableMinimap;
     std::atomic<bool> running{false};
 
-    cv::Point getMinimapPosition(const cv::Size& frame_dims, 
-                                const cv::Size& minimap_dims, int margin = 10) {
+    cv::Point getMinimapPosition(const cv::Size& frame_dims,
+                                 const cv::Size& minimap_dims, int margin = 10) {
         return cv::Point(margin, margin);
     }
 
-public:
-    MotionDetector(const std::string& ip, const std::string& username, 
+  public:
+    MotionDetector(const std::string& ip, const std::string& username,
                    const std::string& password, int area)
         : current_channel(1), enableInfo(false), enableMotion(true), enableMinimap(false), motion_area(area) {
-        
+
         // Initialize background subtractor
         fgbg = cv::createBackgroundSubtractorMOG2(500, 16, true);
 
         try {
             // Initialize channel 0 (motion detection camera)
             readers.push_back(std::make_unique<FrameReader>(0, W_0, H_0, ip, username, password));
-            
+
             // Initialize channels 1-6 (HD cameras)
             for (int channel = 1; channel <= 6; ++channel) {
                 readers.push_back(std::make_unique<FrameReader>(
@@ -250,13 +248,13 @@ public:
                 if (enableMotion) {
                     cv::Mat fgmask;
                     fgbg->apply(cropped, fgmask);
-                    
+
                     cv::Mat thresh;
                     cv::threshold(fgmask, thresh, 128, 255, cv::THRESH_BINARY);
-                    
+
                     std::vector<std::vector<cv::Point>> contours;
-                    cv::findContours(thresh, contours, cv::RETR_EXTERNAL, 
-                                   cv::CHAIN_APPROX_SIMPLE);
+                    cv::findContours(thresh, contours, cv::RETR_EXTERNAL,
+                                     cv::CHAIN_APPROX_SIMPLE);
 
                     // Find largest motion area
                     double max_area = 0;
@@ -276,8 +274,8 @@ public:
                     if (motion_detected) {
                         float rel_x = motion_region.x / static_cast<float>(CROP_WIDTH);
                         float rel_y = motion_region.y / static_cast<float>(CROP_HEIGHT);
-                        int new_channel = 1 + static_cast<int>(rel_x * 3) + 
-                                        (rel_y >= 0.5f ? 3 : 0);
+                        int new_channel = 1 + static_cast<int>(rel_x * 3) +
+                                          (rel_y >= 0.5f ? 3 : 0);
                         if (new_channel != current_channel) {
                             current_channel = new_channel;
                         }
@@ -298,11 +296,11 @@ public:
                 if (enableMinimap) {
                     cv::Mat minimap;
                     cv::resize(cropped, minimap, cv::Size(MINIMAP_WIDTH, MINIMAP_HEIGHT));
-                    
+
                     // Add white border
                     cv::Mat minimap_padded;
                     cv::copyMakeBorder(minimap, minimap_padded, 2, 2, 2, 2,
-                                     cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
+                                       cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
 
                     // Draw motion rectangle on minimap
                     if (motion_detected) {
@@ -312,20 +310,17 @@ public:
                             static_cast<int>(motion_region.x * scale_x),
                             static_cast<int>(motion_region.y * scale_y),
                             static_cast<int>(motion_region.width * scale_x),
-                            static_cast<int>(motion_region.height * scale_y)
-                        );
+                            static_cast<int>(motion_region.height * scale_y));
                         cv::rectangle(minimap_padded, scaled_rect, cv::Scalar(0, 255, 0), 1);
                     }
 
                     // Place minimap on main display
                     cv::Point minimap_pos = getMinimapPosition(
                         cv::Size(display_width, display_height),
-                        minimap_padded.size()
-                    );
+                        minimap_padded.size());
                     minimap_padded.copyTo(display(cv::Rect(
                         minimap_pos.x, minimap_pos.y,
-                        minimap_padded.cols, minimap_padded.rows
-                    )));
+                        minimap_padded.cols, minimap_padded.rows)));
                 }
 
                 // Draw info text
@@ -337,14 +332,14 @@ public:
                     const int font_thickness = 2;
 
                     cv::putText(display, "Info (i): " + std::string(enableInfo ? "Yes" : "No"),
-                               cv::Point(10, text_y_start), cv::FONT_HERSHEY_SIMPLEX,
-                               font_scale, text_color, font_thickness);
+                                cv::Point(10, text_y_start), cv::FONT_HERSHEY_SIMPLEX,
+                                font_scale, text_color, font_thickness);
                     cv::putText(display, "Motion (a): " + std::string(enableMotion ? "Yes" : "No"),
-                               cv::Point(10, text_y_start + text_y_step), cv::FONT_HERSHEY_SIMPLEX,
-                               font_scale, text_color, font_thickness);
+                                cv::Point(10, text_y_start + text_y_step), cv::FONT_HERSHEY_SIMPLEX,
+                                font_scale, text_color, font_thickness);
                     cv::putText(display, "Minimap (m): " + std::string(enableMinimap ? "Yes" : "No"),
-                               cv::Point(10, text_y_start + 2 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
-                               font_scale, text_color, font_thickness);
+                                cv::Point(10, text_y_start + 2 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
+                                font_scale, text_color, font_thickness);
                 }
 
                 cv::imshow("Motion", display);
@@ -353,40 +348,40 @@ public:
                 if (key == 'q') {
                     running = false;
                     break;
-                }
-                else if (key == 'a') enableMotion = !enableMotion;
-                else if (key == 'i') enableInfo = !enableInfo;
-                else if (key == 'm') enableMinimap = !enableMinimap;
-                else if (key >= '1' && key <= '6') current_channel = key - '0';
+                } else if (key == 'a')
+                    enableMotion = !enableMotion;
+                else if (key == 'i')
+                    enableInfo = !enableInfo;
+                else if (key == 'm')
+                    enableMinimap = !enableMinimap;
+                else if (key >= '1' && key <= '6')
+                    current_channel = key - '0';
             }
-        }
-        catch (const std::exception& e) {
+        } catch (const std::exception& e) {
             std::cerr << "Error in display loop: " << e.what() << std::endl;
         }
 
         stop();
     }
 
-
     void stop() {
         running = false;
 
         for (auto& reader : readers) {
-            //std::cout << "stop reader" << std::endl;
+            // std::cout << "stop reader" << std::endl;
             reader->stop();
         }
 
         for (auto& thread : threads) {
             if (thread.joinable()) {
-                //std::cout << "th join" << std::endl;
+                // std::cout << "th join" << std::endl;
                 thread.join();
             }
         }
 
-        //std::cout << "close all wins" << std::endl;
+        // std::cout << "close all wins" << std::endl;
         cv::destroyAllWindows();
     }
-
 
     ~MotionDetector() {
         try {
@@ -401,13 +396,13 @@ public:
 int main(int argc, char* argv[]) {
 
     // Add signal handling
-    std::signal(SIGINT, [](int) { 
+    std::signal(SIGINT, [](int) {
         cv::destroyAllWindows();
         std::exit(0);
     });
 
     argparse::ArgumentParser program("motion_detector");
-    
+
     program.add_argument("-i", "--ip")
         .help("IP to connect to")
         .required();
@@ -444,10 +439,10 @@ int main(int argc, char* argv[]) {
 
     try {
         program.parse_args(argc, argv);
-        
+
         int width = program.get<int>("width");
         int height = program.get<int>("height");
-        
+
         // Override width/height with detected screen size if requested
         if (program.get<bool>("detect")) {
             auto [detected_width, detected_height] = detect_screen_size(program.get<int>("resolution"));
@@ -460,8 +455,7 @@ int main(int argc, char* argv[]) {
             program.get<std::string>("ip"),
             program.get<std::string>("username"),
             program.get<std::string>("password"),
-            program.get<int>("area")
-        );
+            program.get<int>("area"));
 
         detector.start(width, height, program.get<bool>("fullscreen"));
     } catch (const std::exception& e) {
