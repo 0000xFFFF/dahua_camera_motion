@@ -174,6 +174,33 @@ class FrameReader {
     }
 };
 
+cv::Mat getCombinedFrame(std::vector<cv::Mat> frames) {
+    if (frames.size() != 6) {
+        throw std::runtime_error("Expected 6 frames, but got " + std::to_string(frames.size()));
+    }
+
+    // Resize frames to have the same dimensions if needed
+    int width = frames[0].cols;
+    int height = frames[0].rows;
+
+    for (auto& frame : frames) {
+        if (frame.cols != width || frame.rows != height) {
+            cv::resize(frame, frame, cv::Size(width, height));
+        }
+    }
+
+    // Create two row matrices
+    cv::Mat row1, row2;
+    cv::hconcat(std::vector<cv::Mat>{frames[0], frames[1], frames[2]}, row1);
+    cv::hconcat(std::vector<cv::Mat>{frames[3], frames[4], frames[5]}, row2);
+
+    // Combine rows into final matrix
+    cv::Mat finalFrame;
+    cv::vconcat(row1, row2, finalFrame);
+
+    return finalFrame;
+}
+
 class MotionDetector {
   private:
     std::vector<std::unique_ptr<FrameReader>> readers;
@@ -212,6 +239,21 @@ class MotionDetector {
             std::cerr << "Error initializing cameras: " << e.what() << std::endl;
             throw;
         }
+    }
+
+    cv::Mat get_all_frames() {
+        std::vector<cv::Mat> frames(6);
+
+        // Assume readers[i] are objects that can get frames
+        for (int i = 0; i < 6; i++) {
+            frames[i] = readers[i+1]->getLatestFrame();
+            while (frames[i].empty()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                frames[i] = readers[i+1]->getLatestFrame();
+            }
+        }
+
+        return getCombinedFrame(frames);
     }
 
     void start(int display_width, int display_height, bool fullscreen) {
@@ -283,7 +325,7 @@ class MotionDetector {
                 }
 
                 // Get main display frame
-                cv::Mat main_frame = readers[current_channel]->getLatestFrame();
+                cv::Mat main_frame = motion_detected ? readers[current_channel]->getLatestFrame() : get_all_frames();
                 if (main_frame.empty()) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
                     continue;
