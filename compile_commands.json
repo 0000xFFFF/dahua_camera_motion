@@ -1,0 +1,15 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-I/usr/include/opencv4",
+      "-o",
+      "dcm_master",
+      "main.cpp"
+    ],
+    "directory": "/home/user/Documents/dahua_camera_motion",
+    "file": "/home/user/Documents/dahua_camera_motion/main.cpp",
+    "output": "/home/user/Documents/dahua_camera_motion/dcm_master"
+  }
+]

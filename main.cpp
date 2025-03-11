@@ -207,11 +207,11 @@ class MotionDetector {
     std::vector<std::thread> threads;
     cv::Ptr<cv::BackgroundSubtractorMOG2> fgbg;
     int current_channel;
-    int motion_area;
     bool enableInfo;
     bool enableMotion;
     bool enableMinimap;
     bool enableFullscreen;
+    int motion_area;
     std::atomic<bool> running{false};
 
     cv::Point getMinimapPosition(const cv::Size& frame_dims,
@@ -280,7 +280,6 @@ class MotionDetector {
         constexpr int CROP_WIDTH = 704;
 
         try {
-
 
             while (running) {
                 cv::Mat frame0 = readers[0]->getLatestFrame();
@@ -414,8 +413,7 @@ class MotionDetector {
                     enableMinimap = !enableMinimap;
                 } else if (key == 'f') {
                     enableFullscreen = !enableFullscreen;
-                }
-                else if (key >= '1' && key <= '6') {
+                } else if (key >= '1' && key <= '6') {
                     current_channel = key - '0';
                     enableFullscreen = true;
                 }
