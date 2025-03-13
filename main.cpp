@@ -350,8 +350,7 @@ class MotionDetector {
                     continue;
                 }
 
-                cv::Mat display;
-                cv::resize(main_frame, display, cv::Size(display_width, display_height));
+                //cv::resize(main_frame, main_frame, cv::Size(display_width, display_height));
 
                 // Process minimap
                 if (enableMinimap) {
@@ -379,7 +378,7 @@ class MotionDetector {
                     cv::Point minimap_pos = getMinimapPosition(
                         cv::Size(display_width, display_height),
                         minimap_padded.size());
-                    minimap_padded.copyTo(display(cv::Rect(
+                    minimap_padded.copyTo(main_frame(cv::Rect(
                         minimap_pos.x, minimap_pos.y,
                         minimap_padded.cols, minimap_padded.rows)));
                 }
@@ -392,27 +391,27 @@ class MotionDetector {
                     const double font_scale = 0.8;
                     const int font_thickness = 2;
 
-                    cv::putText(display, "Info (i): " + bool_to_str(enableInfo),
+                    cv::putText(main_frame, "Info (i): " + bool_to_str(enableInfo),
                                 cv::Point(10, text_y_start), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
-                    cv::putText(display, "Motion (a): " + bool_to_str(enableMotion),
+                    cv::putText(main_frame, "Motion (a): " + bool_to_str(enableMotion),
                                 cv::Point(10, text_y_start + text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
-                    cv::putText(display, "Minimap (m): " + bool_to_str(enableMinimap),
+                    cv::putText(main_frame, "Minimap (m): " + bool_to_str(enableMinimap),
                                 cv::Point(10, text_y_start + 2 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
-                    cv::putText(display, "Motion Detected: " + bool_to_str(motion_detected),
+                    cv::putText(main_frame, "Motion Detected: " + bool_to_str(motion_detected),
                                 cv::Point(10, text_y_start + 3 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
-                    cv::putText(display, "Channel (num): " + std::to_string(current_channel),
+                    cv::putText(main_frame, "Channel (num): " + std::to_string(current_channel),
                                 cv::Point(10, text_y_start + 4 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
-                    cv::putText(display, "Fullscreen (f): " + bool_to_str(enableFullscreen),
+                    cv::putText(main_frame, "Fullscreen (f): " + bool_to_str(enableFullscreen),
                                 cv::Point(10, text_y_start + 5 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
                 }
 
-                cv::imshow("Motion", display);
+                cv::imshow("Motion", main_frame);
 
                 char key = cv::waitKey(1);
                 if (key == 'q') {
