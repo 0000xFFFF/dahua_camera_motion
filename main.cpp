@@ -15,9 +15,15 @@
 #include <thread>
 #include <vector>
 
-#define ENABLE_MOTION 1
-#define ENABLE_MINIMAP 0
+#ifdef DEBUG
+#define ENABLE_INFO 1
+#define ENABLE_MINIMAP 1
+#else
 #define ENABLE_INFO 0
+#define ENABLE_MINIMAP 0
+#endif
+
+#define ENABLE_MOTION 1
 #define ENABLE_FULLSCREEN 0
 #define DRAW_SLEEP_MS 1
 #define MOTION_DETECT_AREA 10
