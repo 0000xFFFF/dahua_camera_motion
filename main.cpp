@@ -350,7 +350,7 @@ class MotionDetector {
                     continue;
                 }
 
-                //cv::resize(main_frame, main_frame, cv::Size(display_width, display_height));
+                cv::resize(main_frame, main_frame, cv::Size(display_width, display_height));
 
                 // Process minimap
                 if (enableMinimap) {
