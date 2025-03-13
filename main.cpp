@@ -15,6 +15,13 @@
 #include <thread>
 #include <vector>
 
+#define ENABLE_MOTION 1
+#define ENABLE_MINIMAP 1
+#define ENABLE_INFO 1
+#define ENABLE_FULLSCREEN 1
+#define DRAW_SLEEP_MS 1
+#define MOTION_DETECT_AREA 10
+
 // Constants
 constexpr bool USE_SUBTYPE1 = false;
 constexpr int W_0 = 704, H_0 = 576;
@@ -138,7 +145,7 @@ class FrameReader {
                 cv.notify_one();
             } else {
                 std::cerr << "Failed to grab frame from channel " << channel << std::endl;
-                std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Prevent CPU overuse
+                std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
             }
         }
 
@@ -226,7 +233,7 @@ class MotionDetector {
   public:
     MotionDetector(const std::string& ip, const std::string& username,
                    const std::string& password, int area)
-        : current_channel(1), enableInfo(false), enableMotion(true), enableMinimap(false), enableFullscreen(false), motion_area(area) {
+        : current_channel(1), enableInfo(ENABLE_INFO), enableMotion(ENABLE_MOTION), enableMinimap(ENABLE_MINIMAP), enableFullscreen(ENABLE_FULLSCREEN), motion_area(area) {
 
         // Initialize background subtractor
         fgbg = cv::createBackgroundSubtractorMOG2(500, 16, true);
@@ -253,7 +260,7 @@ class MotionDetector {
         for (int i = 0; i < 6; i++) {
             frames[i] = readers[i + 1]->getLatestFrame();
             while (frames[i].empty()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
                 frames[i] = readers[i + 1]->getLatestFrame();
             }
         }
@@ -284,7 +291,7 @@ class MotionDetector {
             while (running) {
                 cv::Mat frame0 = readers[0]->getLatestFrame();
                 if (frame0.empty()) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
                     continue;
                 }
 
@@ -333,7 +340,7 @@ class MotionDetector {
                 // Get main display frame
                 cv::Mat main_frame = (enableFullscreen || motion_detected) ? readers[current_channel]->getLatestFrame() : get_all_frames();
                 if (main_frame.empty()) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
                     continue;
                 }
 
@@ -475,7 +482,7 @@ int main(int argc, char* argv[]) {
         .required();
     program.add_argument("-a", "--area")
         .help("Contour area for detection")
-        .default_value(10)
+        .default_value(MOTION_DETECT_AREA)
         .scan<'i', int>();
     program.add_argument("-ww", "--width")
         .help("Window width")
