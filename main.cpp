@@ -36,7 +36,7 @@ constexpr bool USE_SUBTYPE1 = false;
 constexpr int W_0 = 704, H_0 = 576;
 constexpr int W_HD = 1920, H_HD = 1080;
 
-void setThreadAffinity(int core_id) {
+void set_thread_affinity(int core_id) {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(core_id, &cpuset);
@@ -90,9 +90,11 @@ class FrameReader {
   public:
     FrameReader(int ch, int w, int h, const std::string& ip,
                 const std::string& username, const std::string& password)
-        : m_username(username),
-          m_password(password),
+        :
+
           m_ip(ip),
+          m_username(username),
+          m_password(password),
           m_channel(ch),
           m_width(w),
           m_height(h) {
@@ -101,7 +103,7 @@ class FrameReader {
         m_thread.detach();
     }
 
-    cv::Mat getLatestFrame() {
+    cv::Mat get_latest_frame() {
         std::unique_lock<std::mutex> lock(m_mtx);
         if (m_frame_queue.empty()) return cv::Mat();
 
@@ -140,8 +142,8 @@ class FrameReader {
     std::mutex m_mtx_init;
     static constexpr size_t MAX_QUEUE_SIZE = 2;
 
-    std::string constructRtspUrl(const std::string& ip, const std::string& username,
-                                 const std::string& password) {
+    std::string construct_rtsp_url(const std::string& ip, const std::string& username,
+                                   const std::string& password) {
         int subtype = (USE_SUBTYPE1 && m_channel != 0) ? 1 : 0;
         return "rtsp://" + username + ":" + password + "@" + ip +
                ":554/cam/realmonitor?channel=" + std::to_string(m_channel) +
@@ -152,7 +154,7 @@ class FrameReader {
         std::lock_guard<std::mutex> lock(m_mtx_init);
 
         std::cout << "start capture: " << m_channel << std::endl;
-        std::string rtsp_url = constructRtspUrl(m_ip, m_username, m_password);
+        std::string rtsp_url = construct_rtsp_url(m_ip, m_username, m_password);
 
         // Set FFMPEG options for better stream handling
         m_cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('H', '2', '6', '4'));
@@ -175,7 +177,7 @@ class FrameReader {
         m_running = true;
         cv::Mat frame;
 
-        setThreadAffinity(m_channel % std::thread::hardware_concurrency()); // Assign different core to each camera
+        set_thread_affinity(m_channel % std::thread::hardware_concurrency()); // Assign different core to each camera
 
         while (m_running) {
             if (!m_cap.isOpened()) {
@@ -254,7 +256,7 @@ class MotionDetector {
     cv::Mat paint_main_mat(cv::Mat& main_mat) {
         // Assume readers[i] are objects that can get frames
         for (int i = 0; i < 6; i++) {
-            cv::Mat mat = readers[i + 1]->getLatestFrame();
+            cv::Mat mat = readers[i + 1]->get_latest_frame();
 
             if (mat.empty()) {
                 continue; // If the frame is empty, skip painting
@@ -296,7 +298,7 @@ class MotionDetector {
             while (running) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
 
-                cv::Mat frame0_get = readers[0]->getLatestFrame();
+                cv::Mat frame0_get = readers[0]->get_latest_frame();
                 if (!frame0_get.empty()) {
                     frame0 = frame0_get;
                 }
@@ -346,7 +348,7 @@ class MotionDetector {
                 }
 
                 // Get main display frame
-                cv::Mat main_frame_get = (enableFullscreen || motion_detected) ? readers[current_channel]->getLatestFrame() : paint_main_mat(main_mat);
+                cv::Mat main_frame_get = (enableFullscreen || motion_detected) ? readers[current_channel]->get_latest_frame() : paint_main_mat(main_mat);
                 if (!main_frame_get.empty()) {
                     cv::resize(main_frame_get, main_frame, cv::Size(display_width, display_height));
                 }
