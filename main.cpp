@@ -290,10 +290,15 @@ class MotionDetector {
     void start(bool fullscreen) {
         running = true;
 
+
+        std::cout << "STARTING READERS" << std::endl;
+
         // Start frame reading threads
         for (auto& reader : readers) {
             threads.emplace_back(&FrameReader::readFrames, reader.get());
         }
+
+        std::cout << "STARTED READERS" << std::endl;
 
         if (fullscreen) {
             cv::namedWindow("Motion", cv::WINDOW_NORMAL);
@@ -494,7 +499,7 @@ int main(int argc, char* argv[]) {
         std::exit(0);
     });
 
-    argparse::ArgumentParser program("motion_detector");
+    argparse::ArgumentParser program("dcm_master");
 
     program.add_argument("-i", "--ip")
         .help("IP to connect to")
