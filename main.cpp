@@ -27,7 +27,7 @@
 #define ENABLE_FULLSCREEN 0
 #define MOTION_DETECT_AREA 10
 
-#define DRAW_SLEEP_MS 10
+#define DRAW_SLEEP_MS 100
 #define READ_FRAME_SLEEP_MS 5
 #define ERROR_SLEEP_MS 5
 
@@ -86,101 +86,35 @@ std::pair<int, int> detect_screen_size(const int& index) {
 }
 
 class FrameReader {
-  private:
-    int channel;
-    int width;
-    int height;
-    std::deque<cv::Mat> frame_queue;
-    cv::VideoCapture cap;
-    std::atomic<bool> running{false};
-    std::mutex mtx;
-    std::condition_variable cv;
-    static constexpr size_t MAX_QUEUE_SIZE = 2;
-
-    std::string constructRtspUrl(const std::string& ip, const std::string& username,
-                                 const std::string& password) {
-        int subtype = (USE_SUBTYPE1 && channel != 0) ? 1 : 0;
-        return "rtsp://" + username + ":" + password + "@" + ip +
-               ":554/cam/realmonitor?channel=" + std::to_string(channel) +
-               "&subtype=" + std::to_string(subtype);
-    }
 
   public:
     FrameReader(int ch, int w, int h, const std::string& ip,
                 const std::string& username, const std::string& password)
-        : channel(ch), width(w), height(h) {
+        : m_username(username),
+          m_password(password),
+          m_ip(ip),
+          m_channel(ch),
+          m_width(w),
+          m_height(h) {
 
-        std::cout << "start capture: " << ch << std::endl;
-        std::string rtsp_url = constructRtspUrl(ip, username, password);
-
-        // Set FFMPEG options for better stream handling
-        cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('H', '2', '6', '4'));
-        cap.set(cv::CAP_PROP_BUFFERSIZE, 2);
-
-        // use GPU
-        cap.set(cv::CAP_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY); // Use any available hardware acceleration
-        cap.set(cv::CAP_PROP_HW_DEVICE, 0);                                // Use default GPU
-
-        // Set environment variable for RTSP transport
-        putenv((char*)"OPENCV_FFMPEG_CAPTURE_OPTIONS=rtsp_transport;udp");
-
-        if (!cap.open(rtsp_url, cv::CAP_FFMPEG)) {
-            throw std::runtime_error("Failed to open RTSP stream for channel " +
-                                     std::to_string(channel));
-        }
-    }
-
-    void readFrames() {
-        running = true;
-        cv::Mat frame;
-
-        setThreadAffinity(channel % std::thread::hardware_concurrency()); // Assign different core to each camera
-
-        while (running) {
-            if (!cap.isOpened()) {
-                std::cerr << "Camera " << channel << " is not open. Exiting thread." << std::endl;
-                break;
-            }
-
-            // Use grab + retrieve instead of read() to prevent blocking
-            if (cap.grab()) {        // Grabs the frame (non-blocking)
-                cap.retrieve(frame); // Retrieves the frame (blocking only if available)
-
-                std::lock_guard<std::mutex> lock(mtx);
-                if (frame_queue.size() >= MAX_QUEUE_SIZE) {
-                    frame_queue.pop_front();
-                }
-                frame_queue.emplace_back(std::move(frame));
-                cv.notify_one();
-            } else {
-                std::cerr << "Failed to grab frame from channel " << channel << std::endl;
-                std::this_thread::sleep_for(std::chrono::milliseconds(ERROR_SLEEP_MS)); // Prevent CPU overuse
-            }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(READ_FRAME_SLEEP_MS)); // Prevent CPU overuse
-        }
-
-        if (cap.isOpened()) {
-            cap.release();
-        }
-
-        // std::cout << "Exiting readFrames() thread for channel " << channel << std::endl;
+        m_thread = std::thread([this]() { connect_and_read(); });
+        m_thread.detach();
     }
 
     cv::Mat getLatestFrame() {
-        std::unique_lock<std::mutex> lock(mtx);
-        if (frame_queue.empty()) return cv::Mat();
+        std::unique_lock<std::mutex> lock(m_mtx);
+        if (m_frame_queue.empty()) return cv::Mat();
 
-        cv::Mat latest = std::move(frame_queue.back()); // Avoid deep copy
-        frame_queue.clear();                            // Drop all old frames
+        cv::Mat latest = std::move(m_frame_queue.back()); // Avoid deep copy
+        m_frame_queue.clear();                            // Drop all old frames
         return latest;
     }
 
     void stop() {
-        running = false; // Stop the loop
-
-        // Wake up waiting threads so they do not block
-        cv.notify_all();
+        m_running = false;
+        if (m_thread.joinable()) {
+            m_thread.join();
+        }
     }
 
     ~FrameReader() {
@@ -190,13 +124,95 @@ class FrameReader {
             std::cerr << "Error during FrameReader destruction" << std::endl;
         }
     }
+
+  private:
+    std::thread m_thread;
+    std::string m_ip;
+    std::string m_username;
+    std::string m_password;
+    int m_channel;
+    int m_width;
+    int m_height;
+    std::deque<cv::Mat> m_frame_queue;
+    cv::VideoCapture m_cap;
+    std::atomic<bool> m_running{false};
+    std::mutex m_mtx;
+    std::mutex m_mtx_init;
+    static constexpr size_t MAX_QUEUE_SIZE = 2;
+
+    std::string constructRtspUrl(const std::string& ip, const std::string& username,
+                                 const std::string& password) {
+        int subtype = (USE_SUBTYPE1 && m_channel != 0) ? 1 : 0;
+        return "rtsp://" + username + ":" + password + "@" + ip +
+               ":554/cam/realmonitor?channel=" + std::to_string(m_channel) +
+               "&subtype=" + std::to_string(subtype);
+    }
+
+    void connect_and_read() {
+        std::lock_guard<std::mutex> lock(m_mtx_init);
+
+        std::cout << "start capture: " << m_channel << std::endl;
+        std::string rtsp_url = constructRtspUrl(m_ip, m_username, m_password);
+
+        // Set FFMPEG options for better stream handling
+        m_cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('H', '2', '6', '4'));
+        m_cap.set(cv::CAP_PROP_BUFFERSIZE, 2);
+
+        // use GPU
+        m_cap.set(cv::CAP_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY); // Use any available hardware acceleration
+        m_cap.set(cv::CAP_PROP_HW_DEVICE, 0);                                // Use default GPU
+
+        // Set environment variable for RTSP transport
+        putenv((char*)"OPENCV_FFMPEG_CAPTURE_OPTIONS=rtsp_transport;udp");
+
+        if (!m_cap.open(rtsp_url, cv::CAP_FFMPEG)) {
+            throw std::runtime_error("Failed to open RTSP stream for channel " +
+                                     std::to_string(m_channel));
+        }
+
+        std::cout << "connected: " << m_channel << std::endl;
+
+        m_running = true;
+        cv::Mat frame;
+
+        setThreadAffinity(m_channel % std::thread::hardware_concurrency()); // Assign different core to each camera
+
+        while (m_running) {
+            if (!m_cap.isOpened()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(ERROR_SLEEP_MS)); // Prevent CPU overuse
+                continue;
+                // std::cerr << "Camera " << channel << " is not open. Exiting thread." << std::endl;
+                // break;
+            }
+
+            // Use grab + retrieve instead of read() to prevent blocking
+            if (m_cap.grab()) {        // Grabs the frame (non-blocking)
+                m_cap.retrieve(frame); // Retrieves the frame (blocking only if available)
+
+                std::lock_guard<std::mutex> lock(m_mtx);
+                if (m_frame_queue.size() >= MAX_QUEUE_SIZE) {
+                    m_frame_queue.pop_front();
+                }
+                m_frame_queue.emplace_back(std::move(frame));
+            } else {
+                std::cerr << "Failed to grab frame from channel " << m_channel << std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(ERROR_SLEEP_MS)); // Prevent CPU overuse
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(READ_FRAME_SLEEP_MS)); // Prevent CPU overuse
+        }
+
+        if (m_cap.isOpened()) {
+            m_cap.release();
+        }
+
+        // std::cout << "Exiting readFrames() thread for channel " << channel << std::endl;
+    }
 };
 
 class MotionDetector {
   private:
     std::vector<std::unique_ptr<FrameReader>> readers;
-    std::vector<std::thread> init_threads; // New member for initialization threads
-    std::vector<std::thread> threads;
     cv::Ptr<cv::BackgroundSubtractorMOG2> fgbg;
     int current_channel;
     bool enableInfo;
@@ -207,11 +223,6 @@ class MotionDetector {
     int display_width;
     int display_height;
     std::atomic<bool> running{false};
-
-    cv::Point getMinimapPosition(const cv::Size& frame_dims,
-                                 const cv::Size& minimap_dims, int margin = 10) {
-        return cv::Point(margin, margin);
-    }
 
     std::string bool_to_str(bool b) {
         return std::string(b ? "Yes" : "No");
@@ -232,35 +243,11 @@ class MotionDetector {
         // Initialize background subtractor
         fgbg = cv::createBackgroundSubtractorMOG2(500, 16, true);
 
-        readers.resize(7); // For channels 0-6
+        readers.push_back(std::make_unique<FrameReader>(0, W_0, H_0, ip, username, password));
 
-        // Start threads to initialize each camera connection in parallel
-        for (int channel = 0; channel <= 6; ++channel) {
-            init_threads.emplace_back([this, channel, ip, username, password]() {
-                try {
-                    int w = (channel == 0) ? W_0 : W_HD;
-                    int h = (channel == 0) ? H_0 : H_HD;
-                    readers[channel] = std::make_unique<FrameReader>(
-                        channel, w, h, ip, username, password);
-                } catch (const std::exception& e) {
-                    std::cerr << "Error initializing camera " << channel
-                              << ": " << e.what() << std::endl;
-                }
-            });
-        }
-
-        // Wait for all initialization threads to complete
-        for (auto& thread : init_threads) {
-            if (thread.joinable()) {
-                thread.join();
-            }
-        }
-
-        // Check if all cameras were initialized successfully
-        for (int i = 0; i <= 6; ++i) {
-            if (!readers[i]) {
-                throw std::runtime_error("Failed to initialize camera " + std::to_string(i));
-            }
+        for (int channel = 1; channel <= 6; ++channel) {
+            readers.push_back(std::make_unique<FrameReader>(
+                channel, W_HD, H_HD, ip, username, password));
         }
     }
 
@@ -290,16 +277,6 @@ class MotionDetector {
     void start(bool fullscreen) {
         running = true;
 
-
-        std::cout << "STARTING READERS" << std::endl;
-
-        // Start frame reading threads
-        for (auto& reader : readers) {
-            threads.emplace_back(&FrameReader::readFrames, reader.get());
-        }
-
-        std::cout << "STARTED READERS" << std::endl;
-
         if (fullscreen) {
             cv::namedWindow("Motion", cv::WINDOW_NORMAL);
             cv::setWindowProperty("Motion", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
@@ -310,25 +287,22 @@ class MotionDetector {
         constexpr int CROP_HEIGHT = 384;
         constexpr int CROP_WIDTH = 704;
 
+        cv::Mat frame0 = cv::Mat::zeros(display_width, display_height, CV_8UC3);
         cv::Mat main_mat(cv::Size(display_width * 3, display_height * 2), CV_8UC3, cv::Scalar(0, 0, 0));
         cv::Mat main_frame = cv::Mat::zeros(display_width, display_height, CV_8UC3);
-
-        std::cout << "DRAW LOOP" << std::endl;
 
         try {
 
             while (running) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
 
-                cv::Mat frame0 = readers[0]->getLatestFrame();
-                if (frame0.empty()) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
-                    continue;
+                cv::Mat frame0_get = readers[0]->getLatestFrame();
+                if (!frame0_get.empty()) {
+                    frame0 = frame0_get;
                 }
 
                 // crop frame0
                 frame0 = frame0(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
-
 
                 // Crop frame0
                 cv::Rect motion_region;
@@ -400,9 +374,7 @@ class MotionDetector {
                     }
 
                     // Place minimap on main display
-                    cv::Point minimap_pos = getMinimapPosition(
-                        cv::Size(display_width, display_height),
-                        minimap_padded.size());
+                    cv::Point minimap_pos = cv::Point(10, 10);
                     minimap_padded.copyTo(main_frame(cv::Rect(
                         minimap_pos.x, minimap_pos.y,
                         minimap_padded.cols, minimap_padded.rows)));
@@ -466,15 +438,7 @@ class MotionDetector {
         running = false;
 
         for (auto& reader : readers) {
-            // std::cout << "stop reader" << std::endl;
             reader->stop();
-        }
-
-        for (auto& thread : threads) {
-            if (thread.joinable()) {
-                // std::cout << "th join" << std::endl;
-                thread.join();
-            }
         }
 
         // std::cout << "close all wins" << std::endl;
