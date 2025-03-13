@@ -17,12 +17,13 @@
 #ifdef DEBUG
 #define ENABLE_INFO 1
 #define ENABLE_MINIMAP 1
+#define ENABLE_MOTION 0
 #else
 #define ENABLE_INFO 0
 #define ENABLE_MINIMAP 0
+#define ENABLE_MOTION 1
 #endif
 
-#define ENABLE_MOTION 1
 #define ENABLE_FULLSCREEN 0
 #define MOTION_DETECT_AREA 10
 
@@ -99,7 +100,6 @@ class FrameReader {
           m_height(h) {
 
         m_thread = std::thread([this]() { connect_and_read(); });
-        m_thread.detach();
     }
 
     cv::Mat get_latest_frame() {
@@ -112,18 +112,14 @@ class FrameReader {
     }
 
     void stop() {
+        std::cout << "[" << m_channel << "] reader stop" << std::endl;
         m_running = false;
         if (m_thread.joinable()) {
+            std::cout << "[" << m_channel << "] reader join" << std::endl;
             m_thread.join();
+            std::cout << "[" << m_channel << "] reader joined" << std::endl;
         }
-    }
-
-    ~FrameReader() {
-        try {
-            stop();
-        } catch (...) {
-            std::cerr << "Error during FrameReader destruction" << std::endl;
-        }
+        std::cout << "[" << m_channel << "] reader stopped" << std::endl;
     }
 
   private:
@@ -136,7 +132,7 @@ class FrameReader {
     int m_height;
     std::deque<cv::Mat> m_frame_queue;
     cv::VideoCapture m_cap;
-    std::atomic<bool> m_running{false};
+    std::atomic<bool> m_running{true};
     std::mutex m_mtx;
     static constexpr size_t MAX_QUEUE_SIZE = 2;
 
@@ -149,6 +145,9 @@ class FrameReader {
     }
 
     void connect_and_read() {
+
+        set_thread_affinity(m_channel % std::thread::hardware_concurrency()); // Assign different core to each camera
+
         std::cout << "start capture: " << m_channel << std::endl;
         std::string rtsp_url = construct_rtsp_url(m_ip, m_username, m_password);
 
@@ -170,17 +169,12 @@ class FrameReader {
 
         std::cout << "connected: " << m_channel << std::endl;
 
-        m_running = true;
         cv::Mat frame;
-
-        set_thread_affinity(m_channel % std::thread::hardware_concurrency()); // Assign different core to each camera
 
         while (m_running) {
             if (!m_cap.isOpened()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(ERROR_SLEEP_MS)); // Prevent CPU overuse
-                continue;
-                // std::cerr << "Camera " << channel << " is not open. Exiting thread." << std::endl;
-                // break;
+                std::cerr << "Camera " << m_channel << " is not open. Exiting thread." << std::endl;
+                break;
             }
 
             // Use grab + retrieve instead of read() to prevent blocking
@@ -197,38 +191,22 @@ class FrameReader {
                 std::this_thread::sleep_for(std::chrono::milliseconds(ERROR_SLEEP_MS)); // Prevent CPU overuse
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(READ_FRAME_SLEEP_MS)); // Prevent CPU overuse
+            // std::this_thread::sleep_for(std::chrono::milliseconds(READ_FRAME_SLEEP_MS)); // Prevent CPU overuse
         }
 
         if (m_cap.isOpened()) {
             m_cap.release();
         }
 
-        // std::cout << "Exiting readFrames() thread for channel " << channel << std::endl;
+        std::cout << "Exiting readFrames() thread for channel " << m_channel << std::endl;
     }
 };
 
 class MotionDetector {
-  private:
-    std::vector<std::unique_ptr<FrameReader>> m_readers;
-    cv::Ptr<cv::BackgroundSubtractorMOG2> m_fgbg;
-    int m_current_channel;
-    bool m_enableInfo;
-    bool m_enableMotion;
-    bool m_enableMinimap;
-    bool m_enableFullscreen;
-    int m_motion_area;
-    int m_display_width;
-    int m_display_height;
-    std::atomic<bool> m_running{false};
-
-    std::string bool_to_str(bool b) {
-        return std::string(b ? "Yes" : "No");
-    }
 
   public:
     MotionDetector(const std::string& ip, const std::string& username,
-                   const std::string& password, int area, int w, int h)
+                   const std::string& password, int area, int w, int h, bool fullscreen)
         : m_current_channel(1),
           m_enableInfo(ENABLE_INFO),
           m_enableMotion(ENABLE_MOTION),
@@ -236,7 +214,8 @@ class MotionDetector {
           m_enableFullscreen(ENABLE_FULLSCREEN),
           m_motion_area(area),
           m_display_width(w),
-          m_display_height(h) {
+          m_display_height(h),
+          m_fullscreen(fullscreen) {
 
         // Initialize background subtractor
         m_fgbg = cv::createBackgroundSubtractorMOG2(500, 16, true);
@@ -272,10 +251,10 @@ class MotionDetector {
         return main_mat;
     }
 
-    void start(bool fullscreen) {
+    void start() {
         m_running = true;
 
-        if (fullscreen) {
+        if (m_fullscreen) {
             cv::namedWindow("Motion", cv::WINDOW_NORMAL);
             cv::setWindowProperty("Motion", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
         }
@@ -406,7 +385,7 @@ class MotionDetector {
 
                 char key = cv::waitKey(1);
                 if (key == 'q') {
-                    m_running = false;
+                    stop();
                     break;
                 } else if (key == 'a') {
                     m_enableMotion = !m_enableMotion;
@@ -424,28 +403,39 @@ class MotionDetector {
         } catch (const std::exception& e) {
             std::cerr << "Error in display loop: " << e.what() << std::endl;
         }
-
-        stop();
     }
 
     void stop() {
         m_running = false;
 
+        std::cout << "stopping all readers" << std::endl;
         for (auto& reader : m_readers) {
             reader->stop();
         }
+        std::cout << "stopped all readers" << std::endl;
 
-        // std::cout << "close all wins" << std::endl;
+        std::cout << "close all wins" << std::endl;
         cv::destroyAllWindows();
+        std::cout << "closed all wins" << std::endl;
     }
 
-    ~MotionDetector() {
-        try {
-            stop();
-        } catch (...) {
-            // Prevent exceptions from escaping destructor
-            std::cerr << "Error during MotionDetector cleanup" << std::endl;
-        }
+
+  private:
+    std::vector<std::unique_ptr<FrameReader>> m_readers;
+    cv::Ptr<cv::BackgroundSubtractorMOG2> m_fgbg;
+    int m_current_channel;
+    bool m_enableInfo;
+    bool m_enableMotion;
+    bool m_enableMinimap;
+    bool m_enableFullscreen;
+    int m_motion_area;
+    int m_display_width;
+    int m_display_height;
+    bool m_fullscreen;
+    std::atomic<bool> m_running{false};
+
+    std::string bool_to_str(bool b) {
+        return std::string(b ? "Yes" : "No");
     }
 };
 
@@ -507,13 +497,17 @@ int main(int argc, char* argv[]) {
             std::cout << "Detected screen size: " << width << "x" << height << std::endl;
         }
 
-        MotionDetector detector(
-            program.get<std::string>("ip"),
-            program.get<std::string>("username"),
-            program.get<std::string>("password"),
-            program.get<int>("area"), width, height);
+        {
+            MotionDetector motionDetector(
+                program.get<std::string>("ip"),
+                program.get<std::string>("username"),
+                program.get<std::string>("password"),
+                program.get<int>("area"), width, height, program.get<bool>("fullscreen"));
 
-        detector.start(program.get<bool>("fullscreen"));
+            motionDetector.start();
+        }
+
+
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
