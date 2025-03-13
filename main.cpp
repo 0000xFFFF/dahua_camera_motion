@@ -217,6 +217,7 @@ cv::Mat getCombinedFrame(std::vector<cv::Mat> frames) {
 class MotionDetector {
   private:
     std::vector<std::unique_ptr<FrameReader>> readers;
+    std::vector<std::thread> init_threads; // New member for initialization threads
     std::vector<std::thread> threads;
     cv::Ptr<cv::BackgroundSubtractorMOG2> fgbg;
     int current_channel;
@@ -244,18 +245,35 @@ class MotionDetector {
         // Initialize background subtractor
         fgbg = cv::createBackgroundSubtractorMOG2(500, 16, true);
 
-        try {
-            // Initialize channel 0 (motion detection camera)
-            readers.push_back(std::make_unique<FrameReader>(0, W_0, H_0, ip, username, password));
+        readers.resize(7); // For channels 0-6
 
-            // Initialize channels 1-6 (HD cameras)
-            for (int channel = 1; channel <= 6; ++channel) {
-                readers.push_back(std::make_unique<FrameReader>(
-                    channel, W_HD, H_HD, ip, username, password));
+        // Start threads to initialize each camera connection in parallel
+        for (int channel = 0; channel <= 6; ++channel) {
+            init_threads.emplace_back([this, channel, ip, username, password]() {
+                try {
+                    int w = (channel == 0) ? W_0 : W_HD;
+                    int h = (channel == 0) ? H_0 : H_HD;
+                    readers[channel] = std::make_unique<FrameReader>(
+                        channel, w, h, ip, username, password);
+                } catch (const std::exception& e) {
+                    std::cerr << "Error initializing camera " << channel
+                              << ": " << e.what() << std::endl;
+                }
+            });
+        }
+
+        // Wait for all initialization threads to complete
+        for (auto& thread : init_threads) {
+            if (thread.joinable()) {
+                thread.join();
             }
-        } catch (const std::exception& e) {
-            std::cerr << "Error initializing cameras: " << e.what() << std::endl;
-            throw;
+        }
+
+        // Check if all cameras were initialized successfully
+        for (int i = 0; i <= 6; ++i) {
+            if (!readers[i]) {
+                throw std::runtime_error("Failed to initialize camera " + std::to_string(i));
+            }
         }
     }
 
