@@ -16,9 +16,9 @@
 #include <vector>
 
 #define ENABLE_MOTION 1
-#define ENABLE_MINIMAP 1
-#define ENABLE_INFO 1
-#define ENABLE_FULLSCREEN 1
+#define ENABLE_MINIMAP 0
+#define ENABLE_INFO 0
+#define ENABLE_FULLSCREEN 0
 #define DRAW_SLEEP_MS 1
 #define MOTION_DETECT_AREA 10
 
