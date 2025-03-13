@@ -25,8 +25,11 @@
 
 #define ENABLE_MOTION 1
 #define ENABLE_FULLSCREEN 0
-#define DRAW_SLEEP_MS 1
 #define MOTION_DETECT_AREA 10
+
+#define DRAW_SLEEP_MS 10
+#define READ_FRAME_SLEEP_MS 5
+#define ERROR_SLEEP_MS 5
 
 // Constants
 constexpr bool USE_SUBTYPE1 = false;
@@ -151,8 +154,10 @@ class FrameReader {
                 cv.notify_one();
             } else {
                 std::cerr << "Failed to grab frame from channel " << channel << std::endl;
-                std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
+                std::this_thread::sleep_for(std::chrono::milliseconds(ERROR_SLEEP_MS)); // Prevent CPU overuse
             }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(READ_FRAME_SLEEP_MS)); // Prevent CPU overuse
         }
 
         if (cap.isOpened()) {
@@ -187,33 +192,6 @@ class FrameReader {
     }
 };
 
-cv::Mat getCombinedFrame(std::vector<cv::Mat> frames) {
-    if (frames.size() != 6) {
-        throw std::runtime_error("Expected 6 frames, but got " + std::to_string(frames.size()));
-    }
-
-    // Resize frames to have the same dimensions if needed
-    int width = frames[0].cols;
-    int height = frames[0].rows;
-
-    for (auto& frame : frames) {
-        if (frame.cols != width || frame.rows != height) {
-            cv::resize(frame, frame, cv::Size(width, height));
-        }
-    }
-
-    // Create two row matrices
-    cv::Mat row1, row2;
-    cv::hconcat(std::vector<cv::Mat>{frames[0], frames[1], frames[2]}, row1);
-    cv::hconcat(std::vector<cv::Mat>{frames[3], frames[4], frames[5]}, row2);
-
-    // Combine rows into final matrix
-    cv::Mat finalFrame;
-    cv::vconcat(row1, row2, finalFrame);
-
-    return finalFrame;
-}
-
 class MotionDetector {
   private:
     std::vector<std::unique_ptr<FrameReader>> readers;
@@ -226,6 +204,8 @@ class MotionDetector {
     bool enableMinimap;
     bool enableFullscreen;
     int motion_area;
+    int display_width;
+    int display_height;
     std::atomic<bool> running{false};
 
     cv::Point getMinimapPosition(const cv::Size& frame_dims,
@@ -239,8 +219,15 @@ class MotionDetector {
 
   public:
     MotionDetector(const std::string& ip, const std::string& username,
-                   const std::string& password, int area)
-        : current_channel(1), enableInfo(ENABLE_INFO), enableMotion(ENABLE_MOTION), enableMinimap(ENABLE_MINIMAP), enableFullscreen(ENABLE_FULLSCREEN), motion_area(area) {
+                   const std::string& password, int area, int w, int h)
+        : current_channel(1),
+          enableInfo(ENABLE_INFO),
+          enableMotion(ENABLE_MOTION),
+          enableMinimap(ENABLE_MINIMAP),
+          enableFullscreen(ENABLE_FULLSCREEN),
+          motion_area(area),
+          display_width(w),
+          display_height(h) {
 
         // Initialize background subtractor
         fgbg = cv::createBackgroundSubtractorMOG2(500, 16, true);
@@ -277,22 +264,30 @@ class MotionDetector {
         }
     }
 
-    cv::Mat get_all_frames() {
-        std::vector<cv::Mat> frames(6);
-
+    cv::Mat paint_main_mat(cv::Mat& main_mat) {
         // Assume readers[i] are objects that can get frames
         for (int i = 0; i < 6; i++) {
-            frames[i] = readers[i + 1]->getLatestFrame();
-            while (frames[i].empty()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
-                frames[i] = readers[i + 1]->getLatestFrame();
+            cv::Mat mat = readers[i + 1]->getLatestFrame();
+
+            if (mat.empty()) {
+                continue; // If the frame is empty, skip painting
             }
+
+            // Compute position in the 3x2 grid
+            int row = i / 3; // 0 for first row, 1 for second row
+            int col = i % 3; // Column position (0,1,2)
+
+            // Define the region of interest (ROI) in main_mat
+            cv::Rect roi(col * display_width, row * display_height, display_width, display_height);
+
+            // Copy the frame into main_mat at the correct position
+            mat.copyTo(main_mat(roi));
         }
 
-        return getCombinedFrame(frames);
+        return main_mat;
     }
 
-    void start(int display_width, int display_height, bool fullscreen) {
+    void start(bool fullscreen) {
         running = true;
 
         // Start frame reading threads
@@ -310,23 +305,33 @@ class MotionDetector {
         constexpr int CROP_HEIGHT = 384;
         constexpr int CROP_WIDTH = 704;
 
+        cv::Mat main_mat(cv::Size(display_width * 3, display_height * 2), CV_8UC3, cv::Scalar(0, 0, 0));
+        cv::Mat main_frame = cv::Mat::zeros(display_width, display_height, CV_8UC3);
+
+        std::cout << "DRAW LOOP" << std::endl;
+
         try {
 
             while (running) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
+
                 cv::Mat frame0 = readers[0]->getLatestFrame();
                 if (frame0.empty()) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
                     continue;
                 }
 
+                // crop frame0
+                frame0 = frame0(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
+
+
                 // Crop frame0
-                cv::Mat cropped = frame0(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
                 cv::Rect motion_region;
                 bool motion_detected = false;
 
                 if (enableMotion) {
                     cv::Mat fgmask;
-                    fgbg->apply(cropped, fgmask);
+                    fgbg->apply(frame0, fgmask);
 
                     cv::Mat thresh;
                     cv::threshold(fgmask, thresh, 128, 255, cv::THRESH_BINARY);
@@ -362,18 +367,15 @@ class MotionDetector {
                 }
 
                 // Get main display frame
-                cv::Mat main_frame = (enableFullscreen || motion_detected) ? readers[current_channel]->getLatestFrame() : get_all_frames();
-                if (main_frame.empty()) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
-                    continue;
+                cv::Mat main_frame_get = (enableFullscreen || motion_detected) ? readers[current_channel]->getLatestFrame() : paint_main_mat(main_mat);
+                if (!main_frame_get.empty()) {
+                    cv::resize(main_frame_get, main_frame, cv::Size(display_width, display_height));
                 }
-
-                cv::resize(main_frame, main_frame, cv::Size(display_width, display_height));
 
                 // Process minimap
                 if (enableMinimap) {
                     cv::Mat minimap;
-                    cv::resize(cropped, minimap, cv::Size(MINIMAP_WIDTH, MINIMAP_HEIGHT));
+                    cv::resize(frame0, minimap, cv::Size(MINIMAP_WIDTH, MINIMAP_HEIGHT));
 
                     // Add white border
                     cv::Mat minimap_padded;
@@ -546,9 +548,9 @@ int main(int argc, char* argv[]) {
             program.get<std::string>("ip"),
             program.get<std::string>("username"),
             program.get<std::string>("password"),
-            program.get<int>("area"));
+            program.get<int>("area"), width, height);
 
-        detector.start(width, height, program.get<bool>("fullscreen"));
+        detector.start(program.get<bool>("fullscreen"));
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
