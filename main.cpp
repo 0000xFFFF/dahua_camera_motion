@@ -242,7 +242,7 @@ class MotionDetector {
             int col = i % 3; // Column position (0,1,2)
 
             // Define the region of interest (ROI) in main_mat
-            cv::Rect roi(col * m_display_width, row * m_display_height, m_display_width, m_display_height);
+            cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
 
             // Copy the frame into main_mat at the correct position
             mat.copyTo(main_mat(roi));
