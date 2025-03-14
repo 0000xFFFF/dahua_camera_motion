@@ -8,5 +8,8 @@ OUTPUT = dcm_master
 debug:
 	$(GCC) $(DEBUG_ARGS) $(FILES) $(LIBS) -o $(OUTPUT)
 
+nodelay:
+	$(GCC) $(RELEASE_ARGS) -D NODELAY $(LIBS) $(FILES) -o $(OUTPUT)
+
 release:
 	$(GCC) $(RELEASE_ARGS) $(LIBS) $(FILES) -o $(OUTPUT)

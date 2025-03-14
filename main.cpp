@@ -188,10 +188,11 @@ class FrameReader {
                 m_frame_queue.emplace_back(std::move(frame));
             } else {
                 std::cerr << "Failed to grab frame from channel " << m_channel << std::endl;
-                std::this_thread::sleep_for(std::chrono::milliseconds(ERROR_SLEEP_MS)); // Prevent CPU overuse
-            }
 
-            // std::this_thread::sleep_for(std::chrono::milliseconds(READ_FRAME_SLEEP_MS)); // Prevent CPU overuse
+#ifndef NODELAY
+                std::this_thread::sleep_for(std::chrono::milliseconds(ERROR_SLEEP_MS)); // Prevent CPU overuse
+#endif
+            }
         }
 
         if (m_cap.isOpened()) {
@@ -271,7 +272,10 @@ class MotionDetector {
         try {
 
             while (m_running) {
+#ifndef NODELAY
                 std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
+#endif
+
 
                 cv::Mat frame0_get = m_readers[0]->get_latest_frame();
                 if (!frame0_get.empty()) {
@@ -419,7 +423,6 @@ class MotionDetector {
         std::cout << "closed all wins" << std::endl;
     }
 
-
   private:
     std::vector<std::unique_ptr<FrameReader>> m_readers;
     cv::Ptr<cv::BackgroundSubtractorMOG2> m_fgbg;
@@ -506,7 +509,6 @@ int main(int argc, char* argv[]) {
 
             motionDetector.start();
         }
-
 
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
