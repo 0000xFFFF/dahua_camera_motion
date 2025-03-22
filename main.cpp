@@ -47,7 +47,15 @@
 #endif
 
 #ifdef TOUR
-#undef ENABLE_TOUR 1
+#undef ENABLE_TOUR
+#define ENABLE_TOUR 1
+#endif
+
+#ifdef TOUR_ONLY
+#undef ENABLE_TOUR
+#define ENABLE_TOUR 1
+#undef ENABLE_MOTION
+#define ENABLE_MOTION 0
 #endif
 
 // Constants

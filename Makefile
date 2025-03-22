@@ -14,5 +14,11 @@ fast:
 slow:
 	$(GCC) $(RELEASE_ARGS) -D CPU_LOW_SLOW $(LIBS) $(FILES) -o $(OUTPUT)
 
+tour:
+	$(GCC) $(RELEASE_ARGS) -D TOUR $(LIBS) $(FILES) -o $(OUTPUT)
+
+touronly:
+	$(GCC) $(RELEASE_ARGS) -D TOUR_ONLY $(LIBS) $(FILES) -o $(OUTPUT)
+
 release:
 	$(GCC) $(RELEASE_ARGS) $(LIBS) $(FILES) -o $(OUTPUT)
