@@ -14,29 +14,35 @@
 #include <thread>
 #include <vector>
 
-#ifdef DEBUG
-#define ENABLE_INFO 1
-#define ENABLE_MINIMAP 1
-#define ENABLE_MOTION 0
-#else
 #define ENABLE_INFO 0
 #define ENABLE_MINIMAP 0
 #define ENABLE_MOTION 1
-#endif
-
-#ifdef TOUR
 #define ENABLE_TOUR 1
-#else
-#define ENABLE_TOUR 0
-#endif
-
 #define ENABLE_FULLSCREEN 0
 #define MOTION_DETECT_AREA 10
-
 #define TOUR_SLEEP_MS 3000
 #define DRAW_SLEEP_MS 100
 #define READ_FRAME_SLEEP_MS 5
 #define ERROR_SLEEP_MS 5
+
+#ifdef DEBUG
+#undef ENABLE_INFO
+#define ENABLE_INFO 1
+#undef ENABLE_MINIMAP
+#define ENABLE_MINIMAP 1
+#undef ENABLE_MOTION
+#define ENABLE_MOTION 0
+#endif
+
+#ifdef SLOW_LOW_CPU
+#undef DRAW_SLEEP_MS
+#define DRAW_SLEEP_MS 300
+#endif
+
+#ifdef FAST_HIGH_CPU
+#undef DRAW_SLEEP_MS
+#define DRAW_SLEEP_MS 1
+#endif
 
 // Constants
 constexpr bool USE_SUBTYPE1 = false;
@@ -277,16 +283,14 @@ class MotionDetector {
         cv::Mat main_mat(cv::Size(W_HD * 3, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
         cv::Mat main_frame = cv::Mat::zeros(W_HD, H_HD, CV_8UC3);
 
-        int tour_index = TOUR_SLEEP_MS/DRAW_SLEEP_MS;
-        int frame_index = 0;
+        int tour_frame_count = TOUR_SLEEP_MS / DRAW_SLEEP_MS;
+        int tour_frame_index = 0;
 
         try {
 
             while (m_running) {
-                frame_index++;
-#ifndef NODELAY
+                tour_frame_index++;
                 std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
-#endif
 
                 cv::Mat frame0_get = m_readers[0]->get_latest_frame();
                 if (!frame0_get.empty()) {
@@ -298,11 +302,13 @@ class MotionDetector {
 
                 if (m_enableTour) {
 
-                    if (frame_index >= tour_index) {
-                        frame_index = 0;
+                    if (tour_frame_index >= tour_frame_count) {
+                        tour_frame_index = 0;
                         m_current_channel = m_current_channel % 6 + 1;
                     }
-                } else if (m_enableMotion) {
+                }
+
+                if (m_enableMotion) {
                     cv::Mat fgmask;
                     m_fgbg->apply(frame0, fgmask);
 
@@ -334,6 +340,7 @@ class MotionDetector {
                         int new_channel = 1 + static_cast<int>(rel_x * 3) +
                                           (rel_y >= 0.5f ? 3 : 0);
                         if (new_channel != m_current_channel) {
+                            tour_frame_index = 0; // reset so it doesn't auto switch on new tour so we can show a little bit of motion
                             m_current_channel = new_channel;
                         }
                     }
@@ -403,6 +410,9 @@ class MotionDetector {
                     cv::putText(main_frame, "Tour (t): " + bool_to_str(m_enableTour),
                                 cv::Point(10, text_y_start + 6 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
+                    cv::putText(main_frame, "Reset (r)",
+                                cv::Point(10, text_y_start + 7 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
+                                font_scale, text_color, font_thickness);
                 }
 
                 cv::imshow("Motion", main_frame);
@@ -419,6 +429,12 @@ class MotionDetector {
                     m_enableMinimap = !m_enableMinimap;
                 } else if (key == 'f') {
                     m_enableFullscreen = !m_enableFullscreen;
+                } else if (key == 'r') {
+                    m_enableInfo = ENABLE_INFO;
+                    m_enableMotion = ENABLE_MOTION;
+                    m_enableMinimap = ENABLE_MINIMAP;
+                    m_enableFullscreen = ENABLE_FULLSCREEN;
+                    m_enableTour = ENABLE_TOUR;
                 } else if (key == 't') {
                     m_enableTour = !m_enableTour;
                 } else if (key >= '1' && key <= '6') {

@@ -8,11 +8,11 @@ OUTPUT = dcm_master
 debug:
 	$(GCC) $(DEBUG_ARGS) $(FILES) $(LIBS) -o $(OUTPUT)
 
-nodelay:
-	$(GCC) $(RELEASE_ARGS) -D NODELAY $(LIBS) $(FILES) -o $(OUTPUT)
+fast:
+	$(GCC) $(RELEASE_ARGS) -D FAST $(LIBS) $(FILES) -o $(OUTPUT)
 
-tour:
-	$(GCC) $(RELEASE_ARGS) -D TOUR $(LIBS) $(FILES) -o $(OUTPUT)
+slow:
+	$(GCC) $(RELEASE_ARGS) -D LOWCPU $(LIBS) $(FILES) -o $(OUTPUT)
 
 release:
 	$(GCC) $(RELEASE_ARGS) $(LIBS) $(FILES) -o $(OUTPUT)
