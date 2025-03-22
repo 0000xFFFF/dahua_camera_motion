@@ -24,9 +24,16 @@
 #define ENABLE_MOTION 1
 #endif
 
+#ifdef TOUR
+#define ENABLE_TOUR 1
+#else
+#define ENABLE_TOUR 0
+#endif
+
 #define ENABLE_FULLSCREEN 0
 #define MOTION_DETECT_AREA 10
 
+#define TOUR_SLEEP_MS 3000
 #define DRAW_SLEEP_MS 100
 #define READ_FRAME_SLEEP_MS 5
 #define ERROR_SLEEP_MS 5
@@ -213,6 +220,7 @@ class MotionDetector {
           m_enableMotion(ENABLE_MOTION),
           m_enableMinimap(ENABLE_MINIMAP),
           m_enableFullscreen(ENABLE_FULLSCREEN),
+          m_enableTour(ENABLE_TOUR),
           m_motion_area(area),
           m_display_width(w),
           m_display_height(h),
@@ -269,13 +277,16 @@ class MotionDetector {
         cv::Mat main_mat(cv::Size(W_HD * 3, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
         cv::Mat main_frame = cv::Mat::zeros(W_HD, H_HD, CV_8UC3);
 
+        int tour_index = TOUR_SLEEP_MS/DRAW_SLEEP_MS;
+        int frame_index = 0;
+
         try {
 
             while (m_running) {
+                frame_index++;
 #ifndef NODELAY
                 std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
 #endif
-
 
                 cv::Mat frame0_get = m_readers[0]->get_latest_frame();
                 if (!frame0_get.empty()) {
@@ -285,7 +296,13 @@ class MotionDetector {
                 cv::Rect motion_region;
                 bool motion_detected = false;
 
-                if (m_enableMotion) {
+                if (m_enableTour) {
+
+                    if (frame_index >= tour_index) {
+                        frame_index = 0;
+                        m_current_channel = m_current_channel % 6 + 1;
+                    }
+                } else if (m_enableMotion) {
                     cv::Mat fgmask;
                     m_fgbg->apply(frame0, fgmask);
 
@@ -323,7 +340,7 @@ class MotionDetector {
                 }
 
                 // Get main display frame
-                cv::Mat main_frame_get = (m_enableFullscreen || motion_detected) ? m_readers[m_current_channel]->get_latest_frame() : paint_main_mat(main_mat);
+                cv::Mat main_frame_get = (m_enableFullscreen || m_enableTour || motion_detected) ? m_readers[m_current_channel]->get_latest_frame() : paint_main_mat(main_mat);
                 if (!main_frame_get.empty()) {
                     cv::resize(main_frame_get, main_frame, cv::Size(m_display_width, m_display_height));
                 }
@@ -383,6 +400,9 @@ class MotionDetector {
                     cv::putText(main_frame, "Fullscreen (f): " + bool_to_str(m_enableFullscreen),
                                 cv::Point(10, text_y_start + 5 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
+                    cv::putText(main_frame, "Tour (t): " + bool_to_str(m_enableTour),
+                                cv::Point(10, text_y_start + 6 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
+                                font_scale, text_color, font_thickness);
                 }
 
                 cv::imshow("Motion", main_frame);
@@ -399,6 +419,8 @@ class MotionDetector {
                     m_enableMinimap = !m_enableMinimap;
                 } else if (key == 'f') {
                     m_enableFullscreen = !m_enableFullscreen;
+                } else if (key == 't') {
+                    m_enableTour = !m_enableTour;
                 } else if (key >= '1' && key <= '6') {
                     m_current_channel = key - '0';
                     m_enableFullscreen = true;
@@ -431,6 +453,7 @@ class MotionDetector {
     bool m_enableMotion;
     bool m_enableMinimap;
     bool m_enableFullscreen;
+    bool m_enableTour;
     int m_motion_area;
     int m_display_width;
     int m_display_height;

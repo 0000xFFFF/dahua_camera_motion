@@ -11,5 +11,8 @@ debug:
 nodelay:
 	$(GCC) $(RELEASE_ARGS) -D NODELAY $(LIBS) $(FILES) -o $(OUTPUT)
 
+tour:
+	$(GCC) $(RELEASE_ARGS) -D TOUR $(LIBS) $(FILES) -o $(OUTPUT)
+
 release:
 	$(GCC) $(RELEASE_ARGS) $(LIBS) $(FILES) -o $(OUTPUT)
