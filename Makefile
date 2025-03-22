@@ -1,7 +1,7 @@
 GCC = g++
 FILES = *.cpp
 DEBUG_ARGS = -D DEBUG -g
-RELEASE_ARGS = -Wall -Wextra -O2
+RELEASE_ARGS = -Wall -Wextra -O2 -s
 LIBS = `pkg-config --cflags --libs opencv4`
 OUTPUT = dcm_master
 
