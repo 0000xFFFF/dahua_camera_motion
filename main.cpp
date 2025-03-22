@@ -34,12 +34,12 @@
 #define ENABLE_MOTION 0
 #endif
 
-#ifdef SLOW_LOW_CPU
+#ifdef CPU_LOW_SLOW
 #undef DRAW_SLEEP_MS
 #define DRAW_SLEEP_MS 300
 #endif
 
-#ifdef FAST_HIGH_CPU
+#ifdef CPU_HIGH_FAST
 #undef DRAW_SLEEP_MS
 #define DRAW_SLEEP_MS 1
 #endif
