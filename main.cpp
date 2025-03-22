@@ -11,6 +11,7 @@
 #include <opencv2/opencv.hpp>
 #include <sched.h>
 #include <stdexcept>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -20,6 +21,7 @@
 #define ENABLE_TOUR 1
 #define ENABLE_FULLSCREEN 0
 #define MOTION_DETECT_AREA 10
+#define MOTION_DETECT_MIN_FRAMES 10
 #define TOUR_SLEEP_MS 3000
 #define DRAW_SLEEP_MS 100
 #define READ_FRAME_SLEEP_MS 5
@@ -286,10 +288,12 @@ class MotionDetector {
         int tour_frame_count = TOUR_SLEEP_MS / DRAW_SLEEP_MS;
         int tour_frame_index = 0;
 
+        int motion_detected_frame_count = 0;
+        int motion_detected_frame_count_history = 0;
+
         try {
 
             while (m_running) {
-                tour_frame_index++;
                 std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
 
                 cv::Mat frame0_get = m_readers[0]->get_latest_frame();
@@ -299,9 +303,10 @@ class MotionDetector {
 
                 cv::Rect motion_region;
                 bool motion_detected = false;
+                bool motion_detected_min_frames = false;
 
                 if (m_enableTour) {
-
+                    tour_frame_index++;
                     if (tour_frame_index >= tour_frame_count) {
                         tour_frame_index = 0;
                         m_current_channel = m_current_channel % 6 + 1;
@@ -335,19 +340,29 @@ class MotionDetector {
 
                     // Update current channel based on motion position
                     if (motion_detected) {
-                        float rel_x = motion_region.x / static_cast<float>(CROP_WIDTH);
-                        float rel_y = motion_region.y / static_cast<float>(CROP_HEIGHT);
-                        int new_channel = 1 + static_cast<int>(rel_x * 3) +
-                                          (rel_y >= 0.5f ? 3 : 0);
-                        if (new_channel != m_current_channel) {
+                        motion_detected_frame_count++;
+                        motion_detected_min_frames = motion_detected_frame_count >= MOTION_DETECT_MIN_FRAMES;
+
+                        if (motion_detected_min_frames) {
                             tour_frame_index = 0; // reset so it doesn't auto switch on new tour so we can show a little bit of motion
-                            m_current_channel = new_channel;
+                            float rel_x = motion_region.x / static_cast<float>(CROP_WIDTH);
+                            float rel_y = motion_region.y / static_cast<float>(CROP_HEIGHT);
+                            int new_channel = 1 + static_cast<int>(rel_x * 3) +
+                                              (rel_y >= 0.5f ? 3 : 0);
+                            if (new_channel != m_current_channel) {
+                                m_current_channel = new_channel;
+                            }
                         }
+                    } else {
+                        if (motion_detected_frame_count != 0) {
+                            motion_detected_frame_count_history = motion_detected_frame_count;
+                        }
+                        motion_detected_frame_count = 0;
                     }
                 }
 
                 // Get main display frame
-                cv::Mat main_frame_get = (m_enableFullscreen || m_enableTour || motion_detected) ? m_readers[m_current_channel]->get_latest_frame() : paint_main_mat(main_mat);
+                cv::Mat main_frame_get = (m_enableFullscreen || m_enableTour || motion_detected_min_frames) ? m_readers[m_current_channel]->get_latest_frame() : paint_main_mat(main_mat);
                 if (!main_frame_get.empty()) {
                     cv::resize(main_frame_get, main_frame, cv::Size(m_display_width, m_display_height));
                 }
@@ -398,7 +413,7 @@ class MotionDetector {
                     cv::putText(main_frame, "Minimap (m): " + bool_to_str(m_enableMinimap),
                                 cv::Point(10, text_y_start + 2 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
-                    cv::putText(main_frame, "Motion Detected: " + bool_to_str(motion_detected),
+                    cv::putText(main_frame, "Motion Detected: " + std::to_string(motion_detected) + "/" + std::to_string(motion_detected_min_frames) + "/" + std::to_string(motion_detected_frame_count) + "/" + std::to_string(motion_detected_frame_count_history),
                                 cv::Point(10, text_y_start + 3 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
                     cv::putText(main_frame, "Channel (num): " + std::to_string(m_current_channel),
@@ -407,7 +422,7 @@ class MotionDetector {
                     cv::putText(main_frame, "Fullscreen (f): " + bool_to_str(m_enableFullscreen),
                                 cv::Point(10, text_y_start + 5 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
-                    cv::putText(main_frame, "Tour (t): " + bool_to_str(m_enableTour),
+                    cv::putText(main_frame, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(tour_frame_index) + "/" + std::to_string(tour_frame_count),
                                 cv::Point(10, text_y_start + 6 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
                     cv::putText(main_frame, "Reset (r)",
