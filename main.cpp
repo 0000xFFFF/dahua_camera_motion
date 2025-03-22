@@ -18,7 +18,7 @@
 #define ENABLE_INFO 0
 #define ENABLE_MINIMAP 0
 #define ENABLE_MOTION 1
-#define ENABLE_TOUR 1
+#define ENABLE_TOUR 0
 #define ENABLE_FULLSCREEN 0
 #define MOTION_DETECT_AREA 10
 #define MOTION_DETECT_MIN_FRAMES 10
@@ -44,6 +44,10 @@
 #ifdef CPU_HIGH_FAST
 #undef DRAW_SLEEP_MS
 #define DRAW_SLEEP_MS 1
+#endif
+
+#ifdef TOUR
+#undef ENABLE_TOUR 1
 #endif
 
 // Constants
