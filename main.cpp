@@ -196,22 +196,19 @@ class FrameReader {
                 break;
             }
 
-            // Use grab + retrieve instead of read() to prevent blocking
-            if (m_cap.grab()) {        // Grabs the frame (non-blocking)
-                m_cap.retrieve(frame); // Retrieves the frame (blocking only if available)
-
-                std::lock_guard<std::mutex> lock(m_mtx);
-                if (m_frame_queue.size() >= MAX_QUEUE_SIZE) {
-                    m_frame_queue.pop_front();
-                }
-                m_frame_queue.emplace_back(std::move(frame));
-            } else {
-                std::cerr << "Failed to grab frame from channel " << m_channel << std::endl;
-
+            if (!m_cap.read(frame)) { // Blocks until a frame is available
+                std::cerr << "Failed to read frame from channel " << m_channel << std::endl;
 #ifndef NODELAY
-                std::this_thread::sleep_for(std::chrono::milliseconds(ERROR_SLEEP_MS)); // Prevent CPU overuse
+                std::this_thread::sleep_for(std::chrono::milliseconds(ERROR_SLEEP_MS)); // Prevent CPU overuse on failure
 #endif
+                continue;
             }
+
+            std::lock_guard<std::mutex> lock(m_mtx);
+            if (m_frame_queue.size() >= MAX_QUEUE_SIZE) {
+                m_frame_queue.pop_front();
+            }
+            m_frame_queue.emplace_back(std::move(frame));
         }
 
         if (m_cap.isOpened()) {
