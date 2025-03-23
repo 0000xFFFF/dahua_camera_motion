@@ -49,7 +49,7 @@ std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
     return contours;
 }
 
-void MotionDetector::detect_largest_motion_set_channel()
+void MotionDetector::detect_largest_motion_area_set_channel()
 {
     std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
 
@@ -89,7 +89,39 @@ void MotionDetector::detect_largest_motion_set_channel()
     }
 }
 
-void MotionDetector::detect_sort_motion_set_channels()
+void MotionDetector::sort_channels_by_motion_area_all_channels()
+{
+    std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
+
+    m_sorted_chs_area = {
+        std::make_pair(1, 0.0),
+        std::make_pair(2, 0.0),
+        std::make_pair(3, 0.0),
+        std::make_pair(4, 0.0),
+        std::make_pair(5, 0.0),
+        std::make_pair(6, 0.0)};
+
+    for (const auto& contour : contours) {
+        if (cv::contourArea(contour) >= m_motion_area) {
+            cv::Rect rect = cv::boundingRect(contour);
+            cv::rectangle(m_frame0_drawed, rect, cv::Scalar(0, 255, 0), 1);
+            double area = rect.width * rect.height;
+
+            float rel_x = rect.x / static_cast<float>(CROP_WIDTH);
+            float rel_y = rect.y / static_cast<float>(CROP_HEIGHT);
+            int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
+
+            if (new_channel >= 1 && new_channel <= 6) {
+                m_sorted_chs_area[new_channel - 1].second = area;
+            }
+        }
+    }
+
+    // higher channel first
+    std::sort(m_sorted_chs_area.begin(), m_sorted_chs_area.end(), [](auto& a, auto& b) { return a.second > b.second; });
+}
+
+void MotionDetector::sort_channels_by_motion_area_motion_channels()
 {
     std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
 
@@ -213,6 +245,28 @@ void MotionDetector::paint_main_mat_sort()
     }
 }
 
+void MotionDetector::paint_main_mat_split()
+{
+    // Assume readers[i] are objects that can get frames
+    for (size_t i = 0; i < m_sorted_chs_area.size(); i++) {
+        cv::Mat mat = m_readers[m_sorted_chs_area[i].first]->get_latest_frame();
+
+        if (mat.empty()) {
+            continue; // If the frame is empty, skip painting
+        }
+
+        // Compute position in the 3x2 grid
+        int row = i / 3; // 0 for first row, 1 for second row
+        int col = i % 3; // Column position (0,1,2)
+
+        // Define the region of interest (ROI) in main_mat
+        cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+
+        // Copy the frame into main_mat at the correct position
+        mat.copyTo(m_main_mat(roi));
+    }
+}
+
 void MotionDetector::start()
 {
     m_running = true;
@@ -236,8 +290,9 @@ void MotionDetector::start()
             cv::Mat main_frame_get = cv::Mat();
 
             if (m_enableTour) { do_tour_logic(); }
-            if (m_enableMotion && m_motionDisplayMode == 1) { detect_largest_motion_set_channel(); }
-            if (m_enableMotion && m_motionDisplayMode == 2) { detect_sort_motion_set_channels(); }
+            if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_LARGEST_ONLY) { detect_largest_motion_area_set_channel(); }
+            if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_ALL) { sort_channels_by_motion_area_all_channels(); }
+            if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION) { sort_channels_by_motion_area_motion_channels(); }
 
             if (m_current_channel == 0) {
                 main_frame_get = m_frame0_drawed;
@@ -245,8 +300,12 @@ void MotionDetector::start()
             else if (m_enableFullscreenChannel || m_enableTour || m_motion_detected_min_frames) {
                 main_frame_get = m_readers[m_current_channel]->get_latest_frame();
             }
-            else if (m_motionDisplayMode == 2) {
+            else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_ALL) {
                 paint_main_mat_sort();
+                main_frame_get = m_main_mat;
+            }
+            else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION) {
+                paint_main_mat_split();
                 main_frame_get = m_main_mat;
             }
             else {
@@ -265,9 +324,9 @@ void MotionDetector::start()
             char key = cv::waitKey(1);
             if (key == 'q') { stop(); break; }
             else if (key == 'm') { m_enableMotion = !m_enableMotion; }
-            else if (key == 'l') { m_motionDisplayMode = 1; }
-            else if (key == 's') { m_motionDisplayMode = 2; }
-            else if (key == 'd') { m_motionDisplayMode = 3; }
+            else if (key == 'l') { m_motionDisplayMode = MOTION_DISPLAY_MODE_LARGEST_ONLY; }
+            else if (key == 's') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT_BY_AREA_ALL; }
+            else if (key == 'd') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION; }
             else if (key == 'i') { m_enableInfo = !m_enableInfo; }
             else if (key == 'o') { m_enableMinimap = !m_enableMinimap; }
             else if (key == 'f') { m_enableFullscreenChannel = !m_enableFullscreenChannel; }

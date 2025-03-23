@@ -22,13 +22,15 @@ class MotionDetector {
 
     void do_tour_logic();
     std::vector<std::vector<cv::Point>> find_contours_frame0();
-    void detect_largest_motion_set_channel();
-    void detect_sort_motion_set_channels();
+    void detect_largest_motion_area_set_channel();
+    void sort_channels_by_motion_area_all_channels();
+    void sort_channels_by_motion_area_motion_channels();
 
     void draw_minimap();
     void draw_info();
     void paint_main_mat_all();
     void paint_main_mat_sort();
+    void paint_main_mat_split();
     std::string bool_to_str(bool b);
 
     // set from params
@@ -47,9 +49,6 @@ class MotionDetector {
     bool m_enableInfo = ENABLE_INFO;
     bool m_enableMotion = ENABLE_MOTION;
     int m_motionDisplayMode = MOTION_DISPLAY_MODE;
-    // 1 = Largest Only
-    // 2 = Sort By Area
-    // 3 = Sort By Area 1246
     bool m_enableMinimap = ENABLE_MINIMAP;
     bool m_enableFullscreenChannel = ENABLE_FULLSCREEN_CHANNEL;
     bool m_enableTour = ENABLE_TOUR;
@@ -71,5 +70,6 @@ class MotionDetector {
     int m_motion_detected_frame_count_history = 0;
 
     std::vector<std::pair<int, double>> m_sorted_chs_area; // Stores channels with their areas
+    std::vector<std::pair<int, double>> m_sorted_chs_area_split; // Stores channels with their areas
 
 };
