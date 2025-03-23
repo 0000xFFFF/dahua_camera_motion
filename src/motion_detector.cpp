@@ -84,7 +84,7 @@ void MotionDetector::sort_channels_by_motion_area_all_channels()
 {
     std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
 
-    m_sorted_chs_area = {
+    m_sorted_chs_area_all = {
         std::make_pair(1, 0.0),
         std::make_pair(2, 0.0),
         std::make_pair(3, 0.0),
@@ -103,26 +103,20 @@ void MotionDetector::sort_channels_by_motion_area_all_channels()
             int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
 
             if (new_channel >= 1 && new_channel <= 6) {
-                m_sorted_chs_area[new_channel - 1].second = area;
+                m_sorted_chs_area_all[new_channel - 1].second = area;
             }
         }
     }
 
     // higher channel first
-    std::sort(m_sorted_chs_area.begin(), m_sorted_chs_area.end(), [](auto& a, auto& b) { return a.second > b.second; });
+    std::sort(m_sorted_chs_area_all.begin(), m_sorted_chs_area_all.end(), [](auto& a, auto& b) { return a.second > b.second; });
 }
 
 void MotionDetector::sort_channels_by_motion_area_motion_channels()
 {
     std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
 
-    m_sorted_chs_area = {
-        std::make_pair(1, 0.0),
-        std::make_pair(2, 0.0),
-        std::make_pair(3, 0.0),
-        std::make_pair(4, 0.0),
-        std::make_pair(5, 0.0),
-        std::make_pair(6, 0.0)};
+    m_sorted_chs_area_motion.clear();
 
     for (const auto& contour : contours) {
         if (cv::contourArea(contour) >= m_motion_area) {
@@ -135,13 +129,13 @@ void MotionDetector::sort_channels_by_motion_area_motion_channels()
             int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
 
             if (new_channel >= 1 && new_channel <= 6) {
-                m_sorted_chs_area[new_channel - 1].second = area;
+                m_sorted_chs_area_motion.emplace_back(std::make_pair(new_channel, area));
             }
         }
     }
 
     // higher channel first
-    std::sort(m_sorted_chs_area.begin(), m_sorted_chs_area.end(), [](auto& a, auto& b) { return a.second > b.second; });
+    std::sort(m_sorted_chs_area_all.begin(), m_sorted_chs_area_all.end(), [](auto& a, auto& b) { return a.second > b.second; });
 }
 
 void MotionDetector::draw_minimap()
@@ -169,7 +163,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_frame, "Info (i): " + bool_to_str(m_enableInfo),
                 cv::Point(10, text_y_start), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_frame, "Motion (m/l/s/d): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
+    cv::putText(m_main_frame, "Motion (m/n/l/s/d): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
                 cv::Point(10, text_y_start + text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_frame, "Minimap (o): " + bool_to_str(m_enableMinimap),
@@ -217,8 +211,8 @@ void MotionDetector::paint_main_mat_all()
 void MotionDetector::paint_main_mat_sort()
 {
     // Assume readers[i] are objects that can get frames
-    for (size_t i = 0; i < m_sorted_chs_area.size(); i++) {
-        cv::Mat mat = m_readers[m_sorted_chs_area[i].first]->get_latest_frame();
+    for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
+        cv::Mat mat = m_readers[m_sorted_chs_area_all[i].first]->get_latest_frame();
 
         if (mat.empty()) {
             continue; // If the frame is empty, skip painting
@@ -239,8 +233,8 @@ void MotionDetector::paint_main_mat_sort()
 void MotionDetector::paint_main_mat_split()
 {
     // Assume readers[i] are objects that can get frames
-    for (size_t i = 0; i < m_sorted_chs_area.size(); i++) {
-        cv::Mat mat = m_readers[m_sorted_chs_area[i].first]->get_latest_frame();
+    for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
+        cv::Mat mat = m_readers[m_sorted_chs_area_all[i].first]->get_latest_frame();
 
         if (mat.empty()) {
             continue; // If the frame is empty, skip painting
@@ -315,6 +309,7 @@ void MotionDetector::start()
             char key = cv::waitKey(1);
             if (key == 'q') { stop(); break; }
             else if (key == 'm') { m_enableMotion = !m_enableMotion; }
+            else if (key == 'n') { m_motionDisplayMode = MOTION_DISPLAY_MODE_NONE; }
             else if (key == 'l') { m_motionDisplayMode = MOTION_DISPLAY_MODE_LARGEST_ONLY; }
             else if (key == 's') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT_BY_AREA_ALL; }
             else if (key == 'd') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION; }

@@ -65,7 +65,7 @@ class MotionDetector {
     int m_tour_frame_count = TOUR_SLEEP_MS / DRAW_SLEEP_MS;
     int m_tour_frame_index = 0;
 
-    std::vector<std::pair<int, double>> m_sorted_chs_area; // Stores channels with their areas
-    std::vector<std::pair<int, double>> m_sorted_chs_area_split; // Stores channels with their areas
+    std::vector<std::pair<int, double>> m_sorted_chs_area_all; // Stores all channels with their motion areas (motion chs + non motion chs)
+    std::vector<std::pair<int, double>> m_sorted_chs_area_motion; // Stores only motion channels with their areas
 
 };
