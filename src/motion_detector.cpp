@@ -89,7 +89,7 @@ void MotionDetector::detect_largest_motion_set_channel()
     }
 }
 
-void MotionDetector::detect_all_motion_set_channels()
+void MotionDetector::detect_sort_motion_set_channels()
 {
     std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
 
@@ -146,7 +146,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_frame, "Info (i): " + bool_to_str(m_enableInfo),
                 cv::Point(10, text_y_start), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_frame, "Motion (m/l/a): " + bool_to_str(m_enableMotion) + "/" + bool_to_str(m_enableMotionLargestOnly) + "/" + bool_to_str(m_enableMotionSortByArea),
+    cv::putText(m_main_frame, "Motion (m/l/s/d): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
                 cv::Point(10, text_y_start + text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_frame, "Minimap (o): " + bool_to_str(m_enableMinimap),
@@ -191,7 +191,7 @@ void MotionDetector::paint_main_mat_all()
     }
 }
 
-void MotionDetector::paint_main_mat_some()
+void MotionDetector::paint_main_mat_sort()
 {
     // Assume readers[i] are objects that can get frames
     for (size_t i = 0; i < m_sorted_chs_area.size(); i++) {
@@ -236,14 +236,17 @@ void MotionDetector::start()
             cv::Mat main_frame_get = cv::Mat();
 
             if (m_enableTour) { do_tour_logic(); }
-            if (m_enableMotion && m_enableMotionLargestOnly) { detect_largest_motion_set_channel(); }
-            if (m_enableMotion && m_enableMotionSortByArea) { detect_all_motion_set_channels(); }
+            if (m_enableMotion && m_motionDisplayMode == 1) { detect_largest_motion_set_channel(); }
+            if (m_enableMotion && m_motionDisplayMode == 2) { detect_sort_motion_set_channels(); }
 
-            if (m_enableFullscreenChannel || m_enableTour || m_motion_detected_min_frames) {
+            if (m_current_channel == 0) {
+                main_frame_get = m_frame0_drawed;
+            }
+            else if (m_enableFullscreenChannel || m_enableTour || m_motion_detected_min_frames) {
                 main_frame_get = m_readers[m_current_channel]->get_latest_frame();
             }
-            else if (m_enableMotionSortByArea) {
-                paint_main_mat_some();
+            else if (m_motionDisplayMode == 2) {
+                paint_main_mat_sort();
                 main_frame_get = m_main_mat;
             }
             else {
@@ -262,21 +265,27 @@ void MotionDetector::start()
             char key = cv::waitKey(1);
             if (key == 'q') { stop(); break; }
             else if (key == 'm') { m_enableMotion = !m_enableMotion; }
-            else if (key == 'l') { m_enableMotionLargestOnly = !m_enableMotionLargestOnly; }
-            else if (key == 's') { m_enableMotionSortByArea = !m_enableMotionSortByArea; }
-            else if (key == 'd') { m_enableMotionSortByArea1246 = !m_enableMotionSortByArea1246; }
+            else if (key == 'l') { m_motionDisplayMode = 1; }
+            else if (key == 's') { m_motionDisplayMode = 2; }
+            else if (key == 'd') { m_motionDisplayMode = 3; }
             else if (key == 'i') { m_enableInfo = !m_enableInfo; }
             else if (key == 'o') { m_enableMinimap = !m_enableMinimap; }
             else if (key == 'f') { m_enableFullscreenChannel = !m_enableFullscreenChannel; }
             else if (key == 't') { m_enableTour = !m_enableTour; }
             else if (key == 'r') {
+                m_current_channel = 1;
+                m_motion_detected = false;
+                m_motion_detected_min_frames = false;
+                m_tour_frame_index = 0;
+                m_motion_detected_frame_count = 0;
+                m_motion_detected_frame_count_history = 0;
                 m_enableInfo = ENABLE_INFO;
                 m_enableMotion = ENABLE_MOTION;
                 m_enableMinimap = ENABLE_MINIMAP;
                 m_enableFullscreenChannel = ENABLE_FULLSCREEN_CHANNEL;
                 m_enableTour = ENABLE_TOUR;
             }
-            else if (key >= '1' && key <= '6') {
+            else if (key >= '0' && key <= '6') {
                 m_current_channel = key - '0';
                 m_enableFullscreenChannel = true;
             }
