@@ -1,5 +1,5 @@
 GCC = g++
-FILES = *.cpp
+FILES = src/*.cpp
 DEBUG_ARGS = -D DEBUG -g
 RELEASE_ARGS = -Wall -Wextra -O2 -s
 LIBS = `pkg-config --cflags --libs opencv4`
