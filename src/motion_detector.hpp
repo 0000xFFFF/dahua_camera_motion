@@ -61,13 +61,9 @@ class MotionDetector {
 
     cv::Rect m_motion_region;
     bool m_motion_detected = false;
-    bool m_motion_detected_min_frames = false;
 
     int m_tour_frame_count = TOUR_SLEEP_MS / DRAW_SLEEP_MS;
     int m_tour_frame_index = 0;
-
-    int m_motion_detected_frame_count = 0;
-    int m_motion_detected_frame_count_history = 0;
 
     std::vector<std::pair<int, double>> m_sorted_chs_area; // Stores channels with their areas
     std::vector<std::pair<int, double>> m_sorted_chs_area_split; // Stores channels with their areas
