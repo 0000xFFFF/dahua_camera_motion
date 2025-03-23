@@ -13,11 +13,14 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <vector>
 
 #define ENABLE_INFO 0
 #define ENABLE_MINIMAP 0
 #define ENABLE_MOTION 1
+#define ENABLE_MOTION_LARGEST 0
+#define ENABLE_MOTION_ALL 1
 #define ENABLE_TOUR 0
 #define ENABLE_FULLSCREEN 0
 #define MOTION_DETECT_AREA 10
@@ -32,8 +35,6 @@
 #define ENABLE_INFO 1
 #undef ENABLE_MINIMAP
 #define ENABLE_MINIMAP 1
-#undef ENABLE_MOTION
-#define ENABLE_MOTION 0
 #endif
 
 #ifdef CPU_LOW_SLOW
@@ -244,6 +245,8 @@ class MotionDetector {
         : m_current_channel(1),
           m_enableInfo(ENABLE_INFO),
           m_enableMotion(ENABLE_MOTION),
+          m_enableMotionLargest(ENABLE_MOTION_LARGEST),
+          m_enableMotionAll(ENABLE_MOTION_ALL),
           m_enableMinimap(ENABLE_MINIMAP),
           m_enableFullscreen(ENABLE_FULLSCREEN),
           m_enableTour(ENABLE_TOUR),
@@ -264,11 +267,172 @@ class MotionDetector {
         }
     }
 
-    cv::Mat paint_main_mat(cv::Mat& main_mat)
+    cv::Rect motion_region;
+    bool motion_detected = false;
+    bool motion_detected_min_frames = false;
+
+    int tour_frame_count = TOUR_SLEEP_MS / DRAW_SLEEP_MS;
+    int tour_frame_index = 0;
+
+    int motion_detected_frame_count = 0;
+    int motion_detected_frame_count_history = 0;
+
+    void do_tour_logic()
+    {
+        tour_frame_index++;
+        if (tour_frame_index >= tour_frame_count) {
+            tour_frame_index = 0;
+            m_current_channel = m_current_channel % 6 + 1;
+        }
+    }
+
+    std::vector<std::vector<cv::Point>> find_contours(cv::Mat& frame0)
+    {
+        cv::Mat fgmask;
+        m_fgbg->apply(frame0, fgmask);
+
+        cv::Mat thresh;
+        cv::threshold(fgmask, thresh, 128, 255, cv::THRESH_BINARY);
+
+        std::vector<std::vector<cv::Point>> contours;
+        cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+        return contours;
+    }
+
+    void detect_largest_motion_set_channel(cv::Mat& frame0)
+    {
+        std::vector<std::vector<cv::Point>> contours = find_contours(frame0);
+
+        // Find largest motion area
+        double max_area = 0;
+        for (const auto& contour : contours) {
+            if (cv::contourArea(contour) >= m_motion_area) {
+                cv::Rect rect = cv::boundingRect(contour);
+                double area = rect.width * rect.height;
+                if (area > max_area) {
+                    max_area = area;
+                    motion_region = rect;
+                    motion_detected = true;
+                }
+            }
+        }
+
+        // Update current channel based on motion position
+        if (motion_detected) {
+            motion_detected_frame_count++;
+            motion_detected_min_frames = motion_detected_frame_count >= MOTION_DETECT_MIN_FRAMES;
+
+            if (motion_detected_min_frames) {
+                tour_frame_index = 0; // reset so it doesn't auto switch on new tour so we can show a little bit of motion
+                float rel_x = motion_region.x / static_cast<float>(CROP_WIDTH);
+                float rel_y = motion_region.y / static_cast<float>(CROP_HEIGHT);
+                int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
+                if (new_channel != m_current_channel) { m_current_channel = new_channel; }
+            }
+        }
+        else {
+            if (motion_detected_frame_count != 0) {
+                motion_detected_frame_count_history = motion_detected_frame_count;
+            }
+            motion_detected_frame_count = 0;
+        }
+    }
+
+    std::vector<std::pair<int, double>> sorted_channels; // Stores channels with their areas
+    void detect_all_motion_set_channels(cv::Mat& frame0)
+    {
+        std::vector<std::vector<cv::Point>> contours = find_contours(frame0);
+
+        sorted_channels = {
+            std::make_pair(1, 0.0),
+            std::make_pair(2, 0.0),
+            std::make_pair(3, 0.0),
+            std::make_pair(4, 0.0),
+            std::make_pair(5, 0.0),
+            std::make_pair(6, 0.0)};
+
+        for (const auto& contour : contours) {
+            if (cv::contourArea(contour) >= m_motion_area) {
+                cv::Rect rect = cv::boundingRect(contour);
+                double area = rect.width * rect.height;
+
+                float rel_x = rect.x / static_cast<float>(CROP_WIDTH);
+                float rel_y = rect.y / static_cast<float>(CROP_HEIGHT);
+                int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
+
+                if (new_channel >= 1 && new_channel <= 6) {
+                    sorted_channels[new_channel - 1].second = area;
+                }
+            }
+        }
+
+        // higher channel first
+        std::sort(sorted_channels.begin(), sorted_channels.end(), [](auto& a, auto& b) { return a.second > b.second; });
+    }
+
+    static constexpr int MINIMAP_WIDTH = 300;
+    static constexpr int MINIMAP_HEIGHT = 160;
+    static constexpr int CROP_HEIGHT = 384;
+    static constexpr int CROP_WIDTH = 704;
+
+    void draw_minimap(cv::Mat& frame0, cv::Mat& main_frame)
+    {
+        cv::Mat minimap;
+        cv::resize(frame0, minimap, cv::Size(MINIMAP_WIDTH, MINIMAP_HEIGHT));
+
+        // Add white border
+        cv::Mat minimap_padded;
+        cv::copyMakeBorder(minimap, minimap_padded, 2, 2, 2, 2,
+                           cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
+
+        // Draw motion rectangle on minimap
+        if (motion_detected) {
+            float scale_x = static_cast<float>(MINIMAP_WIDTH) / CROP_WIDTH;
+            float scale_y = static_cast<float>(MINIMAP_HEIGHT) / CROP_HEIGHT;
+            cv::Rect scaled_rect(
+                static_cast<int>(motion_region.x * scale_x),
+                static_cast<int>(motion_region.y * scale_y),
+                static_cast<int>(motion_region.width * scale_x),
+                static_cast<int>(motion_region.height * scale_y));
+            cv::rectangle(minimap_padded, scaled_rect, cv::Scalar(0, 255, 0), 1);
+        }
+
+        // Place minimap on main display
+        cv::Point minimap_pos = cv::Point(10, 10);
+        minimap_padded.copyTo(main_frame(cv::Rect(
+            minimap_pos.x, minimap_pos.y,
+            minimap_padded.cols, minimap_padded.rows)));
+    }
+
+    cv::Mat paint_main_mat_all(cv::Mat& main_mat)
     {
         // Assume readers[i] are objects that can get frames
         for (int i = 0; i < 6; i++) {
             cv::Mat mat = m_readers[i + 1]->get_latest_frame();
+
+            if (mat.empty()) {
+                continue; // If the frame is empty, skip painting
+            }
+
+            // Compute position in the 3x2 grid
+            int row = i / 3; // 0 for first row, 1 for second row
+            int col = i % 3; // Column position (0,1,2)
+
+            // Define the region of interest (ROI) in main_mat
+            cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+
+            // Copy the frame into main_mat at the correct position
+            mat.copyTo(main_mat(roi));
+        }
+
+        return main_mat;
+    }
+
+    cv::Mat paint_main_mat_some(cv::Mat& main_mat)
+    {
+        // Assume readers[i] are objects that can get frames
+        for (size_t i = 0; i < sorted_channels.size(); i++) {
+            cv::Mat mat = m_readers[sorted_channels[i].first]->get_latest_frame();
 
             if (mat.empty()) {
                 continue; // If the frame is empty, skip painting
@@ -297,20 +461,9 @@ class MotionDetector {
             cv::setWindowProperty("Motion", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
         }
 
-        constexpr int MINIMAP_WIDTH = 300;
-        constexpr int MINIMAP_HEIGHT = 160;
-        constexpr int CROP_HEIGHT = 384;
-        constexpr int CROP_WIDTH = 704;
-
         cv::Mat frame0 = cv::Mat::zeros(W_0, H_0, CV_8UC3);
         cv::Mat main_mat(cv::Size(W_HD * 3, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
         cv::Mat main_frame = cv::Mat::zeros(W_HD, H_HD, CV_8UC3);
-
-        int tour_frame_count = TOUR_SLEEP_MS / DRAW_SLEEP_MS;
-        int tour_frame_index = 0;
-
-        int motion_detected_frame_count = 0;
-        int motion_detected_frame_count_history = 0;
 
         try {
 
@@ -322,101 +475,28 @@ class MotionDetector {
                     frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
                 }
 
-                cv::Rect motion_region;
-                bool motion_detected = false;
-                bool motion_detected_min_frames = false;
+                cv::Mat main_frame_get = cv::Mat();
 
-                if (m_enableTour) {
-                    tour_frame_index++;
-                    if (tour_frame_index >= tour_frame_count) {
-                        tour_frame_index = 0;
-                        m_current_channel = m_current_channel % 6 + 1;
-                    }
-                }
-
-                if (m_enableMotion) {
-                    cv::Mat fgmask;
-                    m_fgbg->apply(frame0, fgmask);
-
-                    cv::Mat thresh;
-                    cv::threshold(fgmask, thresh, 128, 255, cv::THRESH_BINARY);
-
-                    std::vector<std::vector<cv::Point>> contours;
-                    cv::findContours(thresh, contours, cv::RETR_EXTERNAL,
-                                     cv::CHAIN_APPROX_SIMPLE);
-
-                    // Find largest motion area
-                    double max_area = 0;
-                    for (const auto& contour : contours) {
-                        if (cv::contourArea(contour) >= m_motion_area) {
-                            cv::Rect rect = cv::boundingRect(contour);
-                            double area = rect.width * rect.height;
-                            if (area > max_area) {
-                                max_area = area;
-                                motion_region = rect;
-                                motion_detected = true;
-                            }
-                        }
-                    }
-
-                    // Update current channel based on motion position
-                    if (motion_detected) {
-                        motion_detected_frame_count++;
-                        motion_detected_min_frames = motion_detected_frame_count >= MOTION_DETECT_MIN_FRAMES;
-
-                        if (motion_detected_min_frames) {
-                            tour_frame_index = 0; // reset so it doesn't auto switch on new tour so we can show a little bit of motion
-                            float rel_x = motion_region.x / static_cast<float>(CROP_WIDTH);
-                            float rel_y = motion_region.y / static_cast<float>(CROP_HEIGHT);
-                            int new_channel = 1 + static_cast<int>(rel_x * 3) +
-                                              (rel_y >= 0.5f ? 3 : 0);
-                            if (new_channel != m_current_channel) {
-                                m_current_channel = new_channel;
-                            }
-                        }
-                    }
-                    else {
-                        if (motion_detected_frame_count != 0) {
-                            motion_detected_frame_count_history = motion_detected_frame_count;
-                        }
-                        motion_detected_frame_count = 0;
-                    }
-                }
+                if (m_enableTour) { do_tour_logic(); }
+                if (m_enableMotion && m_enableMotionLargest) { detect_largest_motion_set_channel(frame0); }
+                if (m_enableMotion && m_enableMotionAll) { detect_all_motion_set_channels(frame0); }
 
                 // Get main display frame
-                cv::Mat main_frame_get = (m_enableFullscreen || m_enableTour || motion_detected_min_frames) ? m_readers[m_current_channel]->get_latest_frame() : paint_main_mat(main_mat);
-                if (!main_frame_get.empty()) {
-                    cv::resize(main_frame_get, main_frame, cv::Size(m_display_width, m_display_height));
+                if (m_enableFullscreen || m_enableTour || motion_detected_min_frames) {
+                    main_frame_get = m_readers[m_current_channel]->get_latest_frame();
                 }
+                else if (m_enableMotionAll) {
+                    main_frame_get = paint_main_mat_some(main_mat);
+                }
+                else {
+                    main_frame_get = paint_main_mat_all(main_mat);
+                }
+
+                // check if null and resize
+                if (!main_frame_get.empty()) { cv::resize(main_frame_get, main_frame, cv::Size(m_display_width, m_display_height)); }
 
                 // Process minimap
-                if (m_enableMinimap) {
-                    cv::Mat minimap;
-                    cv::resize(frame0, minimap, cv::Size(MINIMAP_WIDTH, MINIMAP_HEIGHT));
-
-                    // Add white border
-                    cv::Mat minimap_padded;
-                    cv::copyMakeBorder(minimap, minimap_padded, 2, 2, 2, 2,
-                                       cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
-
-                    // Draw motion rectangle on minimap
-                    if (motion_detected) {
-                        float scale_x = static_cast<float>(MINIMAP_WIDTH) / CROP_WIDTH;
-                        float scale_y = static_cast<float>(MINIMAP_HEIGHT) / CROP_HEIGHT;
-                        cv::Rect scaled_rect(
-                            static_cast<int>(motion_region.x * scale_x),
-                            static_cast<int>(motion_region.y * scale_y),
-                            static_cast<int>(motion_region.width * scale_x),
-                            static_cast<int>(motion_region.height * scale_y));
-                        cv::rectangle(minimap_padded, scaled_rect, cv::Scalar(0, 255, 0), 1);
-                    }
-
-                    // Place minimap on main display
-                    cv::Point minimap_pos = cv::Point(10, 10);
-                    minimap_padded.copyTo(main_frame(cv::Rect(
-                        minimap_pos.x, minimap_pos.y,
-                        minimap_padded.cols, minimap_padded.rows)));
-                }
+                if (m_enableMinimap) { draw_minimap(frame0, main_frame); }
 
                 // Draw info text
                 if (m_enableInfo) {
@@ -429,10 +509,10 @@ class MotionDetector {
                     cv::putText(main_frame, "Info (i): " + bool_to_str(m_enableInfo),
                                 cv::Point(10, text_y_start), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
-                    cv::putText(main_frame, "Motion (a): " + bool_to_str(m_enableMotion),
+                    cv::putText(main_frame, "Motion (m/l/a): " + bool_to_str(m_enableMotion) + "/" + bool_to_str(m_enableMotionLargest) + "/" + bool_to_str(m_enableMotionAll),
                                 cv::Point(10, text_y_start + text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
-                    cv::putText(main_frame, "Minimap (m): " + bool_to_str(m_enableMinimap),
+                    cv::putText(main_frame, "Minimap (o): " + bool_to_str(m_enableMinimap),
                                 cv::Point(10, text_y_start + 2 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                                 font_scale, text_color, font_thickness);
                     cv::putText(main_frame, "Motion Detected: " + std::to_string(motion_detected) + "/" + std::to_string(motion_detected_min_frames) + "/" + std::to_string(motion_detected_frame_count) + "/" + std::to_string(motion_detected_frame_count_history),
@@ -459,13 +539,19 @@ class MotionDetector {
                     stop();
                     break;
                 }
-                else if (key == 'a') {
+                else if (key == 'm') {
                     m_enableMotion = !m_enableMotion;
+                }
+                else if (key == 'l') {
+                    m_enableMotionLargest = !m_enableMotionLargest;
+                }
+                else if (key == 'a') {
+                    m_enableMotionAll = !m_enableMotionAll;
                 }
                 else if (key == 'i') {
                     m_enableInfo = !m_enableInfo;
                 }
-                else if (key == 'm') {
+                else if (key == 'o') {
                     m_enableMinimap = !m_enableMinimap;
                 }
                 else if (key == 'f') {
@@ -513,6 +599,8 @@ class MotionDetector {
     int m_current_channel;
     bool m_enableInfo;
     bool m_enableMotion;
+    bool m_enableMotionLargest;
+    bool m_enableMotionAll;
     bool m_enableMinimap;
     bool m_enableFullscreen;
     bool m_enableTour;
