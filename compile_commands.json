@@ -3,13 +3,64 @@
     "arguments": [
       "/usr/bin/g++",
       "-c",
+      "-Wall",
+      "-Wextra",
+      "-O2",
       "-I/usr/include/opencv4",
       "-o",
       "dcm_master",
-      "main.cpp"
+      "src/frame_reader.cpp"
     ],
     "directory": "/home/user/Documents/dahua_camera_motion",
-    "file": "/home/user/Documents/dahua_camera_motion/main.cpp",
+    "file": "/home/user/Documents/dahua_camera_motion/src/frame_reader.cpp",
+    "output": "/home/user/Documents/dahua_camera_motion/dcm_master"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-Wall",
+      "-Wextra",
+      "-O2",
+      "-I/usr/include/opencv4",
+      "-o",
+      "dcm_master",
+      "src/main.cpp"
+    ],
+    "directory": "/home/user/Documents/dahua_camera_motion",
+    "file": "/home/user/Documents/dahua_camera_motion/src/main.cpp",
+    "output": "/home/user/Documents/dahua_camera_motion/dcm_master"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-Wall",
+      "-Wextra",
+      "-O2",
+      "-I/usr/include/opencv4",
+      "-o",
+      "dcm_master",
+      "src/motion_detector.cpp"
+    ],
+    "directory": "/home/user/Documents/dahua_camera_motion",
+    "file": "/home/user/Documents/dahua_camera_motion/src/motion_detector.cpp",
+    "output": "/home/user/Documents/dahua_camera_motion/dcm_master"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-Wall",
+      "-Wextra",
+      "-O2",
+      "-I/usr/include/opencv4",
+      "-o",
+      "dcm_master",
+      "src/utils.cpp"
+    ],
+    "directory": "/home/user/Documents/dahua_camera_motion",
+    "file": "/home/user/Documents/dahua_camera_motion/src/utils.cpp",
     "output": "/home/user/Documents/dahua_camera_motion/dcm_master"
   }
 ]
