@@ -1,0 +1,4 @@
+- have global minimap mat that get's drawed on on motion detection
+- fix/finish motion detect all that sorts biggest area first
+- motion only show 1,2,4,6 if motion is detected
+- refactor code
