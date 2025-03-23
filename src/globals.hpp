@@ -11,7 +11,6 @@
 #define MOTION_DETECT_MIN_FRAMES 10
 #define TOUR_SLEEP_MS 3000
 #define DRAW_SLEEP_MS 100
-#define READ_FRAME_SLEEP_MS 5
 #define ERROR_SLEEP_MS 5
 
 #ifdef DEBUG
@@ -19,6 +18,8 @@
 #define ENABLE_INFO 1
 #undef ENABLE_MINIMAP
 #define ENABLE_MINIMAP 1
+#undef DRAW_SLEEP_MS
+#define DRAW_SLEEP_MS 10
 #endif
 
 #ifdef CPU_LOW_SLOW
