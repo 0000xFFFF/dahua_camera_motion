@@ -51,8 +51,6 @@ std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
 
 void MotionDetector::detect_largest_motion_set_channel()
 {
-    m_frame0_drawed = m_frame0.clone();
-
     std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
 
     // Find largest motion area
@@ -232,6 +230,7 @@ void MotionDetector::start()
             cv::Mat frame0_get = m_readers[0]->get_latest_frame();
             if (!frame0_get.empty()) {
                 m_frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
+                m_frame0_drawed = m_frame0.clone();
             }
 
             cv::Mat main_frame_get = cv::Mat();
