@@ -15,6 +15,11 @@ class MotionDetector {
     MotionDetector(const std::string& ip, const std::string& username,
                    const std::string& password, int area, int w, int h, bool fullscreen);
 
+    void start();
+    void stop();
+
+  private:
+
     void do_tour_logic();
     std::vector<std::vector<cv::Point>> find_contours(cv::Mat& frame0);
     void detect_largest_motion_set_channel(cv::Mat& frame0);
@@ -23,11 +28,6 @@ class MotionDetector {
     void draw_minimap(cv::Mat& frame0, cv::Mat& main_frame);
     cv::Mat paint_main_mat_all(cv::Mat& main_mat);
     cv::Mat paint_main_mat_some(cv::Mat& main_mat);
-
-    void start();
-    void stop();
-
-  private:
 
     int m_motion_area;
     int m_display_width;
