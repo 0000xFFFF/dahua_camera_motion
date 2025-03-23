@@ -21,13 +21,14 @@ class MotionDetector {
   private:
 
     void do_tour_logic();
-    std::vector<std::vector<cv::Point>> find_contours(cv::Mat& frame0);
-    void detect_largest_motion_set_channel(cv::Mat& frame0);
-    void detect_all_motion_set_channels(cv::Mat& frame0);
+    std::vector<std::vector<cv::Point>> find_contours_frame0();
+    void detect_largest_motion_set_channel();
+    void detect_all_motion_set_channels();
 
-    void draw_minimap(cv::Mat& frame0, cv::Mat& main_frame);
-    cv::Mat paint_main_mat_all(cv::Mat& main_mat);
-    cv::Mat paint_main_mat_some(cv::Mat& main_mat);
+    void draw_minimap();
+    void draw_info();
+    void paint_main_mat_all();
+    void paint_main_mat_some();
     std::string bool_to_str(bool b);
 
     // set from params
@@ -51,8 +52,11 @@ class MotionDetector {
     bool m_enableFullscreen = ENABLE_FULLSCREEN;
     bool m_enableTour = ENABLE_TOUR;
 
+    cv::Mat m_frame0 = cv::Mat::zeros(W_0, H_0, CV_8UC3);
+    cv::Mat m_frame0_drawed = cv::Mat::zeros(W_0, H_0, CV_8UC3);
+    cv::Mat m_main_mat = cv::Mat(cv::Size(W_HD * 3, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
+    cv::Mat m_main_frame = cv::Mat::zeros(W_HD, H_HD, CV_8UC3);
 
-    cv::Mat m_frame0_minimap;
 
     cv::Rect m_motion_region;
     bool m_motion_detected = false;
