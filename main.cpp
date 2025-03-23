@@ -63,7 +63,8 @@ constexpr bool USE_SUBTYPE1 = false;
 constexpr int W_0 = 704, H_0 = 576;
 constexpr int W_HD = 1920, H_HD = 1080;
 
-void set_thread_affinity(int core_id) {
+void set_thread_affinity(int core_id)
+{
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(core_id, &cpuset);
@@ -71,7 +72,8 @@ void set_thread_affinity(int core_id) {
 }
 
 // Helper function to execute shell commands
-std::string exec(const char* cmd) {
+std::string exec(const char* cmd)
+{
     std::array<char, 128> buffer;
     std::string result;
     FILE* pipe = popen(cmd, "r");
@@ -86,7 +88,8 @@ std::string exec(const char* cmd) {
 }
 
 // Get screen resolution using xrandr
-std::pair<int, int> detect_screen_size(const int& index) {
+std::pair<int, int> detect_screen_size(const int& index)
+{
     try {
         std::string xrandr_output = exec("xrandr | grep '*' | awk '{print $1}'");
         std::vector<std::string> resolutions;
@@ -106,7 +109,8 @@ std::pair<int, int> detect_screen_size(const int& index) {
             int height = std::stoi(use.substr(x_pos + 1));
             return {width, height};
         }
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e) {
         std::cerr << "Warning: Failed to detect screen size: " << e.what() << std::endl;
     }
     return {W_HD, H_HD}; // Default fallback
@@ -124,12 +128,14 @@ class FrameReader {
           m_password(password),
           m_channel(ch),
           m_width(w),
-          m_height(h) {
+          m_height(h)
+    {
 
         m_thread = std::thread([this]() { connect_and_read(); });
     }
 
-    cv::Mat get_latest_frame() {
+    cv::Mat get_latest_frame()
+    {
         std::unique_lock<std::mutex> lock(m_mtx);
         if (m_frame_queue.empty()) return cv::Mat();
 
@@ -138,7 +144,8 @@ class FrameReader {
         return latest;
     }
 
-    void stop() {
+    void stop()
+    {
         std::cout << "[" << m_channel << "] reader stop" << std::endl;
         m_running = false;
         if (m_thread.joinable()) {
@@ -164,14 +171,16 @@ class FrameReader {
     static constexpr size_t MAX_QUEUE_SIZE = 2;
 
     std::string construct_rtsp_url(const std::string& ip, const std::string& username,
-                                   const std::string& password) {
+                                   const std::string& password)
+    {
         int subtype = (USE_SUBTYPE1 && m_channel != 0) ? 1 : 0;
         return "rtsp://" + username + ":" + password + "@" + ip +
                ":554/cam/realmonitor?channel=" + std::to_string(m_channel) +
                "&subtype=" + std::to_string(subtype);
     }
 
-    void connect_and_read() {
+    void connect_and_read()
+    {
 
         set_thread_affinity(m_channel % std::thread::hardware_concurrency()); // Assign different core to each camera
 
@@ -241,7 +250,8 @@ class MotionDetector {
           m_motion_area(area),
           m_display_width(w),
           m_display_height(h),
-          m_fullscreen(fullscreen) {
+          m_fullscreen(fullscreen)
+    {
 
         // Initialize background subtractor
         m_fgbg = cv::createBackgroundSubtractorMOG2(500, 16, true);
@@ -254,7 +264,8 @@ class MotionDetector {
         }
     }
 
-    cv::Mat paint_main_mat(cv::Mat& main_mat) {
+    cv::Mat paint_main_mat(cv::Mat& main_mat)
+    {
         // Assume readers[i] are objects that can get frames
         for (int i = 0; i < 6; i++) {
             cv::Mat mat = m_readers[i + 1]->get_latest_frame();
@@ -277,7 +288,8 @@ class MotionDetector {
         return main_mat;
     }
 
-    void start() {
+    void start()
+    {
         m_running = true;
 
         if (m_fullscreen) {
@@ -362,7 +374,8 @@ class MotionDetector {
                                 m_current_channel = new_channel;
                             }
                         }
-                    } else {
+                    }
+                    else {
                         if (motion_detected_frame_count != 0) {
                             motion_detected_frame_count_history = motion_detected_frame_count;
                         }
@@ -445,33 +458,42 @@ class MotionDetector {
                 if (key == 'q') {
                     stop();
                     break;
-                } else if (key == 'a') {
+                }
+                else if (key == 'a') {
                     m_enableMotion = !m_enableMotion;
-                } else if (key == 'i') {
+                }
+                else if (key == 'i') {
                     m_enableInfo = !m_enableInfo;
-                } else if (key == 'm') {
+                }
+                else if (key == 'm') {
                     m_enableMinimap = !m_enableMinimap;
-                } else if (key == 'f') {
+                }
+                else if (key == 'f') {
                     m_enableFullscreen = !m_enableFullscreen;
-                } else if (key == 'r') {
+                }
+                else if (key == 'r') {
                     m_enableInfo = ENABLE_INFO;
                     m_enableMotion = ENABLE_MOTION;
                     m_enableMinimap = ENABLE_MINIMAP;
                     m_enableFullscreen = ENABLE_FULLSCREEN;
                     m_enableTour = ENABLE_TOUR;
-                } else if (key == 't') {
+                }
+                else if (key == 't') {
                     m_enableTour = !m_enableTour;
-                } else if (key >= '1' && key <= '6') {
+                }
+                else if (key >= '1' && key <= '6') {
                     m_current_channel = key - '0';
                     m_enableFullscreen = true;
                 }
             }
-        } catch (const std::exception& e) {
+        }
+        catch (const std::exception& e) {
             std::cerr << "Error in display loop: " << e.what() << std::endl;
         }
     }
 
-    void stop() {
+    void stop()
+    {
         m_running = false;
 
         std::cout << "stopping all readers" << std::endl;
@@ -500,12 +522,14 @@ class MotionDetector {
     bool m_fullscreen;
     std::atomic<bool> m_running{false};
 
-    std::string bool_to_str(bool b) {
+    std::string bool_to_str(bool b)
+    {
         return std::string(b ? "Yes" : "No");
     }
 };
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
 
     // Add signal handling
     std::signal(SIGINT, [](int) {
@@ -572,8 +596,8 @@ int main(int argc, char* argv[]) {
 
             motionDetector.start();
         }
-
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     }
