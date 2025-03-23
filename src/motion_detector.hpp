@@ -46,7 +46,7 @@ class MotionDetector {
     int m_current_channel = 1;
     bool m_enableInfo = ENABLE_INFO;
     bool m_enableMotion = ENABLE_MOTION;
-    int m_motionDisplayMode = 1;
+    int m_motionDisplayMode = MOTION_DISPLAY_MODE;
     // 1 = Largest Only
     // 2 = Sort By Area
     // 3 = Sort By Area 1246
