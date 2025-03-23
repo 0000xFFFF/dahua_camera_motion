@@ -146,7 +146,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_frame, "Info (i): " + bool_to_str(m_enableInfo),
                 cv::Point(10, text_y_start), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_frame, "Motion (m/l/a): " + bool_to_str(m_enableMotion) + "/" + bool_to_str(m_enableMotionLargest) + "/" + bool_to_str(m_enableMotionAll),
+    cv::putText(m_main_frame, "Motion (m/l/a): " + bool_to_str(m_enableMotion) + "/" + bool_to_str(m_enableMotionLargestOnly) + "/" + bool_to_str(m_enableMotionSortByArea),
                 cv::Point(10, text_y_start + text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_frame, "Minimap (o): " + bool_to_str(m_enableMinimap),
@@ -158,7 +158,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_frame, "Channel (num): " + std::to_string(m_current_channel),
                 cv::Point(10, text_y_start + 4 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_frame, "Fullscreen (f): " + bool_to_str(m_enableFullscreen),
+    cv::putText(m_main_frame, "Fullscreen (f): " + bool_to_str(m_enableFullscreenChannel),
                 cv::Point(10, text_y_start + 5 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_frame, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(m_tour_frame_index) + "/" + std::to_string(m_tour_frame_count),
@@ -236,13 +236,13 @@ void MotionDetector::start()
             cv::Mat main_frame_get = cv::Mat();
 
             if (m_enableTour) { do_tour_logic(); }
-            if (m_enableMotion && m_enableMotionLargest) { detect_largest_motion_set_channel(); }
-            if (m_enableMotion && m_enableMotionAll) { detect_all_motion_set_channels(); }
+            if (m_enableMotion && m_enableMotionLargestOnly) { detect_largest_motion_set_channel(); }
+            if (m_enableMotion && m_enableMotionSortByArea) { detect_all_motion_set_channels(); }
 
-            if (m_enableFullscreen || m_enableTour || m_motion_detected_min_frames) {
+            if (m_enableFullscreenChannel || m_enableTour || m_motion_detected_min_frames) {
                 main_frame_get = m_readers[m_current_channel]->get_latest_frame();
             }
-            else if (m_enableMotionAll) {
+            else if (m_enableMotionSortByArea) {
                 paint_main_mat_some();
                 main_frame_get = m_main_mat;
             }
@@ -262,22 +262,23 @@ void MotionDetector::start()
             char key = cv::waitKey(1);
             if (key == 'q') { stop(); break; }
             else if (key == 'm') { m_enableMotion = !m_enableMotion; }
-            else if (key == 'l') { m_enableMotionLargest = !m_enableMotionLargest; }
-            else if (key == 'a') { m_enableMotionAll = !m_enableMotionAll; }
+            else if (key == 'l') { m_enableMotionLargestOnly = !m_enableMotionLargestOnly; }
+            else if (key == 's') { m_enableMotionSortByArea = !m_enableMotionSortByArea; }
+            else if (key == 'd') { m_enableMotionSortByArea1246 = !m_enableMotionSortByArea1246; }
             else if (key == 'i') { m_enableInfo = !m_enableInfo; }
             else if (key == 'o') { m_enableMinimap = !m_enableMinimap; }
-            else if (key == 'f') { m_enableFullscreen = !m_enableFullscreen; }
+            else if (key == 'f') { m_enableFullscreenChannel = !m_enableFullscreenChannel; }
             else if (key == 't') { m_enableTour = !m_enableTour; }
             else if (key == 'r') {
                 m_enableInfo = ENABLE_INFO;
                 m_enableMotion = ENABLE_MOTION;
                 m_enableMinimap = ENABLE_MINIMAP;
-                m_enableFullscreen = ENABLE_FULLSCREEN;
+                m_enableFullscreenChannel = ENABLE_FULLSCREEN_CHANNEL;
                 m_enableTour = ENABLE_TOUR;
             }
             else if (key >= '1' && key <= '6') {
                 m_current_channel = key - '0';
-                m_enableFullscreen = true;
+                m_enableFullscreenChannel = true;
             }
             // clang-format on
         }

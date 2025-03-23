@@ -46,10 +46,11 @@ class MotionDetector {
     int m_current_channel = 1;
     bool m_enableInfo = ENABLE_INFO;
     bool m_enableMotion = ENABLE_MOTION;
-    bool m_enableMotionLargest = ENABLE_MOTION_LARGEST;
-    bool m_enableMotionAll = ENABLE_MOTION_ALL;
+    bool m_enableMotionLargestOnly = ENABLE_MOTION_LARGEST_ONLY;
+    bool m_enableMotionSortByArea = ENABLE_MOTION_SORY_BY_AREA;
+    bool m_enableMotionSortByArea1246 = ENABLE_MOTION_SORY_BY_AREA_1246;
     bool m_enableMinimap = ENABLE_MINIMAP;
-    bool m_enableFullscreen = ENABLE_FULLSCREEN;
+    bool m_enableFullscreenChannel = ENABLE_FULLSCREEN_CHANNEL;
     bool m_enableTour = ENABLE_TOUR;
 
     cv::Mat m_frame0 = cv::Mat::zeros(W_0, H_0, CV_8UC3);
