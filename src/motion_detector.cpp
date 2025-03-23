@@ -88,7 +88,6 @@ void MotionDetector::detect_largest_motion_set_channel(cv::Mat& frame0)
     }
 }
 
-std::vector<std::pair<int, double>> sorted_channels; // Stores channels with their areas
 void MotionDetector::detect_all_motion_set_channels(cv::Mat& frame0)
 {
     std::vector<std::vector<cv::Point>> contours = find_contours(frame0);
