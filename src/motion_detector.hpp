@@ -28,16 +28,20 @@ class MotionDetector {
     void draw_minimap(cv::Mat& frame0, cv::Mat& main_frame);
     cv::Mat paint_main_mat_all(cv::Mat& main_mat);
     cv::Mat paint_main_mat_some(cv::Mat& main_mat);
+    std::string bool_to_str(bool b);
 
+    // set from params
     int m_motion_area;
     int m_display_width;
     int m_display_height;
     bool m_fullscreen;
     std::atomic<bool> m_running{false};
 
+    // init
     std::vector<std::unique_ptr<FrameReader>> m_readers;
     cv::Ptr<cv::BackgroundSubtractorMOG2> m_fgbg;
 
+    // defaults
     int m_current_channel = 1;
     bool m_enableInfo = ENABLE_INFO;
     bool m_enableMotion = ENABLE_MOTION;
@@ -48,17 +52,18 @@ class MotionDetector {
     bool m_enableTour = ENABLE_TOUR;
 
 
-    cv::Rect motion_region;
-    bool motion_detected = false;
-    bool motion_detected_min_frames = false;
+    cv::Mat m_frame0_minimap;
 
-    int tour_frame_count = TOUR_SLEEP_MS / DRAW_SLEEP_MS;
-    int tour_frame_index = 0;
+    cv::Rect m_motion_region;
+    bool m_motion_detected = false;
+    bool m_motion_detected_min_frames = false;
 
-    int motion_detected_frame_count = 0;
-    int motion_detected_frame_count_history = 0;
+    int m_tour_frame_count = TOUR_SLEEP_MS / DRAW_SLEEP_MS;
+    int m_tour_frame_index = 0;
 
-    std::vector<std::pair<int, double>> sorted_channels; // Stores channels with their areas
+    int m_motion_detected_frame_count = 0;
+    int m_motion_detected_frame_count_history = 0;
 
-    std::string bool_to_str(bool b);
+    std::vector<std::pair<int, double>> m_sorted_chs_area; // Stores channels with their areas
+
 };

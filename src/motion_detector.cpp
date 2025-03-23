@@ -29,9 +29,9 @@ MotionDetector::MotionDetector(const std::string& ip, const std::string& usernam
 
 void MotionDetector::do_tour_logic()
 {
-    tour_frame_index++;
-    if (tour_frame_index >= tour_frame_count) {
-        tour_frame_index = 0;
+    m_tour_frame_index++;
+    if (m_tour_frame_index >= m_tour_frame_count) {
+        m_tour_frame_index = 0;
         m_current_channel = m_current_channel % 6 + 1;
     }
 }
@@ -61,30 +61,30 @@ void MotionDetector::detect_largest_motion_set_channel(cv::Mat& frame0)
             double area = rect.width * rect.height;
             if (area > max_area) {
                 max_area = area;
-                motion_region = rect;
-                motion_detected = true;
+                m_motion_region = rect;
+                m_motion_detected = true;
             }
         }
     }
 
     // Update current channel based on motion position
-    if (motion_detected) {
-        motion_detected_frame_count++;
-        motion_detected_min_frames = motion_detected_frame_count >= MOTION_DETECT_MIN_FRAMES;
+    if (m_motion_detected) {
+        m_motion_detected_frame_count++;
+        m_motion_detected_min_frames = m_motion_detected_frame_count >= MOTION_DETECT_MIN_FRAMES;
 
-        if (motion_detected_min_frames) {
-            tour_frame_index = 0; // reset so it doesn't auto switch on new tour so we can show a little bit of motion
-            float rel_x = motion_region.x / static_cast<float>(CROP_WIDTH);
-            float rel_y = motion_region.y / static_cast<float>(CROP_HEIGHT);
+        if (m_motion_detected_min_frames) {
+            m_tour_frame_index = 0; // reset so it doesn't auto switch on new tour so we can show a little bit of motion
+            float rel_x = m_motion_region.x / static_cast<float>(CROP_WIDTH);
+            float rel_y = m_motion_region.y / static_cast<float>(CROP_HEIGHT);
             int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
             if (new_channel != m_current_channel) { m_current_channel = new_channel; }
         }
     }
     else {
-        if (motion_detected_frame_count != 0) {
-            motion_detected_frame_count_history = motion_detected_frame_count;
+        if (m_motion_detected_frame_count != 0) {
+            m_motion_detected_frame_count_history = m_motion_detected_frame_count;
         }
-        motion_detected_frame_count = 0;
+        m_motion_detected_frame_count = 0;
     }
 }
 
@@ -92,7 +92,7 @@ void MotionDetector::detect_all_motion_set_channels(cv::Mat& frame0)
 {
     std::vector<std::vector<cv::Point>> contours = find_contours(frame0);
 
-    sorted_channels = {
+    m_sorted_chs_area = {
         std::make_pair(1, 0.0),
         std::make_pair(2, 0.0),
         std::make_pair(3, 0.0),
@@ -110,13 +110,13 @@ void MotionDetector::detect_all_motion_set_channels(cv::Mat& frame0)
             int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
 
             if (new_channel >= 1 && new_channel <= 6) {
-                sorted_channels[new_channel - 1].second = area;
+                m_sorted_chs_area[new_channel - 1].second = area;
             }
         }
     }
 
     // higher channel first
-    std::sort(sorted_channels.begin(), sorted_channels.end(), [](auto& a, auto& b) { return a.second > b.second; });
+    std::sort(m_sorted_chs_area.begin(), m_sorted_chs_area.end(), [](auto& a, auto& b) { return a.second > b.second; });
 }
 
 void MotionDetector::draw_minimap(cv::Mat& frame0, cv::Mat& main_frame)
@@ -130,14 +130,14 @@ void MotionDetector::draw_minimap(cv::Mat& frame0, cv::Mat& main_frame)
                        cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
 
     // Draw motion rectangle on minimap
-    if (motion_detected) {
+    if (m_motion_detected) {
         float scale_x = static_cast<float>(MINIMAP_WIDTH) / CROP_WIDTH;
         float scale_y = static_cast<float>(MINIMAP_HEIGHT) / CROP_HEIGHT;
         cv::Rect scaled_rect(
-            static_cast<int>(motion_region.x * scale_x),
-            static_cast<int>(motion_region.y * scale_y),
-            static_cast<int>(motion_region.width * scale_x),
-            static_cast<int>(motion_region.height * scale_y));
+            static_cast<int>(m_motion_region.x * scale_x),
+            static_cast<int>(m_motion_region.y * scale_y),
+            static_cast<int>(m_motion_region.width * scale_x),
+            static_cast<int>(m_motion_region.height * scale_y));
         cv::rectangle(minimap_padded, scaled_rect, cv::Scalar(0, 255, 0), 1);
     }
 
@@ -175,8 +175,8 @@ cv::Mat MotionDetector::paint_main_mat_all(cv::Mat& main_mat)
 cv::Mat MotionDetector::paint_main_mat_some(cv::Mat& main_mat)
 {
     // Assume readers[i] are objects that can get frames
-    for (size_t i = 0; i < sorted_channels.size(); i++) {
-        cv::Mat mat = m_readers[sorted_channels[i].first]->get_latest_frame();
+    for (size_t i = 0; i < m_sorted_chs_area.size(); i++) {
+        cv::Mat mat = m_readers[m_sorted_chs_area[i].first]->get_latest_frame();
 
         if (mat.empty()) {
             continue; // If the frame is empty, skip painting
@@ -226,7 +226,7 @@ void MotionDetector::start()
             if (m_enableMotion && m_enableMotionAll) { detect_all_motion_set_channels(frame0); }
 
             // Get main display frame
-            if (m_enableFullscreen || m_enableTour || motion_detected_min_frames) {
+            if (m_enableFullscreen || m_enableTour || m_motion_detected_min_frames) {
                 main_frame_get = m_readers[m_current_channel]->get_latest_frame();
             }
             else if (m_enableMotionAll) {
@@ -259,7 +259,7 @@ void MotionDetector::start()
                 cv::putText(main_frame, "Minimap (o): " + bool_to_str(m_enableMinimap),
                             cv::Point(10, text_y_start + 2 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                             font_scale, text_color, font_thickness);
-                cv::putText(main_frame, "Motion Detected: " + std::to_string(motion_detected) + "/" + std::to_string(motion_detected_min_frames) + "/" + std::to_string(motion_detected_frame_count) + "/" + std::to_string(motion_detected_frame_count_history),
+                cv::putText(main_frame, "Motion Detected: " + std::to_string(m_motion_detected) + "/" + std::to_string(m_motion_detected_min_frames) + "/" + std::to_string(m_motion_detected_frame_count) + "/" + std::to_string(m_motion_detected_frame_count_history),
                             cv::Point(10, text_y_start + 3 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                             font_scale, text_color, font_thickness);
                 cv::putText(main_frame, "Channel (num): " + std::to_string(m_current_channel),
@@ -268,7 +268,7 @@ void MotionDetector::start()
                 cv::putText(main_frame, "Fullscreen (f): " + bool_to_str(m_enableFullscreen),
                             cv::Point(10, text_y_start + 5 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                             font_scale, text_color, font_thickness);
-                cv::putText(main_frame, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(tour_frame_index) + "/" + std::to_string(tour_frame_count),
+                cv::putText(main_frame, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(m_tour_frame_index) + "/" + std::to_string(m_tour_frame_count),
                             cv::Point(10, text_y_start + 6 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                             font_scale, text_color, font_thickness);
                 cv::putText(main_frame, "Reset (r)",
