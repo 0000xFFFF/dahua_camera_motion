@@ -31,6 +31,7 @@ class MotionDetector {
     cv::Mat paint_main_mat_sort();
     cv::Mat paint_main_mat_pyramid();
     std::string bool_to_str(bool b);
+    cv::Mat frame_get_non_empty(const int& i);
 
     // set from params
     int m_motion_area;
