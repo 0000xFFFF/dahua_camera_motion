@@ -45,6 +45,8 @@ class MotionDetector {
 
     // defaults
     int m_current_channel = 1;
+    int m_motion_ch = 1;
+    int m_motion_ch_frames = 0;
     bool m_enableInfo = ENABLE_INFO;
     bool m_enableMotion = ENABLE_MOTION;
     int m_motionDisplayMode = MOTION_DISPLAY_MODE;
@@ -60,8 +62,8 @@ class MotionDetector {
 
     cv::Rect m_motion_region;
     bool m_motion_detected = false;
+    bool m_motion_detected_min_frames = false;
 
-    int m_tour_frame_count = TOUR_SLEEP_MS / DRAW_SLEEP_MS;
     int m_tour_frame_index = 0;
 
     // Stores all channels with their motion areas (motion chs + non motion chs)

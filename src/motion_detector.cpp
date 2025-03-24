@@ -30,7 +30,7 @@ MotionDetector::MotionDetector(const std::string& ip, const std::string& usernam
 void MotionDetector::do_tour_logic()
 {
     m_tour_frame_index++;
-    if (m_tour_frame_index >= m_tour_frame_count) {
+    if (m_tour_frame_index >= TOUR_FRAME_COUNT) {
         m_tour_frame_index = 0;
         m_current_channel = m_current_channel % 6 + 1;
     }
@@ -75,7 +75,19 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         float rel_x = m_motion_region.x / static_cast<float>(CROP_WIDTH);
         float rel_y = m_motion_region.y / static_cast<float>(CROP_HEIGHT);
         int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
-        if (new_channel != m_current_channel) { m_current_channel = new_channel; }
+
+        if (m_motion_ch != new_channel) {
+            m_motion_ch = new_channel;
+        }
+
+        m_motion_ch_frames++;
+        m_motion_detected_min_frames = m_motion_ch_frames >= MOTION_DETECT_MIN_FRAMES;
+        if (m_motion_detected_min_frames && m_current_channel != new_channel) {
+            m_current_channel = new_channel;
+        }
+    }
+    else {
+        m_motion_ch_frames = 0;
     }
 }
 
@@ -154,30 +166,31 @@ void MotionDetector::draw_info()
     const cv::Scalar text_color(255, 255, 255);
     const double font_scale = 0.8;
     const int font_thickness = 2;
+    int i = 0;
 
     cv::putText(m_main_c1r1, "Info (i): " + bool_to_str(m_enableInfo),
-                cv::Point(10, text_y_start), cv::FONT_HERSHEY_SIMPLEX,
+                cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_c1r1, "Motion (m/n/l/s/d): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
-                cv::Point(10, text_y_start + text_y_step), cv::FONT_HERSHEY_SIMPLEX,
+                cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_c1r1, "Minimap (o/0): " + bool_to_str(m_enableMinimap) + "/" + bool_to_str(m_enableMinimapFullscreen),
-                cv::Point(10, text_y_start + 2 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
+                cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_c1r1, "Motion Detected: " + std::to_string(m_motion_detected),
-                cv::Point(10, text_y_start + 3 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
+    cv::putText(m_main_c1r1, "Motion Detected: " + std::to_string(m_motion_detected) + " " + std::to_string(m_motion_detected_min_frames),
+                cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_c1r1, "Channel (num): " + std::to_string(m_current_channel),
-                cv::Point(10, text_y_start + 4 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
+    cv::putText(m_main_c1r1, "Channel (num): " + std::to_string(m_current_channel) + " <- " + std::to_string(m_motion_ch) + " " + std::to_string(m_motion_ch_frames),
+                cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_c1r1, "Fullscreen (f): " + bool_to_str(m_enableFullscreenChannel),
-                cv::Point(10, text_y_start + 5 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
+                cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_c1r1, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(m_tour_frame_index) + "/" + std::to_string(m_tour_frame_count),
-                cv::Point(10, text_y_start + 6 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
+    cv::putText(m_main_c1r1, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(m_tour_frame_index) + "/" + std::to_string(TOUR_FRAME_COUNT),
+                cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_c1r1, "Reset (r)",
-                cv::Point(10, text_y_start + 7 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
+                cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
 }
 
@@ -326,7 +339,9 @@ void MotionDetector::start()
             if (m_enableMinimapFullscreen) {
                 main_frame_get = m_frame0_drawed;
             }
-            else if (m_enableFullscreenChannel || m_enableTour || m_motion_detected) {
+            else if (m_enableFullscreenChannel ||
+                    m_enableTour ||
+                    (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_LARGEST_ONLY && m_motion_detected_min_frames)) {
                 main_frame_get = m_readers[m_current_channel]->get_latest_frame();
             }
             else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_ALL) {
