@@ -2,7 +2,6 @@
 #include <csignal>
 #include <cstdio>
 #include <cstring>
-#include <fstream>
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <sched.h>
