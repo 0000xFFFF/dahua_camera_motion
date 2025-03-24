@@ -28,9 +28,9 @@ class MotionDetector {
 
     void draw_minimap();
     void draw_info();
-    void paint_main_mat_all();
-    void paint_main_mat_sort();
-    void paint_main_mat_split();
+    cv::Mat paint_main_mat_all();
+    cv::Mat paint_main_mat_sort();
+    cv::Mat paint_main_mat_pyramid();
     std::string bool_to_str(bool b);
 
     // set from params
@@ -55,8 +55,8 @@ class MotionDetector {
 
     cv::Mat m_frame0 = cv::Mat::zeros(W_0, H_0, CV_8UC3);
     cv::Mat m_frame0_drawed = cv::Mat::zeros(W_0, H_0, CV_8UC3);
-    cv::Mat m_main_mat = cv::Mat(cv::Size(W_HD * 3, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
-    cv::Mat m_main_frame = cv::Mat::zeros(W_HD, H_HD, CV_8UC3);
+    cv::Mat m_main_c3r2 = cv::Mat(cv::Size(W_HD * 3, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
+    cv::Mat m_main_c1r1 = cv::Mat::zeros(W_HD, H_HD, CV_8UC3);
 
 
     cv::Rect m_motion_region;

@@ -149,7 +149,7 @@ void MotionDetector::draw_minimap()
 
     // Place minimap on main display
     cv::Point minimap_pos = cv::Point(10, 10);
-    minimap_padded.copyTo(m_main_frame(cv::Rect(minimap_pos.x, minimap_pos.y, minimap_padded.cols, minimap_padded.rows)));
+    minimap_padded.copyTo(m_main_c1r1(cv::Rect(minimap_pos.x, minimap_pos.y, minimap_padded.cols, minimap_padded.rows)));
 }
 
 void MotionDetector::draw_info()
@@ -160,33 +160,33 @@ void MotionDetector::draw_info()
     const double font_scale = 0.8;
     const int font_thickness = 2;
 
-    cv::putText(m_main_frame, "Info (i): " + bool_to_str(m_enableInfo),
+    cv::putText(m_main_c1r1, "Info (i): " + bool_to_str(m_enableInfo),
                 cv::Point(10, text_y_start), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_frame, "Motion (m/n/l/s/d): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
+    cv::putText(m_main_c1r1, "Motion (m/n/l/s/d): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
                 cv::Point(10, text_y_start + text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_frame, "Minimap (o): " + bool_to_str(m_enableMinimap),
+    cv::putText(m_main_c1r1, "Minimap (o): " + bool_to_str(m_enableMinimap),
                 cv::Point(10, text_y_start + 2 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_frame, "Motion Detected: " + std::to_string(m_motion_detected),
+    cv::putText(m_main_c1r1, "Motion Detected: " + std::to_string(m_motion_detected),
                 cv::Point(10, text_y_start + 3 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_frame, "Channel (num): " + std::to_string(m_current_channel),
+    cv::putText(m_main_c1r1, "Channel (num): " + std::to_string(m_current_channel),
                 cv::Point(10, text_y_start + 4 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_frame, "Fullscreen (f): " + bool_to_str(m_enableFullscreenChannel),
+    cv::putText(m_main_c1r1, "Fullscreen (f): " + bool_to_str(m_enableFullscreenChannel),
                 cv::Point(10, text_y_start + 5 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_frame, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(m_tour_frame_index) + "/" + std::to_string(m_tour_frame_count),
+    cv::putText(m_main_c1r1, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(m_tour_frame_index) + "/" + std::to_string(m_tour_frame_count),
                 cv::Point(10, text_y_start + 6 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_frame, "Reset (r)",
+    cv::putText(m_main_c1r1, "Reset (r)",
                 cv::Point(10, text_y_start + 7 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
 }
 
-void MotionDetector::paint_main_mat_all()
+cv::Mat MotionDetector::paint_main_mat_all()
 {
     // Assume readers[i] are objects that can get frames
     for (int i = 0; i < 6; i++) {
@@ -204,11 +204,13 @@ void MotionDetector::paint_main_mat_all()
         cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
 
         // Copy the frame into main_mat at the correct position
-        mat.copyTo(m_main_mat(roi));
+        mat.copyTo(m_main_c3r2(roi));
     }
+
+    return m_main_c3r2;
 }
 
-void MotionDetector::paint_main_mat_sort()
+cv::Mat MotionDetector::paint_main_mat_sort()
 {
     // Assume readers[i] are objects that can get frames
     for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
@@ -226,30 +228,75 @@ void MotionDetector::paint_main_mat_sort()
         cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
 
         // Copy the frame into main_mat at the correct position
-        mat.copyTo(m_main_mat(roi));
+        mat.copyTo(m_main_c3r2(roi));
     }
+
+    return m_main_c3r2;
 }
 
-void MotionDetector::paint_main_mat_split()
+cv::Mat MotionDetector::paint_main_mat_pyramid()
 {
-    // Assume readers[i] are objects that can get frames
-    for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
-        cv::Mat mat = m_readers[m_sorted_chs_area_all[i].first]->get_latest_frame();
-
-        if (mat.empty()) {
-            continue; // If the frame is empty, skip painting
+    switch (m_sorted_chs_area_motion.size()) {
+    case 1:
+        {
+            cv::Mat mat = m_readers[m_sorted_chs_area_motion[0].first]->get_latest_frame();
+            if (mat.empty()) { return cv::Mat(); }
+            return mat;
+            break;
         }
 
-        // Compute position in the 3x2 grid
-        int row = i / 3; // 0 for first row, 1 for second row
-        int col = i % 3; // Column position (0,1,2)
+    case 2:
+        {
+            cv::Mat output_c1r2 = cv::Mat(cv::Size(W_HD * 1, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
+            cv::Mat t = m_readers[m_sorted_chs_area_motion[0].first]->get_latest_frame();
+            if (!t.empty()) { t.copyTo(output_c1r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD, H_HD))); }
+            cv::Mat b = m_readers[m_sorted_chs_area_motion[1].first]->get_latest_frame();
+            if (!b.empty()) { b.copyTo(output_c1r2(cv::Rect(0 * W_HD, 1 * H_HD, W_HD, H_HD))); }
+            return output_c1r2;
+            break;
+        }
 
-        // Define the region of interest (ROI) in main_mat
-        cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+    case 3:
+        {
 
-        // Copy the frame into main_mat at the correct position
-        mat.copyTo(m_main_mat(roi));
+            break;
+        }
+    case 4:
+        {
+            cv::Mat output_c2r2 = cv::Mat(cv::Size(W_HD * 2, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
+            cv::Mat tr = m_readers[m_sorted_chs_area_motion[0].first]->get_latest_frame();
+            if (!tr.empty()) { tr.copyTo(output_c2r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD, H_HD))); }
+            cv::Mat tl = m_readers[m_sorted_chs_area_motion[1].first]->get_latest_frame();
+            if (!tl.empty()) { tl.copyTo(output_c2r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD, H_HD))); }
+            cv::Mat br = m_readers[m_sorted_chs_area_motion[2].first]->get_latest_frame();
+            if (!br.empty()) { br.copyTo(output_c2r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD, H_HD))); }
+            cv::Mat bl = m_readers[m_sorted_chs_area_motion[3].first]->get_latest_frame();
+            if (!bl.empty()) { bl.copyTo(output_c2r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD, H_HD))); }
+            return output_c2r2;
+            break;
+        }
+    case 5:
+        {
+
+            break;
+        }
+    case 6:
+        {
+            for (size_t i = 0; i < 6; i++) {
+                cv::Mat mat = m_readers[m_sorted_chs_area_motion[i].first]->get_latest_frame();
+                if (mat.empty()) { continue; }
+                int row = i / 3;
+                int col = i % 3;
+                cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+                mat.copyTo(m_main_c3r2(roi));
+            }
+
+            return m_main_c3r2;
+            break;
+        }
     }
+
+    return cv::Mat();
 }
 
 void MotionDetector::start()
@@ -286,24 +333,21 @@ void MotionDetector::start()
                 main_frame_get = m_readers[m_current_channel]->get_latest_frame();
             }
             else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_ALL) {
-                paint_main_mat_sort();
-                main_frame_get = m_main_mat;
+                main_frame_get = paint_main_mat_sort();
             }
             else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION) {
-                paint_main_mat_split();
-                main_frame_get = m_main_mat;
+                main_frame_get = paint_main_mat_pyramid();
             }
             else {
-                paint_main_mat_all();
-                main_frame_get = m_main_mat;
+                main_frame_get = paint_main_mat_all();
             }
 
-            if (!main_frame_get.empty()) { cv::resize(main_frame_get, m_main_frame, cv::Size(m_display_width, m_display_height)); }
+            if (!main_frame_get.empty()) { cv::resize(main_frame_get, m_main_c1r1, cv::Size(m_display_width, m_display_height)); }
 
             if (m_enableMinimap) { draw_minimap(); }
             if (m_enableInfo) { draw_info(); }
 
-            cv::imshow("Motion", m_main_frame);
+            cv::imshow("Motion", m_main_c1r1);
 
             // clang-format off
             char key = cv::waitKey(1);
