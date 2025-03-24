@@ -50,6 +50,7 @@ class MotionDetector {
     bool m_enableMotion = ENABLE_MOTION;
     int m_motionDisplayMode = MOTION_DISPLAY_MODE;
     bool m_enableMinimap = ENABLE_MINIMAP;
+    bool m_enableMinimapFullscreen = ENABLE_MINIMAP_FULLSCREEN;
     bool m_enableFullscreenChannel = ENABLE_FULLSCREEN_CHANNEL;
     bool m_enableTour = ENABLE_TOUR;
 

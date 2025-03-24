@@ -51,8 +51,6 @@ std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
 
 void MotionDetector::detect_largest_motion_area_set_channel()
 {
-    m_motion_detected = false;
-
     std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
 
     // Find largest motion area
@@ -72,6 +70,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
 
     // Update current channel based on motion position
     if (m_motion_detected) {
+        cv::rectangle(m_frame0_drawed, m_motion_region, cv::Scalar(0, 0, 255), 2);
         m_tour_frame_index = 0; // reset so it doesn't auto switch on new tour so we can show a little bit of motion
         float rel_x = m_motion_region.x / static_cast<float>(CROP_WIDTH);
         float rel_y = m_motion_region.y / static_cast<float>(CROP_HEIGHT);
@@ -166,7 +165,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_c1r1, "Motion (m/n/l/s/d): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
                 cv::Point(10, text_y_start + text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_c1r1, "Minimap (o): " + bool_to_str(m_enableMinimap),
+    cv::putText(m_main_c1r1, "Minimap (o/0): " + bool_to_str(m_enableMinimap) + "/" + bool_to_str(m_enableMinimapFullscreen),
                 cv::Point(10, text_y_start + 2 * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_c1r1, "Motion Detected: " + std::to_string(m_motion_detected),
@@ -322,11 +321,13 @@ void MotionDetector::start()
             cv::Mat main_frame_get = cv::Mat();
 
             if (m_enableTour) { do_tour_logic(); }
+
+            m_motion_detected = false;
             if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_LARGEST_ONLY) { detect_largest_motion_area_set_channel(); }
             if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_ALL) { sort_channels_by_motion_area_all_channels(); }
             if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION) { sort_channels_by_motion_area_motion_channels(); }
 
-            if (m_current_channel == 0) {
+            if (m_enableMinimapFullscreen) {
                 main_frame_get = m_frame0_drawed;
             }
             else if (m_enableFullscreenChannel || m_enableTour || m_motion_detected) {
@@ -371,7 +372,10 @@ void MotionDetector::start()
                 m_enableFullscreenChannel = ENABLE_FULLSCREEN_CHANNEL;
                 m_enableTour = ENABLE_TOUR;
             }
-            else if (key >= '0' && key <= '6') {
+            else if (key == '0') {
+                m_enableMinimapFullscreen = !m_enableMinimapFullscreen;
+            }
+            else if (key >= '1' && key <= '6') {
                 m_current_channel = key - '0';
                 m_enableFullscreenChannel = true;
             }
