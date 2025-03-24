@@ -12,9 +12,9 @@
 #include "utils.h"
 
 #ifdef DEBUG
+#include <fstream>
 
 class CpuUsageMonitor {
-
 
   public:
     CpuUsageMonitor()
@@ -22,13 +22,14 @@ class CpuUsageMonitor {
         m_thread = std::thread([this]() { cpu_usage_monitor(); });
     }
 
-    ~CpuUsageMonitor() {
+    ~CpuUsageMonitor()
+    {
         m_running = false;
         m_thread.join();
     }
 
-
   private:
+    double m_max_cpu;
     std::thread m_thread;
     std::atomic<bool> m_running{true};
 
@@ -90,11 +91,14 @@ class CpuUsageMonitor {
 
             // Calculate and print CPU usage percentage
             double cpu_usage = calculate_cpu_usage(prev_stats, curr_stats);
+            if (cpu_usage > m_max_cpu) { m_max_cpu = cpu_usage; }
             std::cout << "CPU Usage: " << cpu_usage << "%" << std::endl;
 
             // Update previous stats
             prev_stats = curr_stats;
         }
+
+        std::cout << "Max CPU Usage: " << m_max_cpu << "%" << std::endl;
     }
 };
 #endif
@@ -107,7 +111,6 @@ int main(int argc, char* argv[])
         cv::destroyAllWindows();
         std::exit(0);
     });
-
 
 #ifdef DEBUG
     CpuUsageMonitor monitor;

@@ -24,8 +24,8 @@
 #define ENABLE_INFO 1
 #undef ENABLE_MINIMAP
 #define ENABLE_MINIMAP 1
-#undef DRAW_SLEEP_MS
-#define DRAW_SLEEP_MS 10
+//#undef DRAW_SLEEP_MS
+//#define DRAW_SLEEP_MS 10
 #endif
 
 #ifdef CPU_LOW_SLOW
