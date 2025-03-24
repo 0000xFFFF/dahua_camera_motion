@@ -75,5 +75,7 @@ class MotionDetector {
         std::make_pair(5, 0.0),
         std::make_pair(6, 0.0)};
 
-    std::vector<std::pair<int, double>> m_sorted_chs_area_motion; // Stores only motion channels with their areas
+    // Stores only motion channels with their areas
+    std::vector<std::pair<int, double>> m_sorted_chs_area_motion;
+
 };
