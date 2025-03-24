@@ -83,13 +83,9 @@ void MotionDetector::sort_channels_by_motion_area_all_channels()
 {
     std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
 
-    m_sorted_chs_area_all = {
-        std::make_pair(1, 0.0),
-        std::make_pair(2, 0.0),
-        std::make_pair(3, 0.0),
-        std::make_pair(4, 0.0),
-        std::make_pair(5, 0.0),
-        std::make_pair(6, 0.0)};
+    for (int i = 0; i < 6; i++) {
+        m_sorted_chs_area_all[i].second = 0;
+    }
 
     for (const auto& contour : contours) {
         if (cv::contourArea(contour) >= m_motion_area) {
@@ -134,7 +130,7 @@ void MotionDetector::sort_channels_by_motion_area_motion_channels()
     }
 
     // higher channel first
-    std::sort(m_sorted_chs_area_all.begin(), m_sorted_chs_area_all.end(), [](auto& a, auto& b) { return a.second > b.second; });
+    std::sort(m_sorted_chs_area_motion.begin(), m_sorted_chs_area_motion.end(), [](auto& a, auto& b) { return a.second > b.second; });
 }
 
 void MotionDetector::draw_minimap()

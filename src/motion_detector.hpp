@@ -19,7 +19,6 @@ class MotionDetector {
     void stop();
 
   private:
-
     void do_tour_logic();
     std::vector<std::vector<cv::Point>> find_contours_frame0();
     void detect_largest_motion_area_set_channel();
@@ -59,14 +58,20 @@ class MotionDetector {
     cv::Mat m_main_c3r2 = cv::Mat(cv::Size(W_HD * 3, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
     cv::Mat m_main_c1r1 = cv::Mat::zeros(W_HD, H_HD, CV_8UC3);
 
-
     cv::Rect m_motion_region;
     bool m_motion_detected = false;
 
     int m_tour_frame_count = TOUR_SLEEP_MS / DRAW_SLEEP_MS;
     int m_tour_frame_index = 0;
 
-    std::vector<std::pair<int, double>> m_sorted_chs_area_all; // Stores all channels with their motion areas (motion chs + non motion chs)
-    std::vector<std::pair<int, double>> m_sorted_chs_area_motion; // Stores only motion channels with their areas
+    // Stores all channels with their motion areas (motion chs + non motion chs)
+    std::vector<std::pair<int, double>> m_sorted_chs_area_all = {
+        std::make_pair(1, 0.0),
+        std::make_pair(2, 0.0),
+        std::make_pair(3, 0.0),
+        std::make_pair(4, 0.0),
+        std::make_pair(5, 0.0),
+        std::make_pair(6, 0.0)};
 
+    std::vector<std::pair<int, double>> m_sorted_chs_area_motion; // Stores only motion channels with their areas
 };
