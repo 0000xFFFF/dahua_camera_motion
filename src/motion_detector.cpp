@@ -7,6 +7,7 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <sys/types.h>
+#include <tuple>
 
 #define MINIMAP_WIDTH 300
 #define MINIMAP_HEIGHT 160
@@ -232,7 +233,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_c1r1, "Info (i): " + bool_to_str(m_enableInfo),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_c1r1, "Motion (m/n/l/s/d/k): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
+    cv::putText(m_main_c1r1, "Motion (m/n/l/s/d/k/t): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_c1r1, "Minimap (o/0): " + bool_to_str(m_enableMinimap) + "/" + bool_to_str(m_enableMinimapFullscreen),
@@ -463,6 +464,21 @@ cv::Mat MotionDetector::paint_main_mat_king()
     return output_c3r3;
 }
 
+
+cv::Mat MotionDetector::paint_main_mat_top() {
+
+    m_sorted_chs_area_all.clear();
+    m_sorted_chs_area_all.emplace_back(std::make_tuple(m_current_channel, 0.0, 0));
+
+    for (size_t i = 0; i < 6; i++) {
+        int x = i+1;
+        if ((int)x == m_current_channel) continue;
+        m_sorted_chs_area_all.emplace_back(std::make_tuple(x, 0.0, 0));
+    }
+
+    return paint_main_mat_king();
+}
+
 void MotionDetector::start()
 {
     m_running = true;
@@ -488,25 +504,28 @@ void MotionDetector::start()
             if (m_enableTour) { do_tour_logic(); }
 
             m_motion_detected = false;
-            if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_LARGEST_ONLY) { detect_largest_motion_area_set_channel(); }
-            if (m_enableMotion && (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_ALL || m_motionDisplayMode == MOTION_DISPLAY_MODE_KING)) { sort_channels_by_motion_area_all_channels(); }
-            if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION) { sort_channels_by_motion_area_motion_channels(); }
+            if (m_enableMotion && (m_motionDisplayMode == MOTION_DISPLAY_MODE_LARGEST || m_motionDisplayMode == MOTION_DISPLAY_MODE_TOP)) { detect_largest_motion_area_set_channel(); }
+            if (m_enableMotion && (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT || m_motionDisplayMode == MOTION_DISPLAY_MODE_KING)) { sort_channels_by_motion_area_all_channels(); }
+            if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_MULTI) { sort_channels_by_motion_area_motion_channels(); }
 
             if (m_enableMinimapFullscreen) {
                 main_frame_get = m_frame0_drawed;
             }
-            else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_ALL) {
+            else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT) {
                 main_frame_get = paint_main_mat_sort();
             }
-            else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION) {
+            else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_MULTI) {
                 main_frame_get = paint_main_mat_multi();
             }
             else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_KING) {
                 main_frame_get = paint_main_mat_king();
             }
+            else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_TOP) {
+                main_frame_get = paint_main_mat_top();
+            }
             else if (m_enableFullscreenChannel ||
                      m_enableTour ||
-                     (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_LARGEST_ONLY && m_motion_detected_min_frames)) {
+                     (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_LARGEST && m_motion_detected_min_frames)) {
                 main_frame_get = m_readers[m_current_channel]->get_latest_frame();
             }
             else {
@@ -525,10 +544,11 @@ void MotionDetector::start()
             if (key == 'q') { stop(); break; }
             else if (key == 'm') { m_enableMotion = !m_enableMotion; }
             else if (key == 'n') { m_motionDisplayMode = MOTION_DISPLAY_MODE_NONE; }
-            else if (key == 'l') { m_motionDisplayMode = MOTION_DISPLAY_MODE_LARGEST_ONLY; }
-            else if (key == 's') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT_BY_AREA_ALL; }
-            else if (key == 'd') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION; }
+            else if (key == 'l') { m_motionDisplayMode = MOTION_DISPLAY_MODE_LARGEST; }
+            else if (key == 's') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT; }
+            else if (key == 'd') { m_motionDisplayMode = MOTION_DISPLAY_MODE_MULTI; }
             else if (key == 'k') { m_motionDisplayMode = MOTION_DISPLAY_MODE_KING; }
+            else if (key == 't') { m_motionDisplayMode = MOTION_DISPLAY_MODE_TOP; }
             else if (key == 'i') { m_enableInfo = !m_enableInfo; }
             else if (key == 'o') { m_enableMinimap = !m_enableMinimap; }
             else if (key == 'f') { m_enableFullscreenChannel = !m_enableFullscreenChannel; }

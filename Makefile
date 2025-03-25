@@ -29,5 +29,8 @@ multi:
 king:
 	$(GCC) $(RELEASE_ARGS) -D KING $(LIBS) $(FILES) -o $(OUTPUT)
 
+top:
+	$(GCC) $(RELEASE_ARGS) -D TOP $(LIBS) $(FILES) -o $(OUTPUT)
+
 release:
 	$(GCC) $(RELEASE_ARGS) $(LIBS) $(FILES) -o $(OUTPUT)
