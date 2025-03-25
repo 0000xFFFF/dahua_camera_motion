@@ -100,7 +100,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     m_motion_detected_min_frames = m_motion_ch_frames >= MOTION_DETECT_MIN_FRAMES;
 }
 
-std::unordered_map<int, int> motion_frame_count;  // Keeps track across frames
+std::unordered_map<int, int> motion_frame_count; // Keeps track across frames
 
 void MotionDetector::sort_channels_by_motion_area_all_channels()
 {
@@ -163,16 +163,17 @@ void MotionDetector::sort_channels_by_motion_area_all_channels()
                   return areaA > areaB; // Default sorting by motion area
               });
 
-    std::cout << "===" << std::endl;
-    for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
-        std::cout << std::get<0>(m_sorted_chs_area_all[i])
-                  << " "
-                  << std::get<1>(m_sorted_chs_area_all[i])
-                  << " "
-                  << std::get<2>(m_sorted_chs_area_all[i])
-                  << std::endl;
-    }
-    std::cout << "===" << std::endl;
+    D(
+        std::cout << "===" << std::endl;
+        for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
+            std::cout << std::get<0>(m_sorted_chs_area_all[i])
+                      << " "
+                      << std::get<1>(m_sorted_chs_area_all[i])
+                      << " "
+                      << std::get<2>(m_sorted_chs_area_all[i])
+                      << std::endl;
+        } std::cout
+        << "===" << std::endl;);
 }
 
 void MotionDetector::sort_channels_by_motion_area_motion_channels()
@@ -465,14 +466,14 @@ cv::Mat MotionDetector::paint_main_mat_king()
     return output_c3r3;
 }
 
-
-cv::Mat MotionDetector::paint_main_mat_top() {
+cv::Mat MotionDetector::paint_main_mat_top()
+{
 
     m_sorted_chs_area_all.clear();
     m_sorted_chs_area_all.emplace_back(std::make_tuple(m_current_channel, 0.0, 0));
 
     for (size_t i = 0; i < 6; i++) {
-        int x = i+1;
+        int x = i + 1;
         if ((int)x == m_current_channel) continue;
         m_sorted_chs_area_all.emplace_back(std::make_tuple(x, 0.0, 0));
     }
