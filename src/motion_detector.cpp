@@ -55,6 +55,16 @@ std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
     return contours;
 }
 
+void MotionDetector::move_to_front(int value)
+{
+    // Find the element
+    auto it = std::find(m_sorted_chs_area_all.begin(), m_sorted_chs_area_all.end(), value);
+    if (it != m_sorted_chs_area_all.end()) {
+        m_sorted_chs_area_all.erase(it);         // Remove from current position (O(1) with iterator)
+        m_sorted_chs_area_all.push_front(value); // Insert at the beginning (O(1))
+    }
+}
+
 void MotionDetector::detect_largest_motion_area_set_channel()
 {
     std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
@@ -91,6 +101,11 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         m_motion_ch_frames++;
         if (m_motion_detected_min_frames && m_current_channel != new_channel) {
             m_current_channel = new_channel;
+            move_to_front(m_current_channel);
+            std::cout << "===" << std::endl;
+            for (int i : m_sorted_chs_area_all)
+                std::cout << i << std::endl;
+            std::cout << "===" << std::endl;
         }
     }
     else {
@@ -98,82 +113,6 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     }
 
     m_motion_detected_min_frames = m_motion_ch_frames >= MOTION_DETECT_MIN_FRAMES;
-}
-
-std::unordered_map<int, int> motion_frame_count; // Keeps track across frames
-
-void MotionDetector::sort_channels_by_motion_area_all_channels()
-{
-    std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
-
-    double max_areas[6] = {0.0};
-
-    for (const auto& contour : contours) {
-        if (cv::contourArea(contour) >= m_motion_area) {
-            cv::Rect rect = cv::boundingRect(contour);
-            cv::rectangle(m_frame0_drawed, rect, cv::Scalar(0, 255, 0), 1);
-            double area = rect.width * rect.height;
-
-            float rel_x = rect.x / static_cast<float>(CROP_WIDTH);
-            float rel_y = rect.y / static_cast<float>(CROP_HEIGHT);
-            int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
-
-            assert(new_channel >= 1 && new_channel <= 6);
-
-            if (area > max_areas[new_channel - 1]) {
-                max_areas[new_channel - 1] = area;
-            }
-        }
-    }
-
-    // Update areas and maintain frame count
-    for (int i = 0; i < 6; i++) {
-        int ch = std::get<0>(m_sorted_chs_area_all[i]);
-        double& area = std::get<1>(m_sorted_chs_area_all[i]);
-        int& frame_count = std::get<2>(m_sorted_chs_area_all[i]);
-
-        if (max_areas[ch - 1] > 0) {
-            if (max_areas[ch - 1] > area) {
-                motion_frame_count[ch]++; // Increase only if it's still dominant
-            }
-            else {
-                motion_frame_count[ch] = std::max(motion_frame_count[ch] - 1, 0);
-            }
-        }
-        else {
-            motion_frame_count[ch] = 0; // Reset if no motion
-        }
-
-        area = max_areas[ch - 1];
-        frame_count = motion_frame_count[ch];
-    }
-
-    // higher channel first
-    // sort: only swap if frame count >= MIN
-#define MDMF MOTION_DETECT_MIN_FRAMES
-    std::sort(m_sorted_chs_area_all.begin(), m_sorted_chs_area_all.end(),
-              [](const auto& a, const auto& b) {
-                  int framesA = std::get<2>(a);
-                  int framesB = std::get<2>(b);
-                  double areaA = std::get<1>(a);
-                  double areaB = std::get<1>(b);
-
-                  if (framesA >= MDMF && framesB < MDMF) return true;
-                  if (framesA < MDMF && framesB >= MDMF) return false;
-                  return areaA > areaB; // Default sorting by motion area
-              });
-
-    D(
-        std::cout << "===" << std::endl;
-        for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
-            std::cout << std::get<0>(m_sorted_chs_area_all[i])
-                      << " "
-                      << std::get<1>(m_sorted_chs_area_all[i])
-                      << " "
-                      << std::get<2>(m_sorted_chs_area_all[i])
-                      << std::endl;
-        } std::cout
-        << "===" << std::endl;);
 }
 
 void MotionDetector::sort_channels_by_motion_area_motion_channels()
@@ -235,7 +174,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_c1r1, "Info (i): " + bool_to_str(m_enableInfo),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_c1r1, "Motion (m/n/z/x/c/v/b): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
+    cv::putText(m_main_c1r1, "Motion (m/n/l/s/d/k/x): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_c1r1, "Minimap (o/0): " + bool_to_str(m_enableMinimap) + "/" + bool_to_str(m_enableMinimapFullscreen),
@@ -285,8 +224,9 @@ cv::Mat MotionDetector::paint_main_mat_all()
 cv::Mat MotionDetector::paint_main_mat_sort()
 {
     // Assume readers[i] are objects that can get frames
-    for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
-        cv::Mat mat = m_readers[std::get<0>(m_sorted_chs_area_all[i])]->get_latest_frame();
+    for (int x : m_sorted_chs_area_all) {
+        int i = x - 1;
+        cv::Mat mat = m_readers[i + 1]->get_latest_frame();
 
         if (mat.empty()) {
             continue; // If the frame is empty, skip painting
@@ -403,15 +343,14 @@ cv::Mat MotionDetector::paint_main_mat_king()
 {
     cv::Mat output_c3r3 = cv::Mat(cv::Size(W_HD * 3, H_HD * 3), CV_8UC3, cv::Scalar(0, 0, 0));
 
-    // Assume readers[i] are objects that can get frames
-    for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
-        cv::Mat mat = m_readers[std::get<0>(m_sorted_chs_area_all[i])]->get_latest_frame();
-
+    int x = 1;
+    for (int i : m_sorted_chs_area_all) {
+        cv::Mat mat = m_readers[i]->get_latest_frame();
         if (mat.empty()) { continue; }
 
-        switch (i) {
+        switch (x++) {
 
-        case 0:
+        case 1:
             {
                 cv::resize(mat, mat, cv::Size(W_HD * 2, H_HD * 2));
                 int row = 0;
@@ -420,7 +359,7 @@ cv::Mat MotionDetector::paint_main_mat_king()
                 mat.copyTo(output_c3r3(roi));
                 break;
             }
-        case 1:
+        case 2:
             {
                 int row = 0;
                 int col = 2;
@@ -428,7 +367,7 @@ cv::Mat MotionDetector::paint_main_mat_king()
                 mat.copyTo(output_c3r3(roi));
                 break;
             }
-        case 2:
+        case 3:
             {
                 int row = 1;
                 int col = 2;
@@ -436,7 +375,7 @@ cv::Mat MotionDetector::paint_main_mat_king()
                 mat.copyTo(output_c3r3(roi));
                 break;
             }
-        case 3:
+        case 4:
             {
                 int row = 2;
                 int col = 0;
@@ -444,7 +383,7 @@ cv::Mat MotionDetector::paint_main_mat_king()
                 mat.copyTo(output_c3r3(roi));
                 break;
             }
-        case 4:
+        case 5:
             {
                 int row = 2;
                 int col = 1;
@@ -452,7 +391,7 @@ cv::Mat MotionDetector::paint_main_mat_king()
                 mat.copyTo(output_c3r3(roi));
                 break;
             }
-        case 5:
+        case 6:
             {
                 int row = 2;
                 int col = 2;
@@ -470,12 +409,12 @@ cv::Mat MotionDetector::paint_main_mat_top()
 {
 
     m_sorted_chs_area_all.clear();
-    m_sorted_chs_area_all.emplace_back(std::make_tuple(m_current_channel, 0.0, 0));
+    m_sorted_chs_area_all.emplace_back(m_current_channel);
 
     for (size_t i = 0; i < 6; i++) {
         int x = i + 1;
         if ((int)x == m_current_channel) continue;
-        m_sorted_chs_area_all.emplace_back(std::make_tuple(x, 0.0, 0));
+        m_sorted_chs_area_all.emplace_back(x);
     }
 
     return paint_main_mat_king();
@@ -506,8 +445,16 @@ void MotionDetector::start()
             if (m_enableTour) { do_tour_logic(); }
 
             m_motion_detected = false;
-            if (m_enableMotion && (m_motionDisplayMode == MOTION_DISPLAY_MODE_LARGEST || m_motionDisplayMode == MOTION_DISPLAY_MODE_TOP)) { detect_largest_motion_area_set_channel(); }
-            if (m_enableMotion && (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT || m_motionDisplayMode == MOTION_DISPLAY_MODE_KING)) { sort_channels_by_motion_area_all_channels(); }
+            if (m_enableMotion) {
+                switch (m_motionDisplayMode) {
+                case MOTION_DISPLAY_MODE_LARGEST:
+                case MOTION_DISPLAY_MODE_SORT:
+                case MOTION_DISPLAY_MODE_KING:
+                case MOTION_DISPLAY_MODE_TOP:
+                    detect_largest_motion_area_set_channel();
+                    break;
+                }
+            }
             if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_MULTI) { sort_channels_by_motion_area_motion_channels(); }
 
             if (m_enableMinimapFullscreen) {
@@ -546,11 +493,11 @@ void MotionDetector::start()
             if (key == 'q') { stop(); break; }
             else if (key == 'm') { m_enableMotion = !m_enableMotion; }
             else if (key == 'n') { m_motionDisplayMode = MOTION_DISPLAY_MODE_NONE; }
-            else if (key == 'z') { m_motionDisplayMode = MOTION_DISPLAY_MODE_LARGEST; }
-            else if (key == 'x') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT; }
-            else if (key == 'c') { m_motionDisplayMode = MOTION_DISPLAY_MODE_MULTI; }
-            else if (key == 'v') { m_motionDisplayMode = MOTION_DISPLAY_MODE_KING; }
-            else if (key == 'b') { m_motionDisplayMode = MOTION_DISPLAY_MODE_TOP; }
+            else if (key == 'l') { m_motionDisplayMode = MOTION_DISPLAY_MODE_LARGEST; }
+            else if (key == 's') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT; }
+            else if (key == 'd') { m_motionDisplayMode = MOTION_DISPLAY_MODE_MULTI; }
+            else if (key == 'k') { m_motionDisplayMode = MOTION_DISPLAY_MODE_KING; }
+            else if (key == 'x') { m_motionDisplayMode = MOTION_DISPLAY_MODE_TOP; }
             else if (key == 'i') { m_enableInfo = !m_enableInfo; }
             else if (key == 'o') { m_enableMinimap = !m_enableMinimap; }
             else if (key == 'f') { m_enableFullscreenChannel = !m_enableFullscreenChannel; }
