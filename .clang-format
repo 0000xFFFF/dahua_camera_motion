@@ -13,4 +13,12 @@ AllowShortLoopsOnASingleLine: true  # Keep short loops on a single line
 NamespaceIndentation: All  # Indents contents inside a namespace
 PointerAlignment: Left
 BreakBeforeBraces: Stroustrup
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+  AlignCaseColons: false
+AllowShortCaseExpressionOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
 IndentCaseBlocks: true
+IndentCaseLabels: true
