@@ -18,7 +18,8 @@ MotionDetector::MotionDetector(const std::string& ip, const std::string& usernam
     : m_motion_area(area),
       m_display_width(w),
       m_display_height(h),
-      m_fullscreen(fullscreen)
+      m_fullscreen(fullscreen),
+      m_main_c3r3(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0))
 {
 
     // Initialize background subtractor
@@ -342,6 +343,10 @@ cv::Mat MotionDetector::paint_main_mat_king()
 
 cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
 {
+
+    size_t w = m_display_width / 3;
+    size_t h = m_display_height / 3;
+
     int x = 1;
     for (int i : chs) {
         cv::Mat mat = m_readers[i]->get_latest_frame();
@@ -350,14 +355,29 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
         cv::Rect roi;
         switch (x++) {
             case 1:
-                cv::resize(mat, mat, cv::Size(W_HD * 2, H_HD * 2));
-                roi = cv::Rect(0 * W_HD, 0 * H_HD, W_HD * 2, H_HD * 2);
+                cv::resize(mat, mat, cv::Size(w * 2, h * 2));
+                roi = cv::Rect(0 * w, 0 * h, w * 2, h * 2);
                 break;
-            case 2: roi = cv::Rect(2 * W_HD, 0 * H_HD, W_HD, H_HD); break;
-            case 3: roi = cv::Rect(2 * W_HD, 1 * H_HD, W_HD, H_HD); break;
-            case 4: roi = cv::Rect(0 * W_HD, 2 * H_HD, W_HD, H_HD); break;
-            case 5: roi = cv::Rect(1 * W_HD, 2 * H_HD, W_HD, H_HD); break;
-            case 6: roi = cv::Rect(2 * W_HD, 2 * H_HD, W_HD, H_HD); break;
+            case 2:
+                cv::resize(mat, mat, cv::Size(w, h));
+                roi = cv::Rect(2 * w, 0 * h, w, h);
+                break;
+            case 3:
+                cv::resize(mat, mat, cv::Size(w, h));
+                roi = cv::Rect(2 * w, 1 * h, w, h);
+                break;
+            case 4:
+                cv::resize(mat, mat, cv::Size(w, h));
+                roi = cv::Rect(0 * w, 2 * h, w, h);
+                break;
+            case 5:
+                cv::resize(mat, mat, cv::Size(w, h));
+                roi = cv::Rect(1 * w, 2 * h, w, h);
+                break;
+            case 6:
+                cv::resize(mat, mat, cv::Size(w, h));
+                roi = cv::Rect(2 * w, 2 * h, w, h);
+                break;
         }
         mat.copyTo(m_main_c3r3(roi));
     }
@@ -441,7 +461,14 @@ void MotionDetector::start()
                 main_frame_get = paint_main_mat_top();
             }
 
-            if (!main_frame_get.empty()) { cv::resize(main_frame_get, m_main_c1r1, cv::Size(m_display_width, m_display_height)); }
+            if (!main_frame_get.empty()) {
+                if (main_frame_get.size() != cv::Size(m_display_width, m_display_height)) {
+                    cv::resize(main_frame_get, m_main_c1r1, cv::Size(m_display_width, m_display_height));
+                }
+                else {
+                    m_main_c1r1 = main_frame_get;
+                }
+            }
 
             if (m_enableMinimap) { draw_minimap(); }
             if (m_enableInfo) { draw_info(); }
