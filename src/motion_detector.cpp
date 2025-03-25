@@ -235,7 +235,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_c1r1, "Info (i): " + bool_to_str(m_enableInfo),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_c1r1, "Motion (m/n/l/s/d/k/t): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
+    cv::putText(m_main_c1r1, "Motion (m/n/z/x/c/v/b): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_c1r1, "Minimap (o/0): " + bool_to_str(m_enableMinimap) + "/" + bool_to_str(m_enableMinimapFullscreen),
@@ -546,11 +546,11 @@ void MotionDetector::start()
             if (key == 'q') { stop(); break; }
             else if (key == 'm') { m_enableMotion = !m_enableMotion; }
             else if (key == 'n') { m_motionDisplayMode = MOTION_DISPLAY_MODE_NONE; }
-            else if (key == 'l') { m_motionDisplayMode = MOTION_DISPLAY_MODE_LARGEST; }
-            else if (key == 's') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT; }
-            else if (key == 'd') { m_motionDisplayMode = MOTION_DISPLAY_MODE_MULTI; }
-            else if (key == 'k') { m_motionDisplayMode = MOTION_DISPLAY_MODE_KING; }
-            else if (key == 't') { m_motionDisplayMode = MOTION_DISPLAY_MODE_TOP; }
+            else if (key == 'z') { m_motionDisplayMode = MOTION_DISPLAY_MODE_LARGEST; }
+            else if (key == 'x') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT; }
+            else if (key == 'c') { m_motionDisplayMode = MOTION_DISPLAY_MODE_MULTI; }
+            else if (key == 'v') { m_motionDisplayMode = MOTION_DISPLAY_MODE_KING; }
+            else if (key == 'b') { m_motionDisplayMode = MOTION_DISPLAY_MODE_TOP; }
             else if (key == 'i') { m_enableInfo = !m_enableInfo; }
             else if (key == 'o') { m_enableMinimap = !m_enableMinimap; }
             else if (key == 'f') { m_enableFullscreenChannel = !m_enableFullscreenChannel; }
