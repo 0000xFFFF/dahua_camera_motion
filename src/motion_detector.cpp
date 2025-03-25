@@ -341,8 +341,6 @@ cv::Mat MotionDetector::paint_main_mat_king() {
 
 cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
 {
-    cv::Mat output_c3r3 = cv::Mat(cv::Size(W_HD * 3, H_HD * 3), CV_8UC3, cv::Scalar(0, 0, 0));
-
     int x = 1;
     for (int i : chs) {
         cv::Mat mat = m_readers[i]->get_latest_frame();
@@ -356,7 +354,7 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
                 int row = 0;
                 int col = 0;
                 cv::Rect roi(col * W_HD, row * H_HD, W_HD * 2, H_HD * 2);
-                mat.copyTo(output_c3r3(roi));
+                mat.copyTo(m_main_c3r3(roi));
                 break;
             }
         case 2:
@@ -364,7 +362,7 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
                 int row = 0;
                 int col = 2;
                 cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                mat.copyTo(output_c3r3(roi));
+                mat.copyTo(m_main_c3r3(roi));
                 break;
             }
         case 3:
@@ -372,7 +370,7 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
                 int row = 1;
                 int col = 2;
                 cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                mat.copyTo(output_c3r3(roi));
+                mat.copyTo(m_main_c3r3(roi));
                 break;
             }
         case 4:
@@ -380,7 +378,7 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
                 int row = 2;
                 int col = 0;
                 cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                mat.copyTo(output_c3r3(roi));
+                mat.copyTo(m_main_c3r3(roi));
                 break;
             }
         case 5:
@@ -388,7 +386,7 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
                 int row = 2;
                 int col = 1;
                 cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                mat.copyTo(output_c3r3(roi));
+                mat.copyTo(m_main_c3r3(roi));
                 break;
             }
         case 6:
@@ -396,13 +394,13 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
                 int row = 2;
                 int col = 2;
                 cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                mat.copyTo(output_c3r3(roi));
+                mat.copyTo(m_main_c3r3(roi));
                 break;
             }
         }
     }
 
-    return output_c3r3;
+    return m_main_c3r3;
 }
 
 cv::Mat MotionDetector::paint_main_mat_top()
