@@ -32,5 +32,11 @@ king:
 top:
 	$(GCC) $(RELEASE_ARGS) -D TOP $(LIBS) $(FILES) -o $(OUTPUT)
 
+tourtop:
+	$(GCC) $(RELEASE_ARGS) -D TOUR_TOP $(LIBS) $(FILES) -o $(OUTPUT)
+
+touronlytop:
+	$(GCC) $(RELEASE_ARGS) -D TOUR_ONLY_TOP $(LIBS) $(FILES) -o $(OUTPUT)
+
 release:
 	$(GCC) $(RELEASE_ARGS) $(LIBS) $(FILES) -o $(OUTPUT)
