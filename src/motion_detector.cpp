@@ -224,9 +224,9 @@ cv::Mat MotionDetector::paint_main_mat_all()
 cv::Mat MotionDetector::paint_main_mat_sort()
 {
     // Assume readers[i] are objects that can get frames
+    int i = 0;
     for (int x : m_sorted_chs_area_all) {
-        int i = x - 1;
-        cv::Mat mat = m_readers[i + 1]->get_latest_frame();
+        cv::Mat mat = m_readers[x]->get_latest_frame();
 
         if (mat.empty()) {
             continue; // If the frame is empty, skip painting
@@ -235,6 +235,7 @@ cv::Mat MotionDetector::paint_main_mat_sort()
         // Compute position in the 3x2 grid
         int row = i / 3; // 0 for first row, 1 for second row
         int col = i % 3; // Column position (0,1,2)
+        i++;
 
         // Define the region of interest (ROI) in main_mat
         cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
