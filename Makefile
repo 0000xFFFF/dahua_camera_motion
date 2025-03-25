@@ -1,6 +1,6 @@
 GCC = g++
 FILES = src/*.cpp
-DEBUG_ARGS = -D DEBUG -g
+DEBUG_ARGS = -D DEBUG -g -O0 -fno-omit-frame-pointer
 RELEASE_ARGS = -Wall -Wextra -O2 -s
 LIBS = `pkg-config --cflags --libs opencv4`
 OUTPUT = dcm_master
@@ -19,6 +19,9 @@ tour:
 
 touronly:
 	$(GCC) $(RELEASE_ARGS) -D TOUR_ONLY $(LIBS) $(FILES) -o $(OUTPUT)
+
+debug_multi:
+	$(GCC) $(DEBUG_ARGS) -D MULTI $(LIBS) $(FILES) -o $(OUTPUT)
 
 multi:
 	$(GCC) $(RELEASE_ARGS) -D MULTI $(LIBS) $(FILES) -o $(OUTPUT)
