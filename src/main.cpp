@@ -84,7 +84,7 @@ class CpuUsageMonitor {
 
         while (m_running) {
             // Wait for a second before getting stats again
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(std::chrono::seconds(12));
 
             // Get current CPU stats
             std::vector<unsigned long long> curr_stats = get_cpu_stats();
