@@ -89,6 +89,7 @@ void FrameReader::connect_and_read()
             std::cerr << "Failed to read frame from channel " << m_channel << std::endl;
 #ifndef NODELAY
             std::this_thread::sleep_for(std::chrono::milliseconds(ERROR_SLEEP_MS)); // Prevent CPU overuse on failure
+            DPL("ERROR READING FRAME");
 #endif
             continue;
         }
