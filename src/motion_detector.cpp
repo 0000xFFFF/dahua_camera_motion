@@ -103,7 +103,6 @@ void MotionDetector::sort_channels_by_motion_area_all_channels()
     std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
 
     double max_areas[6] = {0.0};
-    m_sorted_chs_area_all.clear();
 
     for (const auto& contour : contours) {
         if (cv::contourArea(contour) >= m_motion_area) {
@@ -124,7 +123,14 @@ void MotionDetector::sort_channels_by_motion_area_all_channels()
     }
 
     for (int i = 0; i < 6; i++) {
-        m_sorted_chs_area_all.emplace_back(std::make_pair(i + 1, max_areas[i]));
+        int x = 0;
+        int ch = m_sorted_chs_area_all[x].first;
+        while (ch != i+1) {
+            x++;
+            x = x % 6;
+            ch = m_sorted_chs_area_all[x].first;
+        }
+        m_sorted_chs_area_all[x].second = max_areas[i];
     }
 
     // higher channel first
