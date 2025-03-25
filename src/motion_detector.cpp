@@ -347,58 +347,19 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
         cv::Mat mat = m_readers[i]->get_latest_frame();
         if (mat.empty()) { continue; }
 
+        cv::Rect roi;
         switch (x++) {
-
             case 1:
-                {
-                    cv::resize(mat, mat, cv::Size(W_HD * 2, H_HD * 2));
-                    int row = 0;
-                    int col = 0;
-                    cv::Rect roi(col * W_HD, row * H_HD, W_HD * 2, H_HD * 2);
-                    mat.copyTo(m_main_c3r3(roi));
-                    break;
-                }
-            case 2:
-                {
-                    int row = 0;
-                    int col = 2;
-                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                    mat.copyTo(m_main_c3r3(roi));
-                    break;
-                }
-            case 3:
-                {
-                    int row = 1;
-                    int col = 2;
-                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                    mat.copyTo(m_main_c3r3(roi));
-                    break;
-                }
-            case 4:
-                {
-                    int row = 2;
-                    int col = 0;
-                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                    mat.copyTo(m_main_c3r3(roi));
-                    break;
-                }
-            case 5:
-                {
-                    int row = 2;
-                    int col = 1;
-                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                    mat.copyTo(m_main_c3r3(roi));
-                    break;
-                }
-            case 6:
-                {
-                    int row = 2;
-                    int col = 2;
-                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                    mat.copyTo(m_main_c3r3(roi));
-                    break;
-                }
+                cv::resize(mat, mat, cv::Size(W_HD * 2, H_HD * 2));
+                roi = cv::Rect(0 * W_HD, 0 * H_HD, W_HD * 2, H_HD * 2);
+                break;                                                     // case 1
+            case 2: roi = cv::Rect(2 * W_HD, 0 * H_HD, W_HD, H_HD); break; // case 2
+            case 3: roi = cv::Rect(2 * W_HD, 1 * H_HD, W_HD, H_HD); break; // case 3
+            case 4: roi = cv::Rect(0 * W_HD, 2 * H_HD, W_HD, H_HD); break; // case 4
+            case 5: roi = cv::Rect(1 * W_HD, 2 * H_HD, W_HD, H_HD); break; // case 5
+            case 6: roi = cv::Rect(2 * W_HD, 2 * H_HD, W_HD, H_HD); break; // case 6
         }
+        mat.copyTo(m_main_c3r3(roi));
     }
 
     return m_main_c3r3;
