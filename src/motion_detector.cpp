@@ -23,7 +23,11 @@ MotionDetector::MotionDetector(const std::string& ip, const std::string& usernam
 {
 
     // Initialize background subtractor
-    m_fgbg = cv::createBackgroundSubtractorMOG2(500, 16, true);
+    m_fgbg = cv::createBackgroundSubtractorMOG2(
+        20,    // history (reduced from 500)
+        32,    // varThreshold (increased from 16)
+        true   // detectShadows
+    );
 
     m_readers.push_back(std::make_unique<FrameReader>(0, W_0, H_0, ip, username, password));
 
@@ -411,8 +415,15 @@ void MotionDetector::start()
 
     try {
 
+        int frame_counter = 0;
+        const int PROCESS_EVERY_N_FRAMES = 3;  // Process only every 3rd frame
         while (m_running) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS)); // Prevent CPU overuse
+
+            frame_counter++;
+            if (frame_counter % PROCESS_EVERY_N_FRAMES != 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS));
+                continue;
+            }
 
             cv::Mat frame0_get = m_readers[0]->get_latest_frame();
             if (!frame0_get.empty()) {
