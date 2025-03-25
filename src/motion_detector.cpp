@@ -98,6 +98,8 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     }
 }
 
+std::unordered_map<int, int> motion_frame_count;  // Keeps track across frames
+
 void MotionDetector::sort_channels_by_motion_area_all_channels()
 {
     std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
@@ -122,31 +124,26 @@ void MotionDetector::sort_channels_by_motion_area_all_channels()
         }
     }
 
+    // Update areas and maintain frame count
     for (int i = 0; i < 6; i++) {
-        int x = 0;
-        int ch = std::get<0>(m_sorted_chs_area_all[x]);
-        while (ch != i + 1) {
-            x++;
-            x = x % 6;
-            ch = std::get<0>(m_sorted_chs_area_all[x]);
-        }
+        int ch = std::get<0>(m_sorted_chs_area_all[i]);
+        double& area = std::get<1>(m_sorted_chs_area_all[i]);
+        int& frame_count = std::get<2>(m_sorted_chs_area_all[i]);
 
-        double& area = std::get<1>(m_sorted_chs_area_all[x]);
-        int& frame_count = std::get<2>(m_sorted_chs_area_all[x]);
-
-        if (max_areas[i] > 0) {
-            if (max_areas[i] > area) {
-                frame_count++;
+        if (max_areas[ch - 1] > 0) {
+            if (max_areas[ch - 1] > area) {
+                motion_frame_count[ch]++; // Increase only if it's still dominant
             }
             else {
-                frame_count = std::max(frame_count - 1, 0);
+                motion_frame_count[ch] = std::max(motion_frame_count[ch] - 1, 0);
             }
         }
         else {
-            frame_count = 0; // Reset if no motion
+            motion_frame_count[ch] = 0; // Reset if no motion
         }
 
-        area = max_areas[i];
+        area = max_areas[ch - 1];
+        frame_count = motion_frame_count[ch];
     }
 
     // higher channel first
@@ -154,9 +151,14 @@ void MotionDetector::sort_channels_by_motion_area_all_channels()
 #define MDMF MOTION_DETECT_MIN_FRAMES
     std::sort(m_sorted_chs_area_all.begin(), m_sorted_chs_area_all.end(),
               [](const auto& a, const auto& b) {
-                  if (std::get<2>(a) >= MDMF && std::get<2>(b) < MDMF) return true;
-                  if (std::get<2>(a) < MDMF && std::get<2>(b) >= MDMF) return false;
-                  return std::get<1>(a) > std::get<1>(b); // Default sorting by area
+                  int framesA = std::get<2>(a);
+                  int framesB = std::get<2>(b);
+                  double areaA = std::get<1>(a);
+                  double areaB = std::get<1>(b);
+
+                  if (framesA >= MDMF && framesB < MDMF) return true;
+                  if (framesA < MDMF && framesB >= MDMF) return false;
+                  return areaA > areaB; // Default sorting by motion area
               });
 
     std::cout << "===" << std::endl;
