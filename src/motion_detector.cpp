@@ -352,12 +352,12 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
             case 1:
                 cv::resize(mat, mat, cv::Size(W_HD * 2, H_HD * 2));
                 roi = cv::Rect(0 * W_HD, 0 * H_HD, W_HD * 2, H_HD * 2);
-                break;                                                     // case 1
-            case 2: roi = cv::Rect(2 * W_HD, 0 * H_HD, W_HD, H_HD); break; // case 2
-            case 3: roi = cv::Rect(2 * W_HD, 1 * H_HD, W_HD, H_HD); break; // case 3
-            case 4: roi = cv::Rect(0 * W_HD, 2 * H_HD, W_HD, H_HD); break; // case 4
-            case 5: roi = cv::Rect(1 * W_HD, 2 * H_HD, W_HD, H_HD); break; // case 5
-            case 6: roi = cv::Rect(2 * W_HD, 2 * H_HD, W_HD, H_HD); break; // case 6
+                break;
+            case 2: roi = cv::Rect(2 * W_HD, 0 * H_HD, W_HD, H_HD); break;
+            case 3: roi = cv::Rect(2 * W_HD, 1 * H_HD, W_HD, H_HD); break;
+            case 4: roi = cv::Rect(0 * W_HD, 2 * H_HD, W_HD, H_HD); break;
+            case 5: roi = cv::Rect(1 * W_HD, 2 * H_HD, W_HD, H_HD); break;
+            case 6: roi = cv::Rect(2 * W_HD, 2 * H_HD, W_HD, H_HD); break;
         }
         mat.copyTo(m_main_c3r3(roi));
     }
