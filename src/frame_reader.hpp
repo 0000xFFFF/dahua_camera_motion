@@ -25,7 +25,9 @@ class FrameReader {
     int m_channel;
     int m_width;
     int m_height;
-    cv::Mat m_frame;
+    cv::Mat m_frame_buffer1;
+    cv::Mat m_frame_buffer2;
+    bool m_useBuffer1 = true;
     cv::VideoCapture m_cap;
     std::atomic<bool> m_running{true};
     std::mutex m_mtx;

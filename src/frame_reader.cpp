@@ -27,8 +27,8 @@ FrameReader::FrameReader(int ch, int w, int h, const std::string& ip,
 cv::Mat FrameReader::get_latest_frame()
 {
     std::unique_lock<std::mutex> lock(m_mtx);
-    if (m_frame.empty()) return cv::Mat();
-    return m_frame.clone();
+    if (m_frame_buffer1.empty()) return cv::Mat();
+    return m_useBuffer1 ? m_frame_buffer2.clone() : m_frame_buffer1.clone();
 }
 
 void FrameReader::stop()
@@ -95,7 +95,11 @@ void FrameReader::connect_and_read()
         }
 
         std::lock_guard<std::mutex> lock(m_mtx);
-        m_frame = std::move(frame);
+        if (m_useBuffer1)
+            m_frame_buffer1 = std::move(frame);
+        else
+            m_frame_buffer2 = std::move(frame);
+        m_useBuffer1 = !m_useBuffer1;
     }
 
     if (m_cap.isOpened()) {
