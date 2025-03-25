@@ -89,7 +89,6 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         }
 
         m_motion_ch_frames++;
-        m_motion_detected_min_frames = m_motion_ch_frames >= MOTION_DETECT_MIN_FRAMES;
         if (m_motion_detected_min_frames && m_current_channel != new_channel) {
             m_current_channel = new_channel;
         }
@@ -97,6 +96,8 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     else {
         m_motion_ch_frames = 0;
     }
+
+    m_motion_detected_min_frames = m_motion_ch_frames >= MOTION_DETECT_MIN_FRAMES;
 }
 
 std::unordered_map<int, int> motion_frame_count;  // Keeps track across frames
@@ -529,7 +530,7 @@ void MotionDetector::start()
                 main_frame_get = m_readers[m_current_channel]->get_latest_frame();
             }
             else {
-                main_frame_get = paint_main_mat_all();
+                main_frame_get = paint_main_mat_top();
             }
 
             if (!main_frame_get.empty()) { cv::resize(main_frame_get, m_main_c1r1, cv::Size(m_display_width, m_display_height)); }
