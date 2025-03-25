@@ -262,12 +262,13 @@ cv::Mat MotionDetector::frame_get_non_empty(const int& i)
 
     cv::Mat frame = m_readers[i]->get_latest_frame();
     while (frame.empty()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(ERROR_SLEEP_MS));
         frame = m_readers[i]->get_latest_frame();
     }
     return frame;
 }
 
-cv::Mat MotionDetector::paint_main_mat_pyramid()
+cv::Mat MotionDetector::paint_main_mat_multi()
 {
     switch (m_sorted_chs_area_motion.size()) {
     case 1:
@@ -289,25 +290,47 @@ cv::Mat MotionDetector::paint_main_mat_pyramid()
 
     case 3:
         {
+            cv::Mat output_c1r2 = cv::Mat(cv::Size(W_HD * 2, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
+            cv::Mat t = frame_get_non_empty(m_sorted_chs_area_motion[0].first);
+            t.copyTo(output_c1r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD * 2, H_HD)));
+            cv::Mat bl = frame_get_non_empty(m_sorted_chs_area_motion[0].first);
+            bl.copyTo(output_c1r2(cv::Rect(0 * W_HD, 1 * H_HD, W_HD, H_HD)));
+            cv::Mat br = frame_get_non_empty(m_sorted_chs_area_motion[1].first);
+            br.copyTo(output_c1r2(cv::Rect(1 * W_HD, 1 * H_HD, W_HD, H_HD)));
+            return output_c1r2;
 
             break;
         }
     case 4:
         {
             cv::Mat output_c2r2 = cv::Mat(cv::Size(W_HD * 2, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
-            cv::Mat tr = frame_get_non_empty(m_sorted_chs_area_motion[0].first);
-            tr.copyTo(output_c2r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD, H_HD)));
             cv::Mat tl = frame_get_non_empty(m_sorted_chs_area_motion[1].first);
             tl.copyTo(output_c2r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD, H_HD)));
-            cv::Mat br = frame_get_non_empty(m_sorted_chs_area_motion[2].first);
-            br.copyTo(output_c2r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD, H_HD)));
+            cv::Mat tr = frame_get_non_empty(m_sorted_chs_area_motion[0].first);
+            tr.copyTo(output_c2r2(cv::Rect(1 * W_HD, 0 * H_HD, W_HD, H_HD)));
             cv::Mat bl = frame_get_non_empty(m_sorted_chs_area_motion[3].first);
-            bl.copyTo(output_c2r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD, H_HD)));
+            bl.copyTo(output_c2r2(cv::Rect(0 * W_HD, 1 * H_HD, W_HD, H_HD)));
+            cv::Mat br = frame_get_non_empty(m_sorted_chs_area_motion[2].first);
+            br.copyTo(output_c2r2(cv::Rect(1 * W_HD, 1 * H_HD, W_HD, H_HD)));
             return output_c2r2;
             break;
         }
     case 5:
         {
+            cv::Mat output_c1r2 = cv::Mat(cv::Size(W_HD * 3, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
+            cv::Mat c12r1 = frame_get_non_empty(m_sorted_chs_area_motion[0].first);
+            c12r1.copyTo(output_c1r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD * 2, H_HD)));
+
+            cv::Mat c3r1 = frame_get_non_empty(m_sorted_chs_area_motion[1].first);
+            c3r1.copyTo(output_c1r2(cv::Rect(2 * W_HD, 0 * H_HD, W_HD, H_HD)));
+
+            for (int i = 2; i < 6; i++) {
+                int row = (i+1) / 3;
+                int col = (i+1) % 3;
+                cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+                frame_get_non_empty(m_sorted_chs_area_motion[i].first).copyTo(output_c1r2);
+            }
+            return output_c1r2;
 
             break;
         }
@@ -365,7 +388,7 @@ void MotionDetector::start()
                 main_frame_get = paint_main_mat_sort();
             }
             else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION) {
-                main_frame_get = paint_main_mat_pyramid();
+                main_frame_get = paint_main_mat_multi();
             }
             else if (m_enableFullscreenChannel ||
                      m_enableTour ||

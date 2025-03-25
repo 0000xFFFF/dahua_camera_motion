@@ -50,6 +50,13 @@
 #define ENABLE_MOTION 0
 #endif
 
+#ifdef MULTI
+#undef MOTION_DISPLAY_MODE
+#define MOTION_DISPLAY_MODE MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION
+#endif
+
+
+
 #define USE_SUBTYPE1 false
 #define W_0 704
 #define H_0 576
