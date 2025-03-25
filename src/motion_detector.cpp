@@ -2,6 +2,7 @@
 #include "debug.h"
 #include "globals.hpp"
 #include "opencv2/core.hpp"
+#include <exception>
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <string>
@@ -189,7 +190,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_c1r1, "Info (i): " + bool_to_str(m_enableInfo),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_c1r1, "Motion (m/n/l/s/d): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
+    cv::putText(m_main_c1r1, "Motion (m/n/l/s/d/k): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_motionDisplayMode),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_c1r1, "Minimap (o/0): " + bool_to_str(m_enableMinimap) + "/" + bool_to_str(m_enableMinimapFullscreen),
@@ -353,6 +354,78 @@ cv::Mat MotionDetector::paint_main_mat_multi()
     return paint_main_mat_all();
 }
 
+cv::Mat MotionDetector::paint_main_mat_king()
+{
+    cv::Mat output_c3r3 = cv::Mat(cv::Size(W_HD * 3, H_HD * 3), CV_8UC3, cv::Scalar(0, 0, 0));
+
+    try {
+        // Assume readers[i] are objects that can get frames
+        for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
+            cv::Mat mat = m_readers[m_sorted_chs_area_all[i].first]->get_latest_frame();
+
+            if (mat.empty()) { continue; }
+
+            switch (i) {
+
+            case 0:
+                {
+                    cv::resize(mat, mat, cv::Size(W_HD * 2, H_HD * 2));
+                    int row = 0;
+                    int col = 0;
+                    cv::Rect roi(col * W_HD, row * H_HD, W_HD * 2, H_HD * 2);
+                    mat.copyTo(output_c3r3(roi));
+                    break;
+                }
+            case 1:
+                {
+                    int row = 0;
+                    int col = 2;
+                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+                    mat.copyTo(output_c3r3(roi));
+                    break;
+                }
+            case 2:
+                {
+                    int row = 1;
+                    int col = 2;
+                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+                    mat.copyTo(output_c3r3(roi));
+                    break;
+                }
+            case 3:
+                {
+                    int row = 2;
+                    int col = 0;
+                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+                    mat.copyTo(output_c3r3(roi));
+                    break;
+                }
+            case 4:
+                {
+                    int row = 2;
+                    int col = 1;
+                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+                    mat.copyTo(output_c3r3(roi));
+                    break;
+                }
+            case 5:
+                {
+                    int row = 2;
+                    int col = 2;
+                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+                    mat.copyTo(output_c3r3(roi));
+                    break;
+                }
+            }
+        }
+    }
+    catch (std::exception e) {
+        std::cout << e.what() << std::endl;
+    }
+
+    return output_c3r3;
+}
+
 void MotionDetector::start()
 {
     m_running = true;
@@ -379,7 +452,7 @@ void MotionDetector::start()
 
             m_motion_detected = false;
             if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_LARGEST_ONLY) { detect_largest_motion_area_set_channel(); }
-            if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_ALL) { sort_channels_by_motion_area_all_channels(); }
+            if (m_enableMotion && (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_ALL || m_motionDisplayMode == MOTION_DISPLAY_MODE_KING)) { sort_channels_by_motion_area_all_channels(); }
             if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION) { sort_channels_by_motion_area_motion_channels(); }
 
             if (m_enableMinimapFullscreen) {
@@ -390,6 +463,9 @@ void MotionDetector::start()
             }
             else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION) {
                 main_frame_get = paint_main_mat_multi();
+            }
+            else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_KING) {
+                main_frame_get = paint_main_mat_king();
             }
             else if (m_enableFullscreenChannel ||
                      m_enableTour ||
@@ -415,6 +491,7 @@ void MotionDetector::start()
             else if (key == 'l') { m_motionDisplayMode = MOTION_DISPLAY_MODE_LARGEST_ONLY; }
             else if (key == 's') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT_BY_AREA_ALL; }
             else if (key == 'd') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT_BY_AREA_MOTION; }
+            else if (key == 'k') { m_motionDisplayMode = MOTION_DISPLAY_MODE_KING; }
             else if (key == 'i') { m_enableInfo = !m_enableInfo; }
             else if (key == 'o') { m_enableMinimap = !m_enableMinimap; }
             else if (key == 'f') { m_enableFullscreenChannel = !m_enableFullscreenChannel; }
