@@ -26,5 +26,8 @@ debug_multi:
 multi:
 	$(GCC) $(RELEASE_ARGS) -D MULTI $(LIBS) $(FILES) -o $(OUTPUT)
 
+king:
+	$(GCC) $(RELEASE_ARGS) -D KING $(LIBS) $(FILES) -o $(OUTPUT)
+
 release:
 	$(GCC) $(RELEASE_ARGS) $(LIBS) $(FILES) -o $(OUTPUT)
