@@ -293,9 +293,9 @@ cv::Mat MotionDetector::paint_main_mat_multi()
             cv::Mat output_c1r2 = cv::Mat(cv::Size(W_HD * 2, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
             cv::Mat t = frame_get_non_empty(m_sorted_chs_area_motion[0].first);
             t.copyTo(output_c1r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD * 2, H_HD)));
-            cv::Mat bl = frame_get_non_empty(m_sorted_chs_area_motion[0].first);
+            cv::Mat bl = frame_get_non_empty(m_sorted_chs_area_motion[1].first);
             bl.copyTo(output_c1r2(cv::Rect(0 * W_HD, 1 * H_HD, W_HD, H_HD)));
-            cv::Mat br = frame_get_non_empty(m_sorted_chs_area_motion[1].first);
+            cv::Mat br = frame_get_non_empty(m_sorted_chs_area_motion[2].first);
             br.copyTo(output_c1r2(cv::Rect(1 * W_HD, 1 * H_HD, W_HD, H_HD)));
             return output_c1r2;
 
@@ -304,13 +304,13 @@ cv::Mat MotionDetector::paint_main_mat_multi()
     case 4:
         {
             cv::Mat output_c2r2 = cv::Mat(cv::Size(W_HD * 2, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
-            cv::Mat tl = frame_get_non_empty(m_sorted_chs_area_motion[1].first);
+            cv::Mat tl = frame_get_non_empty(m_sorted_chs_area_motion[0].first);
             tl.copyTo(output_c2r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD, H_HD)));
-            cv::Mat tr = frame_get_non_empty(m_sorted_chs_area_motion[0].first);
+            cv::Mat tr = frame_get_non_empty(m_sorted_chs_area_motion[1].first);
             tr.copyTo(output_c2r2(cv::Rect(1 * W_HD, 0 * H_HD, W_HD, H_HD)));
-            cv::Mat bl = frame_get_non_empty(m_sorted_chs_area_motion[3].first);
+            cv::Mat bl = frame_get_non_empty(m_sorted_chs_area_motion[2].first);
             bl.copyTo(output_c2r2(cv::Rect(0 * W_HD, 1 * H_HD, W_HD, H_HD)));
-            cv::Mat br = frame_get_non_empty(m_sorted_chs_area_motion[2].first);
+            cv::Mat br = frame_get_non_empty(m_sorted_chs_area_motion[3].first);
             br.copyTo(output_c2r2(cv::Rect(1 * W_HD, 1 * H_HD, W_HD, H_HD)));
             return output_c2r2;
             break;
