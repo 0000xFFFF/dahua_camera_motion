@@ -7,7 +7,6 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <sys/types.h>
-#include <tuple>
 
 #define MINIMAP_WIDTH 300
 #define MINIMAP_HEIGHT 160
@@ -102,10 +101,6 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         if (m_motion_detected_min_frames && m_current_channel != new_channel) {
             m_current_channel = new_channel;
             move_to_front(m_current_channel);
-            std::cout << "===" << std::endl;
-            for (int i : m_sorted_chs_area_all)
-                std::cout << i << std::endl;
-            std::cout << "===" << std::endl;
         }
     }
     else {
@@ -340,12 +335,16 @@ cv::Mat MotionDetector::paint_main_mat_multi()
     return paint_main_mat_all();
 }
 
-cv::Mat MotionDetector::paint_main_mat_king()
+cv::Mat MotionDetector::paint_main_mat_king() {
+    return paint_main_mat_king(m_sorted_chs_area_all);
+}
+
+cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
 {
     cv::Mat output_c3r3 = cv::Mat(cv::Size(W_HD * 3, H_HD * 3), CV_8UC3, cv::Scalar(0, 0, 0));
 
     int x = 1;
-    for (int i : m_sorted_chs_area_all) {
+    for (int i : chs) {
         cv::Mat mat = m_readers[i]->get_latest_frame();
         if (mat.empty()) { continue; }
 
@@ -409,16 +408,16 @@ cv::Mat MotionDetector::paint_main_mat_king()
 cv::Mat MotionDetector::paint_main_mat_top()
 {
 
-    m_sorted_chs_area_all.clear();
-    m_sorted_chs_area_all.emplace_back(m_current_channel);
+    std::list<int> chs;
+    chs.emplace_back(m_current_channel);
 
     for (size_t i = 0; i < 6; i++) {
         int x = i + 1;
         if ((int)x == m_current_channel) continue;
-        m_sorted_chs_area_all.emplace_back(x);
+        chs.emplace_back(x);
     }
 
-    return paint_main_mat_king();
+    return paint_main_mat_king(chs);
 }
 
 void MotionDetector::start()

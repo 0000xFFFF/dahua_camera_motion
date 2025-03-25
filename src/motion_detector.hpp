@@ -30,6 +30,7 @@ class MotionDetector {
     cv::Mat paint_main_mat_sort();
     cv::Mat paint_main_mat_multi();
     cv::Mat paint_main_mat_king();
+    cv::Mat paint_main_mat_king(const std::list<int>& chs);
     cv::Mat paint_main_mat_top();
     std::string bool_to_str(bool b);
     cv::Mat frame_get_non_empty(const int& i);
