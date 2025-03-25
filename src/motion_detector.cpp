@@ -358,69 +358,64 @@ cv::Mat MotionDetector::paint_main_mat_king()
 {
     cv::Mat output_c3r3 = cv::Mat(cv::Size(W_HD * 3, H_HD * 3), CV_8UC3, cv::Scalar(0, 0, 0));
 
-    try {
-        // Assume readers[i] are objects that can get frames
-        for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
-            cv::Mat mat = m_readers[m_sorted_chs_area_all[i].first]->get_latest_frame();
+    // Assume readers[i] are objects that can get frames
+    for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
+        cv::Mat mat = m_readers[m_sorted_chs_area_all[i].first]->get_latest_frame();
 
-            if (mat.empty()) { continue; }
+        if (mat.empty()) { continue; }
 
-            switch (i) {
+        switch (i) {
 
-            case 0:
-                {
-                    cv::resize(mat, mat, cv::Size(W_HD * 2, H_HD * 2));
-                    int row = 0;
-                    int col = 0;
-                    cv::Rect roi(col * W_HD, row * H_HD, W_HD * 2, H_HD * 2);
-                    mat.copyTo(output_c3r3(roi));
-                    break;
-                }
-            case 1:
-                {
-                    int row = 0;
-                    int col = 2;
-                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                    mat.copyTo(output_c3r3(roi));
-                    break;
-                }
-            case 2:
-                {
-                    int row = 1;
-                    int col = 2;
-                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                    mat.copyTo(output_c3r3(roi));
-                    break;
-                }
-            case 3:
-                {
-                    int row = 2;
-                    int col = 0;
-                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                    mat.copyTo(output_c3r3(roi));
-                    break;
-                }
-            case 4:
-                {
-                    int row = 2;
-                    int col = 1;
-                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                    mat.copyTo(output_c3r3(roi));
-                    break;
-                }
-            case 5:
-                {
-                    int row = 2;
-                    int col = 2;
-                    cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                    mat.copyTo(output_c3r3(roi));
-                    break;
-                }
+        case 0:
+            {
+                cv::resize(mat, mat, cv::Size(W_HD * 2, H_HD * 2));
+                int row = 0;
+                int col = 0;
+                cv::Rect roi(col * W_HD, row * H_HD, W_HD * 2, H_HD * 2);
+                mat.copyTo(output_c3r3(roi));
+                break;
+            }
+        case 1:
+            {
+                int row = 0;
+                int col = 2;
+                cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+                mat.copyTo(output_c3r3(roi));
+                break;
+            }
+        case 2:
+            {
+                int row = 1;
+                int col = 2;
+                cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+                mat.copyTo(output_c3r3(roi));
+                break;
+            }
+        case 3:
+            {
+                int row = 2;
+                int col = 0;
+                cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+                mat.copyTo(output_c3r3(roi));
+                break;
+            }
+        case 4:
+            {
+                int row = 2;
+                int col = 1;
+                cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+                mat.copyTo(output_c3r3(roi));
+                break;
+            }
+        case 5:
+            {
+                int row = 2;
+                int col = 2;
+                cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
+                mat.copyTo(output_c3r3(roi));
+                break;
             }
         }
-    }
-    catch (std::exception e) {
-        std::cout << e.what() << std::endl;
     }
 
     return output_c3r3;
