@@ -124,17 +124,51 @@ void MotionDetector::sort_channels_by_motion_area_all_channels()
 
     for (int i = 0; i < 6; i++) {
         int x = 0;
-        int ch = m_sorted_chs_area_all[x].first;
-        while (ch != i+1) {
+        int ch = std::get<0>(m_sorted_chs_area_all[x]);
+        while (ch != i + 1) {
             x++;
             x = x % 6;
-            ch = m_sorted_chs_area_all[x].first;
+            ch = std::get<0>(m_sorted_chs_area_all[x]);
         }
-        m_sorted_chs_area_all[x].second = max_areas[i];
+
+        double& area = std::get<1>(m_sorted_chs_area_all[x]);
+        int& frame_count = std::get<2>(m_sorted_chs_area_all[x]);
+
+        if (max_areas[i] > 0) {
+            if (max_areas[i] > area) {
+                frame_count++;
+            }
+            else {
+                frame_count = std::max(frame_count - 1, 0);
+            }
+        }
+        else {
+            frame_count = 0; // Reset if no motion
+        }
+
+        area = max_areas[i];
     }
 
     // higher channel first
-    std::sort(m_sorted_chs_area_all.begin(), m_sorted_chs_area_all.end(), [](auto& a, auto& b) { return a.second > b.second; });
+    // sort: only swap if frame count >= MIN
+#define MDMF MOTION_DETECT_MIN_FRAMES
+    std::sort(m_sorted_chs_area_all.begin(), m_sorted_chs_area_all.end(),
+              [](const auto& a, const auto& b) {
+                  if (std::get<2>(a) >= MDMF && std::get<2>(b) < MDMF) return true;
+                  if (std::get<2>(a) < MDMF && std::get<2>(b) >= MDMF) return false;
+                  return std::get<1>(a) > std::get<1>(b); // Default sorting by area
+              });
+
+    std::cout << "===" << std::endl;
+    for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
+        std::cout << std::get<0>(m_sorted_chs_area_all[i])
+                  << " "
+                  << std::get<1>(m_sorted_chs_area_all[i])
+                  << " "
+                  << std::get<2>(m_sorted_chs_area_all[i])
+                  << std::endl;
+    }
+    std::cout << "===" << std::endl;
 }
 
 void MotionDetector::sort_channels_by_motion_area_motion_channels()
@@ -247,7 +281,7 @@ cv::Mat MotionDetector::paint_main_mat_sort()
 {
     // Assume readers[i] are objects that can get frames
     for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
-        cv::Mat mat = m_readers[m_sorted_chs_area_all[i].first]->get_latest_frame();
+        cv::Mat mat = m_readers[std::get<0>(m_sorted_chs_area_all[i])]->get_latest_frame();
 
         if (mat.empty()) {
             continue; // If the frame is empty, skip painting
@@ -366,7 +400,7 @@ cv::Mat MotionDetector::paint_main_mat_king()
 
     // Assume readers[i] are objects that can get frames
     for (size_t i = 0; i < m_sorted_chs_area_all.size(); i++) {
-        cv::Mat mat = m_readers[m_sorted_chs_area_all[i].first]->get_latest_frame();
+        cv::Mat mat = m_readers[std::get<0>(m_sorted_chs_area_all[i])]->get_latest_frame();
 
         if (mat.empty()) { continue; }
 

@@ -69,15 +69,9 @@ class MotionDetector {
     int m_tour_frame_index = 0;
 
     // Stores all channels with their motion areas (motion chs + non motion chs)
-    std::vector<std::pair<int, double>> m_sorted_chs_area_all = {
-        std::make_pair(1, 0.0),
-        std::make_pair(2, 0.0),
-        std::make_pair(3, 0.0),
-        std::make_pair(4, 0.0),
-        std::make_pair(5, 0.0),
-        std::make_pair(6, 0.0)};
+    std::vector<std::tuple<int, double, int>> m_sorted_chs_area_all = {
+        {1, 0.0, 0}, {2, 0.0, 0}, {3, 0.0, 0}, {4, 0.0, 0}, {5, 0.0, 0}, {6, 0.0, 0}};
 
     // Stores only motion channels with their areas
     std::vector<std::pair<int, double>> m_sorted_chs_area_motion;
-
 };
