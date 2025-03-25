@@ -1,8 +1,11 @@
 #include "motion_detector.hpp"
-#include "globals.hpp"
 #include "debug.h"
+#include "globals.hpp"
+#include "opencv2/core.hpp"
+#include <iostream>
 #include <opencv2/opencv.hpp>
 #include <string>
+#include <sys/types.h>
 
 #define MINIMAP_WIDTH 300
 #define MINIMAP_HEIGHT 160
@@ -276,7 +279,6 @@ cv::Mat MotionDetector::paint_main_mat_multi()
             return frame_get_non_empty(m_sorted_chs_area_motion[0].first);
             break;
         }
-
     case 2:
         {
             cv::Mat output_c1r2 = cv::Mat(cv::Size(W_HD * 1, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
@@ -287,11 +289,11 @@ cv::Mat MotionDetector::paint_main_mat_multi()
             return output_c1r2;
             break;
         }
-
     case 3:
         {
             cv::Mat output_c1r2 = cv::Mat(cv::Size(W_HD * 2, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
             cv::Mat t = frame_get_non_empty(m_sorted_chs_area_motion[0].first);
+            cv::resize(t, t, cv::Size(W_HD * 2, H_HD));
             t.copyTo(output_c1r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD * 2, H_HD)));
             cv::Mat bl = frame_get_non_empty(m_sorted_chs_area_motion[1].first);
             bl.copyTo(output_c1r2(cv::Rect(0 * W_HD, 1 * H_HD, W_HD, H_HD)));
@@ -317,20 +319,19 @@ cv::Mat MotionDetector::paint_main_mat_multi()
         }
     case 5:
         {
-            cv::Mat output_c1r2 = cv::Mat(cv::Size(W_HD * 3, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
-            cv::Mat c12r1 = frame_get_non_empty(m_sorted_chs_area_motion[0].first);
-            c12r1.copyTo(output_c1r2(cv::Rect(0 * W_HD, 0 * H_HD, W_HD * 2, H_HD)));
+            cv::Mat out = cv::Mat(cv::Size(W_HD * 3, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0));
+            cv::Mat big = frame_get_non_empty(m_sorted_chs_area_motion[0].first);
+            cv::Mat resize;
+            cv::resize(big, resize, cv::Size(W_HD * 2, H_HD));
+            resize.copyTo(out(cv::Rect(0 * W_HD, 0 * H_HD, W_HD * 2, H_HD)));
 
-            cv::Mat c3r1 = frame_get_non_empty(m_sorted_chs_area_motion[1].first);
-            c3r1.copyTo(output_c1r2(cv::Rect(2 * W_HD, 0 * H_HD, W_HD, H_HD)));
-
-            for (int i = 2; i < 6; i++) {
-                int row = (i+1) / 3;
-                int col = (i+1) % 3;
+            for (int i = 1; i < 5; i++) {
+                int row = (i + 1) / 3;
+                int col = (i + 1) % 3;
                 cv::Rect roi(col * W_HD, row * H_HD, W_HD, H_HD);
-                frame_get_non_empty(m_sorted_chs_area_motion[i].first).copyTo(output_c1r2);
+                frame_get_non_empty(m_sorted_chs_area_motion[i].first).copyTo(out(roi));
             }
-            return output_c1r2;
+            return out;
 
             break;
         }
