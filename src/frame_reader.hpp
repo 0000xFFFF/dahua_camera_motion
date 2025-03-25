@@ -1,5 +1,4 @@
 #include <atomic>
-#include <deque>
 #include <mutex>
 #include <opencv2/opencv.hpp>
 #include <string>
@@ -26,9 +25,8 @@ class FrameReader {
     int m_channel;
     int m_width;
     int m_height;
-    std::deque<cv::Mat> m_frame_queue;
+    cv::Mat m_frame;
     cv::VideoCapture m_cap;
     std::atomic<bool> m_running{true};
     std::mutex m_mtx;
-    static constexpr size_t MAX_QUEUE_SIZE = 2;
 };

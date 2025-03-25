@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "globals.hpp"
 #include "utils.h"
 #include <atomic>
@@ -26,23 +27,20 @@ FrameReader::FrameReader(int ch, int w, int h, const std::string& ip,
 cv::Mat FrameReader::get_latest_frame()
 {
     std::unique_lock<std::mutex> lock(m_mtx);
-    if (m_frame_queue.empty()) return cv::Mat();
-
-    cv::Mat latest = std::move(m_frame_queue.back()); // Avoid deep copy
-    m_frame_queue.clear();                            // Drop all old frames
-    return latest;
+    if (m_frame.empty()) return cv::Mat();
+    return m_frame.clone();
 }
 
 void FrameReader::stop()
 {
-    std::cout << "[" << m_channel << "] reader stop" << std::endl;
+    D(std::cout << "[" << m_channel << "] reader stop" << std::endl);
     m_running = false;
     if (m_thread.joinable()) {
-        std::cout << "[" << m_channel << "] reader join" << std::endl;
+        D(std::cout << "[" << m_channel << "] reader join" << std::endl);
         m_thread.join();
-        std::cout << "[" << m_channel << "] reader joined" << std::endl;
+        D(std::cout << "[" << m_channel << "] reader joined" << std::endl);
     }
-    std::cout << "[" << m_channel << "] reader stopped" << std::endl;
+    D(std::cout << "[" << m_channel << "] reader stopped" << std::endl);
 }
 
 std::string FrameReader::construct_rtsp_url(const std::string& ip, const std::string& username,
@@ -59,7 +57,7 @@ void FrameReader::connect_and_read()
 
     set_thread_affinity(m_channel % std::thread::hardware_concurrency()); // Assign different core to each camera
 
-    std::cout << "start capture: " << m_channel << std::endl;
+    D(std::cout << "start capture: " << m_channel << std::endl);
     std::string rtsp_url = construct_rtsp_url(m_ip, m_username, m_password);
 
     // Set FFMPEG options for better stream handling
@@ -78,9 +76,7 @@ void FrameReader::connect_and_read()
                                  std::to_string(m_channel));
     }
 
-    std::cout << "connected: " << m_channel << std::endl;
-
-    cv::Mat frame;
+    D(std::cout << "connected: " << m_channel << std::endl);
 
     while (m_running) {
         if (!m_cap.isOpened()) {
@@ -88,6 +84,7 @@ void FrameReader::connect_and_read()
             break;
         }
 
+        cv::Mat frame;
         if (!m_cap.read(frame)) { // Blocks until a frame is available
             std::cerr << "Failed to read frame from channel " << m_channel << std::endl;
 #ifndef NODELAY
@@ -97,15 +94,12 @@ void FrameReader::connect_and_read()
         }
 
         std::lock_guard<std::mutex> lock(m_mtx);
-        if (m_frame_queue.size() >= MAX_QUEUE_SIZE) {
-            m_frame_queue.pop_front();
-        }
-        m_frame_queue.emplace_back(std::move(frame));
+        m_frame = std::move(frame);
     }
 
     if (m_cap.isOpened()) {
         m_cap.release();
     }
 
-    std::cout << "Exiting readFrames() thread for channel " << m_channel << std::endl;
+    D(std::cout << "Exiting readFrames() thread for channel " << m_channel << std::endl);
 }

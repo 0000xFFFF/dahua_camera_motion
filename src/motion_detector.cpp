@@ -1,5 +1,6 @@
 #include "motion_detector.hpp"
 #include "globals.hpp"
+#include "debug.h"
 #include <opencv2/opencv.hpp>
 #include <string>
 
@@ -423,15 +424,15 @@ void MotionDetector::stop()
 {
     m_running = false;
 
-    std::cout << "stopping all readers" << std::endl;
+    DPL("stopping all readers");
     for (auto& reader : m_readers) {
         reader->stop();
     }
-    std::cout << "stopped all readers" << std::endl;
+    DPL("stopped all readers");
 
-    std::cout << "close all wins" << std::endl;
+    DPL("close all wins");
     cv::destroyAllWindows();
-    std::cout << "closed all wins" << std::endl;
+    DPL("closed all wins");
 }
 
 std::string MotionDetector::bool_to_str(bool b)
