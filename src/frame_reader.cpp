@@ -2,7 +2,6 @@
 #include "globals.hpp"
 #include "utils.h"
 #include <atomic>
-#include <mutex>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <thread>
