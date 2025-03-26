@@ -1,1 +1,2 @@
-- split view for detected motions
+- fix sort option
+- fix or rm d option
