@@ -26,12 +26,8 @@ MotionDetector::MotionDetector(const std::string& ip, const std::string& usernam
 
     // Initialize background subtractor
     // m_fgbg = cv::createBackgroundSubtractorMOG2(20, 32, true);
-    // m_fgbg = cv::createBackgroundSubtractorKNN(20, 400.0, true);
-    m_fgbg = cv::bgsegm::createBackgroundSubtractorCNT(
-        true, // use ROI
-        15,   // min object size
-        true  // reset background model
-    );
+    m_fgbg = cv::createBackgroundSubtractorKNN(20, 400.0, true);
+    //m_fgbg = cv::bgsegm::createBackgroundSubtractorCNT(true, 15, true);
 
     m_readers.push_back(std::make_unique<FrameReader>(0, ip, username, password));
 
@@ -54,9 +50,11 @@ std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
 {
     cv::Mat fgmask;
     m_fgbg->apply(m_frame0, fgmask);
+    cv::imshow("fgmask", fgmask);
 
     cv::Mat thresh;
     cv::threshold(fgmask, thresh, 128, 255, cv::THRESH_BINARY);
+    cv::imshow("thresh", thresh);
 
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);

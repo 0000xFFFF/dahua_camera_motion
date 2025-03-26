@@ -46,9 +46,9 @@ class MotionDetector {
 
     // init
     std::vector<std::unique_ptr<FrameReader>> m_readers;
-    // cv::Ptr<cv::BackgroundSubtractorMOG2> m_fgbg;
-    // cv::Ptr<cv::BackgroundSubtractorKNN> m_fgbg;
-    cv::Ptr<cv::bgsegm::BackgroundSubtractorCNT> m_fgbg;
+    // cv::Ptr<cv::BackgroundSubtractorMOG2> m_fgbg;     // 69.6
+    cv::Ptr<cv::BackgroundSubtractorKNN> m_fgbg;      // 69% KNN
+    //cv::Ptr<cv::bgsegm::BackgroundSubtractorCNT> m_fgbg; // 62% CNT
 
     // defaults
     int m_current_channel = 1;
