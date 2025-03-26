@@ -18,7 +18,7 @@
 #define OVERRIDE_SLEEP 1 // sleep by default is calced by fps, to override with values below set to 1
 #define SLEEP_MS_TOUR 3000
 #define SLEEP_MS_MOTION 300
-#define SLEEP_MS_DRAW 100
+#define SLEEP_MS_DRAW 200
 #define SLEEP_MS_ERROR 10
 #define MOTION_DETECT_MIN_MS 1000
 
