@@ -24,9 +24,9 @@ MotionDetector::MotionDetector(const std::string& ip, const std::string& usernam
 
     // Initialize background subtractor
     m_fgbg = cv::createBackgroundSubtractorMOG2(
-        20,    // history (reduced from 500)
-        32,    // varThreshold (increased from 16)
-        true   // detectShadows
+        20,  // history (reduced from 500)
+        32,  // varThreshold (increased from 16)
+        true // detectShadows
     );
 
     m_readers.push_back(std::make_unique<FrameReader>(0, ip, username, password));
@@ -55,7 +55,7 @@ std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
     cv::threshold(fgmask, thresh, 128, 255, cv::THRESH_BINARY);
 
     std::vector<std::vector<cv::Point>> contours;
-    //cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    // cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
     cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
     return contours;
 }
@@ -405,6 +405,42 @@ cv::Mat MotionDetector::paint_main_mat_top()
     return paint_main_mat_king(chs);
 }
 
+void MotionDetector::handle_keys()
+{
+    // clang-format off
+    char key = cv::waitKey(1);
+    if (key == 'q') { stop(); }
+    else if (key == 'm') { m_enableMotion = !m_enableMotion; }
+    else if (key == 'n') { m_motionDisplayMode = MOTION_DISPLAY_MODE_NONE; }
+    else if (key == 'l') { m_motionDisplayMode = MOTION_DISPLAY_MODE_LARGEST; }
+    else if (key == 's') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT; }
+    else if (key == 'd') { m_motionDisplayMode = MOTION_DISPLAY_MODE_MULTI; }
+    else if (key == 'k') { m_motionDisplayMode = MOTION_DISPLAY_MODE_KING; }
+    else if (key == 'x') { m_motionDisplayMode = MOTION_DISPLAY_MODE_TOP; }
+    else if (key == 'i') { m_enableInfo = !m_enableInfo; }
+    else if (key == 'o') { m_enableMinimap = !m_enableMinimap; }
+    else if (key == 'f') { m_enableFullscreenChannel = !m_enableFullscreenChannel; }
+    else if (key == 't') { m_enableTour = !m_enableTour; }
+    else if (key == 'r') {
+        m_current_channel = 1;
+        m_motion_detected = false;
+        m_tour_frame_index = 0;
+        m_enableInfo = ENABLE_INFO;
+        m_enableMotion = ENABLE_MOTION;
+        m_enableMinimap = ENABLE_MINIMAP;
+        m_enableFullscreenChannel = ENABLE_FULLSCREEN_CHANNEL;
+        m_enableTour = ENABLE_TOUR;
+    }
+    else if (key == '0') {
+        m_enableMinimapFullscreen = !m_enableMinimapFullscreen;
+    }
+    else if (key >= '1' && key <= '6') {
+        m_current_channel = key - '0';
+        m_enableFullscreenChannel = true;
+    }
+    // clang-format on
+}
+
 void MotionDetector::start()
 {
     m_running = true;
@@ -417,7 +453,7 @@ void MotionDetector::start()
     try {
 
         int frame_counter = 0;
-        const int PROCESS_EVERY_N_FRAMES = 3;  // Process only every 3rd frame
+        const int PROCESS_EVERY_N_FRAMES = 3; // Process only every 3rd frame
         while (m_running) {
 
             frame_counter++;
@@ -487,38 +523,7 @@ void MotionDetector::start()
 
             cv::imshow("Motion", m_main_c1r1);
 
-            // clang-format off
-            char key = cv::waitKey(1);
-            if (key == 'q') { stop(); break; }
-            else if (key == 'm') { m_enableMotion = !m_enableMotion; }
-            else if (key == 'n') { m_motionDisplayMode = MOTION_DISPLAY_MODE_NONE; }
-            else if (key == 'l') { m_motionDisplayMode = MOTION_DISPLAY_MODE_LARGEST; }
-            else if (key == 's') { m_motionDisplayMode = MOTION_DISPLAY_MODE_SORT; }
-            else if (key == 'd') { m_motionDisplayMode = MOTION_DISPLAY_MODE_MULTI; }
-            else if (key == 'k') { m_motionDisplayMode = MOTION_DISPLAY_MODE_KING; }
-            else if (key == 'x') { m_motionDisplayMode = MOTION_DISPLAY_MODE_TOP; }
-            else if (key == 'i') { m_enableInfo = !m_enableInfo; }
-            else if (key == 'o') { m_enableMinimap = !m_enableMinimap; }
-            else if (key == 'f') { m_enableFullscreenChannel = !m_enableFullscreenChannel; }
-            else if (key == 't') { m_enableTour = !m_enableTour; }
-            else if (key == 'r') {
-                m_current_channel = 1;
-                m_motion_detected = false;
-                m_tour_frame_index = 0;
-                m_enableInfo = ENABLE_INFO;
-                m_enableMotion = ENABLE_MOTION;
-                m_enableMinimap = ENABLE_MINIMAP;
-                m_enableFullscreenChannel = ENABLE_FULLSCREEN_CHANNEL;
-                m_enableTour = ENABLE_TOUR;
-            }
-            else if (key == '0') {
-                m_enableMinimapFullscreen = !m_enableMinimapFullscreen;
-            }
-            else if (key >= '1' && key <= '6') {
-                m_current_channel = key - '0';
-                m_enableFullscreenChannel = true;
-            }
-            // clang-format on
+            handle_keys();
         }
     }
     catch (const std::exception& e) {

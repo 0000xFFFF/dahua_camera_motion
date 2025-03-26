@@ -34,6 +34,7 @@ class MotionDetector {
     cv::Mat paint_main_mat_top();
     std::string bool_to_str(bool b);
     cv::Mat frame_get_non_empty(const int& i);
+    void handle_keys();
 
     // set from params
     int m_motion_area;
