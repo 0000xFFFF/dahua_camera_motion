@@ -13,10 +13,13 @@
 #define MOTION_DISPLAY_MODE_TOP 4
 #define ENABLE_TOUR 0
 #define ENABLE_FULLSCREEN_CHANNEL 0
-#define TOUR_SLEEP_MS 3000
-//#define MOTION_SLEEP_MS 300
-//#define DRAW_SLEEP_MS 10
-//#define ERROR_SLEEP_MS 10
+
+// milis
+#define OVERRIDE_SLEEP 1 // sleep by default is calced by fps, to override with values below set to 1
+#define SLEEP_MS_TOUR 3000
+#define SLEEP_MS_MOTION 300
+#define SLEEP_MS_DRAW 100
+#define SLEEP_MS_ERROR 10
 #define MOTION_DETECT_MIN_MS 1000
 
 #ifdef DEBUG
@@ -24,20 +27,11 @@
 #define ENABLE_INFO 1
 #undef ENABLE_MINIMAP
 #define ENABLE_MINIMAP 1
-//#undef DRAW_SLEEP_MS
-//#define DRAW_SLEEP_MS 10
 #endif
 
-#ifdef CPU_LOW_SLOW
-#undef DRAW_SLEEP_MS
-#define DRAW_SLEEP_MS 300
-#undef MOTION_DETECT_MIN_FRAMES
-#define MOTION_DETECT_MIN_FRAMES 1
-#endif
-
-#ifdef CPU_HIGH_FAST
-#undef DRAW_SLEEP_MS
-#define DRAW_SLEEP_MS 1
+#ifdef FAST
+#undef OVERRIDE_SLEEP
+#define OVERRIDE_SLEEP 0
 #endif
 
 #ifdef TOUR
@@ -50,11 +44,6 @@
 #define ENABLE_TOUR 1
 #undef ENABLE_MOTION
 #define ENABLE_MOTION 0
-#endif
-
-#ifdef MULTI
-#undef MOTION_DISPLAY_MODE
-#define MOTION_DISPLAY_MODE MOTION_DISPLAY_MODE_MULTI
 #endif
 
 #ifdef KING

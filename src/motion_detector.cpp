@@ -117,8 +117,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         m_motion_ch_frames = 0;
     }
 
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(m_motion_sleep_time).count();
-    m_motion_detect_min_frames = (ms > 0) ? MOTION_DETECT_MIN_MS / ms : MOTION_DETECT_MIN_MS / 10;
+    m_motion_detect_min_frames = (m_motion_sleep_ms > 0) ? MOTION_DETECT_MIN_MS / m_motion_sleep_ms : MOTION_DETECT_MIN_MS / 10;
     m_motion_detected_min_frames = m_motion_ch_frames >= m_motion_detect_min_frames;
 
     m_frame0_dbuff.update(m_frame0);
@@ -362,15 +361,17 @@ void MotionDetector::detect_motion()
         auto motion_time = std::chrono::high_resolution_clock::now() - motion_start;
 
         auto sleep_time = std::chrono::duration<double>(detect_time) - motion_time;
-        m_motion_sleep_time = sleep_time;
+        m_motion_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
+#if OVERRIDE_SLEEP
+        m_motion_sleep_ms = SLEEP_MS_MOTION;
+#endif
         if (sleep_time.count() > 0) {
 #ifdef DEBUG_VERBOSE
             if (i % 300 == 0) {
-                auto sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
-                std::cout << "Motion thread sleep time: " << sleep_ms << " ms" << std::endl;
+                std::cout << "Motion thread sleep time: " << m_motion_sleep_ms << " ms" << std::endl;
             }
 #endif
-            std::this_thread::sleep_for(sleep_time);
+            std::this_thread::sleep_for(std::chrono::milliseconds(m_motion_sleep_ms));
         }
     }
 }
@@ -443,16 +444,19 @@ void MotionDetector::draw_loop()
             auto draw_time = std::chrono::high_resolution_clock::now() - draw_start;
 
             auto sleep_time = std::chrono::duration<double>(frame_time) - draw_time;
-            m_draw_sleep_time = sleep_time;
-            auto sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
-            m_tour_frame_count = (sleep_ms > 0) ? TOUR_SLEEP_MS/sleep_ms : TOUR_SLEEP_MS/10;
+            m_draw_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
+
+#if OVERRIDE_SLEEP
+            m_draw_sleep_ms = SLEEP_MS_DRAW;
+#endif
+            m_tour_frame_count = (m_draw_sleep_ms > 0) ? SLEEP_MS_TOUR/m_draw_sleep_ms : SLEEP_MS_TOUR/10;
             if (sleep_time.count() > 0) {
 #ifdef DEBUG_VERBOSE
                 if (i % 300 == 0) {
-                    std::cout << "Draw thread sleep time: " << sleep_ms << " ms" << std::endl;
+                    std::cout << "Draw thread sleep time: " << m_draw_sleep_ms << " ms" << std::endl;
                 }
 #endif
-                std::this_thread::sleep_for(sleep_time);
+                std::this_thread::sleep_for(std::chrono::milliseconds(m_draw_sleep_ms));
             }
         }
     }
