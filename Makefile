@@ -8,8 +8,11 @@ OUTPUT = dcm_master
 debug:
 	$(GCC) $(DEBUG_ARGS) $(FILES) $(LIBS) -o $(OUTPUT)
 
-debug_release:
-	$(GCC) -D DEBUG $(RELEASE_ARGS) $(FILES) $(LIBS) -o $(OUTPUT)
+debugv:
+	$(GCC) $(DEBUG_ARGS) -D DEBUG_VERBOSE $(FILES) $(LIBS) -o $(OUTPUT)
+
+cputest:
+	$(GCC) -D DEBUG -D DEBUG_VERBOSE $(RELEASE_ARGS) $(FILES) $(LIBS) -o $(OUTPUT)
 
 fast:
 	$(GCC) $(RELEASE_ARGS) -D CPU_HIGH_FAST $(LIBS) $(FILES) -o $(OUTPUT)
@@ -22,12 +25,6 @@ tour:
 
 touronly:
 	$(GCC) $(RELEASE_ARGS) -D TOUR_ONLY $(LIBS) $(FILES) -o $(OUTPUT)
-
-debug_multi:
-	$(GCC) $(DEBUG_ARGS) -D MULTI $(LIBS) $(FILES) -o $(OUTPUT)
-
-multi:
-	$(GCC) $(RELEASE_ARGS) -D MULTI $(LIBS) $(FILES) -o $(OUTPUT)
 
 king:
 	$(GCC) $(RELEASE_ARGS) -D KING $(LIBS) $(FILES) -o $(OUTPUT)

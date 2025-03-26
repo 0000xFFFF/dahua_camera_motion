@@ -11,7 +11,7 @@
 #include "motion_detector.hpp"
 #include "utils.h"
 
-#ifdef DEBUG
+#ifdef DEBUG_VERBOSE
 #include <fstream>
 
 class CpuUsageMonitor {
@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
         std::exit(0);
     });
 
-#ifdef DEBUG
+#ifdef DEBUG_VERBOSE
     CpuUsageMonitor monitor;
 #endif
 

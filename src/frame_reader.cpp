@@ -6,6 +6,10 @@
 #include <string>
 #include <thread>
 
+#ifdef DEBUG_VERBOSE
+#include <chrono>
+#endif
+
 #include "frame_reader.hpp"
 
 FrameReader::FrameReader(int ch, const std::string& ip,
@@ -15,7 +19,9 @@ FrameReader::FrameReader(int ch, const std::string& ip,
       m_ip(ip),
       m_username(username),
       m_password(password),
-      m_channel(ch)
+      m_channel(ch),
+      captured_fps(30.0)
+
 {
 
     m_thread = std::thread([this]() { connect_and_read(); });
@@ -25,6 +31,11 @@ cv::Mat FrameReader::get_latest_frame()
 {
     auto frame = m_frame_buffer.pop();
     return frame ? *frame : cv::Mat();
+}
+
+double FrameReader::get_fps()
+{
+    return captured_fps.load();
 }
 
 void FrameReader::stop()
@@ -74,6 +85,9 @@ void FrameReader::connect_and_read()
 
     D(std::cout << "connected: " << m_channel << std::endl);
 
+    int i = 0;
+    auto start_time = std::chrono::high_resolution_clock::now();
+
     while (m_running) {
         if (!m_cap.isOpened()) {
             std::cerr << "Camera " << m_channel << " is not open. Exiting thread." << std::endl;
@@ -81,16 +95,26 @@ void FrameReader::connect_and_read()
         }
 
         cv::Mat frame;
-        if (!m_cap.read(frame)) { // Blocks until a frame is available
-            std::cerr << "Failed to read frame from channel " << m_channel << std::endl;
-#ifndef NODELAY
-            std::this_thread::sleep_for(std::chrono::milliseconds(ERROR_SLEEP_MS)); // Prevent CPU overuse on failure
-            DPL("ERROR READING FRAME");
-#endif
-            continue;
-        }
+        // Blocks until a frame is available
+        if (!m_cap.read(frame)) { continue; }
 
         m_frame_buffer.push(std::move(frame));
+
+        i++;
+        if (i % 30 == 0) { // Measure FPS every 30 frames
+            auto end_time = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = end_time - start_time;
+            double fps = 30.0 / elapsed.count();
+            captured_fps = fps;
+
+#ifdef DEBUG_VERBOSE
+            if (i % 100 == 0) {
+                std::cout << "Channel " << m_channel << " Frame Rate: " << fps << " FPS" << std::endl;
+            }
+#endif
+            // Reset timer
+            start_time = std::chrono::high_resolution_clock::now();
+        }
     }
 
     if (m_cap.isOpened()) {

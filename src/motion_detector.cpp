@@ -116,7 +116,8 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         m_motion_ch_frames = 0;
     }
 
-    m_motion_detected_min_frames = m_motion_ch_frames >= MOTION_DETECT_MIN_FRAMES;
+    m_motion_detect_min_frames = MOTION_DETECT_MIN_MS / (m_motion_sleep_time.count() * 1000);
+    m_motion_detected_min_frames = m_motion_ch_frames >= m_motion_detect_min_frames;
 
     m_frame0_dbuff.update(m_frame0);
 }
@@ -159,7 +160,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_display, "Motion Detected: " + std::to_string(m_motion_detected) + " " + std::to_string(m_motion_detected_min_frames),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Channel (num): " + std::to_string(m_current_channel) + " <- " + std::to_string(m_motion_ch) + " " + std::to_string(m_motion_ch_frames) + "/" + std::to_string(MOTION_DETECT_MIN_FRAMES),
+    cv::putText(m_main_display, "Channel (num): " + std::to_string(m_current_channel) + " <- " + std::to_string(m_motion_ch) + " " + std::to_string(m_motion_ch_frames) + "/" + std::to_string(m_motion_detect_min_frames),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_display, "Fullscreen (f): " + bool_to_str(m_enableFullscreenChannel),
@@ -231,20 +232,17 @@ cv::Mat MotionDetector::paint_main_mat_king()
 
 cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
 {
-    std::cout << "--- ";
-    for (const int& i : chs) { std::cout << i << " "; }
-    std::cout << std::endl;
-
     size_t w = m_display_width / 3;
     size_t h = m_display_height / 3;
 
-    int x = 1;
+    int x = 0;
     for (const int& i : chs) {
+        x++;
         cv::Mat mat = m_readers[i]->get_latest_frame();
         if (mat.empty()) { continue; }
 
         cv::Rect roi;
-        switch (x++) {
+        switch (x) {
             case 1:
                 cv::resize(mat, mat, cv::Size(w * 2, h * 2));
                 roi = cv::Rect(0 * w, 0 * h, w * 2, h * 2);
@@ -328,23 +326,49 @@ void MotionDetector::handle_keys()
 
 void MotionDetector::detect_motion()
 {
+
+#ifdef DEBUG_VERBOSE
+    int i = 0;
+#endif
     while (m_running) {
 
+#ifdef DEBUG_VERBOSE
+        i++;
+#endif
+        auto motion_start = std::chrono::high_resolution_clock::now();
+
         m_motion_detected = false;
-        std::this_thread::sleep_for(std::chrono::milliseconds(MOTION_SLEEP_MS));
-        if (!m_enableMotion) { continue; }
+        if (m_enableMotion) {
+            cv::Mat frame0_get = m_readers[0]->get_latest_frame();
+            if (!frame0_get.empty()) {
+                m_frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
 
-        cv::Mat frame0_get = m_readers[0]->get_latest_frame();
-        if (frame0_get.empty()) { continue; }
-        m_frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
+                switch (m_motionDisplayMode) {
+                    case MOTION_DISPLAY_MODE_LARGEST:
+                    case MOTION_DISPLAY_MODE_SORT:
+                    case MOTION_DISPLAY_MODE_KING:
+                    case MOTION_DISPLAY_MODE_TOP:
+                        detect_largest_motion_area_set_channel();
+                        break;
+                }
+            }
+        }
 
-        switch (m_motionDisplayMode) {
-            case MOTION_DISPLAY_MODE_LARGEST:
-            case MOTION_DISPLAY_MODE_SORT:
-            case MOTION_DISPLAY_MODE_KING:
-            case MOTION_DISPLAY_MODE_TOP:
-                detect_largest_motion_area_set_channel();
-                break;
+        // Calculate sleep time based on measured FPS
+        double fps = m_readers[0]->get_fps();                        // get fps from any 1-6 ch they all have the same fps
+        double detect_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 30.0; // Default to 30 FPS if zero
+        auto motion_time = std::chrono::high_resolution_clock::now() - motion_start;
+
+        auto sleep_time = std::chrono::duration<double>(detect_time) - motion_time;
+        m_motion_sleep_time = sleep_time;
+        if (sleep_time.count() > 0) {
+#ifdef DEBUG_VERBOSE
+            if (i % 300 == 0) {
+                double sleep_ms = sleep_time.count() * 1000.0;
+                std::cout << "Motion thread sleep time: " << sleep_ms << " ms" << std::endl;
+            }
+#endif
+            std::this_thread::sleep_for(sleep_time);
         }
     }
 }
@@ -359,8 +383,17 @@ void MotionDetector::draw_loop()
     }
 
     try {
+
+#ifdef DEBUG_VERBOSE
+        int i = 0;
+#endif
         while (m_running) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS));
+
+#ifdef DEBUG_VERBOSE
+            i++;
+#endif
+
+            auto draw_start = std::chrono::high_resolution_clock::now();
 
             if (m_enableTour) { do_tour_logic(); }
 
@@ -401,6 +434,22 @@ void MotionDetector::draw_loop()
             cv::imshow("Motion", m_main_display);
 
             handle_keys();
+
+            // Calculate sleep time based on measured FPS
+            double fps = m_readers[1]->get_fps();                       // get fps from any 1-6 ch they all have the same fps
+            double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 30.0; // Default to 30 FPS if zero
+            auto draw_time = std::chrono::high_resolution_clock::now() - draw_start;
+
+            auto sleep_time = std::chrono::duration<double>(frame_time) - draw_time;
+            if (sleep_time.count() > 0) {
+#ifdef DEBUG_VERBOSE
+                if (i % 300 == 0) {
+                    double sleep_ms = sleep_time.count() * 1000.0;
+                    std::cout << "Draw thread sleep time: " << sleep_ms << " ms" << std::endl;
+                }
+#endif
+                std::this_thread::sleep_for(sleep_time);
+            }
         }
     }
     catch (const std::exception& e) {

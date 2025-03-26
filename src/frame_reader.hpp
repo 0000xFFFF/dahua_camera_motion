@@ -11,6 +11,7 @@ class FrameReader {
                 const std::string& username, const std::string& password);
 
     cv::Mat get_latest_frame();
+    double get_fps();
     void stop();
 
   private:
@@ -24,6 +25,7 @@ class FrameReader {
     std::string m_username;
     std::string m_password;
     int m_channel;
+    std::atomic<double> captured_fps;
     LockFreeRingBuffer<cv::Mat, 2> m_frame_buffer;
     cv::VideoCapture m_cap;
     std::atomic<bool> m_running{true};

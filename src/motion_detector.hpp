@@ -72,6 +72,8 @@ class MotionDetector {
     cv::Mat m_main_display;
 
     std::atomic<bool> m_motion_detected{false};
+    std::chrono::duration<double> m_motion_sleep_time{0};
+    std::atomic<int> m_motion_detect_min_frames{0};
     std::atomic<bool> m_motion_detected_min_frames{false};
 
     std::atomic<int> m_tour_frame_index{0};
