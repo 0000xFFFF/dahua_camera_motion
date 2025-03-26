@@ -1,12 +1,15 @@
-GCC = g++
+GCC = clang++
 FILES = src/*.cpp
 DEBUG_ARGS = -D DEBUG -g -O0 -fno-omit-frame-pointer
-RELEASE_ARGS = -Wall -Wextra -O2 -s
+RELEASE_ARGS = -Wall -Wextra -s -O3 -march=native
 LIBS = `pkg-config --cflags --libs opencv4`
 OUTPUT = dcm_master
 
 debug:
 	$(GCC) $(DEBUG_ARGS) $(FILES) $(LIBS) -o $(OUTPUT)
+
+debug_release:
+	$(GCC) -D DEBUG $(RELEASE_ARGS) $(FILES) $(LIBS) -o $(OUTPUT)
 
 fast:
 	$(GCC) $(RELEASE_ARGS) -D CPU_HIGH_FAST $(LIBS) $(FILES) -o $(OUTPUT)
