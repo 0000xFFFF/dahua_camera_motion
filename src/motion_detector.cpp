@@ -55,8 +55,7 @@ std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
     cv::threshold(fgmask, thresh, 128, 255, cv::THRESH_BINARY);
 
     std::vector<std::vector<cv::Point>> contours;
-    // cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-    cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+    cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
     return contours;
 }
 
