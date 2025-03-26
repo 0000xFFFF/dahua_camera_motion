@@ -9,16 +9,14 @@
 
 #include "frame_reader.hpp"
 
-FrameReader::FrameReader(int ch, int w, int h, const std::string& ip,
+FrameReader::FrameReader(int ch, const std::string& ip,
                          const std::string& username, const std::string& password)
     :
 
       m_ip(ip),
       m_username(username),
       m_password(password),
-      m_channel(ch),
-      m_width(w),
-      m_height(h)
+      m_channel(ch)
 {
 
     m_thread = std::thread([this]() { connect_and_read(); });

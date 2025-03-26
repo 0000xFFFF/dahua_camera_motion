@@ -6,7 +6,7 @@
 
 class FrameReader {
   public:
-    FrameReader(int ch, int w, int h, const std::string& ip,
+    FrameReader(int ch, const std::string& ip,
                 const std::string& username, const std::string& password);
 
     cv::Mat get_latest_frame();
@@ -23,8 +23,6 @@ class FrameReader {
     std::string m_username;
     std::string m_password;
     int m_channel;
-    int m_width;
-    int m_height;
     cv::Mat m_frame_buffer1;
     cv::Mat m_frame_buffer2;
     bool m_useBuffer1 = true;

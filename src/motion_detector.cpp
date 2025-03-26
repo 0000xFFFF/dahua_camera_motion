@@ -29,11 +29,11 @@ MotionDetector::MotionDetector(const std::string& ip, const std::string& usernam
         true   // detectShadows
     );
 
-    m_readers.push_back(std::make_unique<FrameReader>(0, W_0, H_0, ip, username, password));
+    m_readers.push_back(std::make_unique<FrameReader>(0, ip, username, password));
 
     for (int channel = 1; channel <= 6; ++channel) {
         m_readers.push_back(std::make_unique<FrameReader>(
-            channel, W_HD, H_HD, ip, username, password));
+            channel, ip, username, password));
     }
 }
 
@@ -55,7 +55,8 @@ std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
     cv::threshold(fgmask, thresh, 128, 255, cv::THRESH_BINARY);
 
     std::vector<std::vector<cv::Point>> contours;
-    cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    //cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
     return contours;
 }
 
