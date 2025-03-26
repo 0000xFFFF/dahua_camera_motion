@@ -117,7 +117,8 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         m_motion_ch_frames = 0;
     }
 
-    m_motion_detect_min_frames = MOTION_DETECT_MIN_MS / (m_motion_sleep_time.count() * 1000);
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(m_motion_sleep_time).count();
+    m_motion_detect_min_frames = MOTION_DETECT_MIN_MS / ms;
     m_motion_detected_min_frames = m_motion_ch_frames >= m_motion_detect_min_frames;
 
     m_frame0_dbuff.update(m_frame0);
@@ -444,7 +445,7 @@ void MotionDetector::draw_loop()
             auto sleep_time = std::chrono::duration<double>(frame_time) - draw_time;
             m_draw_sleep_time = sleep_time;
             auto sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
-            m_tour_frame_count = TOUR_SLEEP_MS/sleep_ms;
+            m_tour_frame_count = (sleep_ms > 0) ? TOUR_SLEEP_MS/sleep_ms : TOUR_SLEEP_MS/10;
             if (sleep_time.count() > 0) {
 #ifdef DEBUG_VERBOSE
                 if (i % 300 == 0) {
