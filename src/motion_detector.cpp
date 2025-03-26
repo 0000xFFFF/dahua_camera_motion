@@ -118,7 +118,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     }
 
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(m_motion_sleep_time).count();
-    m_motion_detect_min_frames = MOTION_DETECT_MIN_MS / ms;
+    m_motion_detect_min_frames = (ms > 0) ? MOTION_DETECT_MIN_MS / ms : MOTION_DETECT_MIN_MS / 10;
     m_motion_detected_min_frames = m_motion_ch_frames >= m_motion_detect_min_frames;
 
     m_frame0_dbuff.update(m_frame0);
