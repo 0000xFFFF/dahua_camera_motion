@@ -7,6 +7,7 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <sys/types.h>
+#include <unistd.h>
 
 #define MINIMAP_WIDTH 300
 #define MINIMAP_HEIGHT 160
@@ -43,7 +44,7 @@ MotionDetector::MotionDetector(const std::string& ip, const std::string& usernam
 void MotionDetector::do_tour_logic()
 {
     m_tour_frame_index++;
-    if (m_tour_frame_index >= TOUR_FRAME_COUNT) {
+    if (m_tour_frame_index >= m_tour_frame_count) {
         m_tour_frame_index = 0;
         m_current_channel = m_current_channel % 6 + 1;
     }
@@ -166,7 +167,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_display, "Fullscreen (f): " + bool_to_str(m_enableFullscreenChannel),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(m_tour_frame_index) + "/" + std::to_string(TOUR_FRAME_COUNT),
+    cv::putText(m_main_display, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(m_tour_frame_index) + "/" + std::to_string(m_tour_frame_count),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_display, "Reset (r)",
@@ -364,7 +365,7 @@ void MotionDetector::detect_motion()
         if (sleep_time.count() > 0) {
 #ifdef DEBUG_VERBOSE
             if (i % 300 == 0) {
-                double sleep_ms = sleep_time.count() * 1000.0;
+                auto sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
                 std::cout << "Motion thread sleep time: " << sleep_ms << " ms" << std::endl;
             }
 #endif
@@ -441,10 +442,12 @@ void MotionDetector::draw_loop()
             auto draw_time = std::chrono::high_resolution_clock::now() - draw_start;
 
             auto sleep_time = std::chrono::duration<double>(frame_time) - draw_time;
+            m_draw_sleep_time = sleep_time;
+            auto sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
+            m_tour_frame_count = TOUR_SLEEP_MS/sleep_ms;
             if (sleep_time.count() > 0) {
 #ifdef DEBUG_VERBOSE
                 if (i % 300 == 0) {
-                    double sleep_ms = sleep_time.count() * 1000.0;
                     std::cout << "Draw thread sleep time: " << sleep_ms << " ms" << std::endl;
                 }
 #endif

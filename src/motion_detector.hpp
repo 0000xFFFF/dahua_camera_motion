@@ -76,6 +76,8 @@ class MotionDetector {
     std::atomic<int> m_motion_detect_min_frames{0};
     std::atomic<bool> m_motion_detected_min_frames{false};
 
+    std::chrono::duration<double> m_draw_sleep_time{0};
+    std::atomic<int> m_tour_frame_count{0};
     std::atomic<int> m_tour_frame_index{0};
 
     DoubleBufferList m_sorted_chs_area_all;
