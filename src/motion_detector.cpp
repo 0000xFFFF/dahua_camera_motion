@@ -7,6 +7,8 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <sys/types.h>
+#include <opencv2/bgsegm.hpp>
+
 
 #define MINIMAP_WIDTH 300
 #define MINIMAP_HEIGHT 160
@@ -23,10 +25,12 @@ MotionDetector::MotionDetector(const std::string& ip, const std::string& usernam
 {
 
     // Initialize background subtractor
-    m_fgbg = cv::createBackgroundSubtractorMOG2(
-        20,  // history (reduced from 500)
-        32,  // varThreshold (increased from 16)
-        true // detectShadows
+    // m_fgbg = cv::createBackgroundSubtractorMOG2(20, 32, true);
+    // m_fgbg = cv::createBackgroundSubtractorKNN(20, 400.0, true);
+    m_fgbg = cv::bgsegm::createBackgroundSubtractorCNT(
+        true, // use ROI
+        15,   // min object size
+        true  // reset background model
     );
 
     m_readers.push_back(std::make_unique<FrameReader>(0, ip, username, password));

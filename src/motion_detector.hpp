@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <opencv2/bgsegm.hpp>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <utility>
@@ -45,7 +46,9 @@ class MotionDetector {
 
     // init
     std::vector<std::unique_ptr<FrameReader>> m_readers;
-    cv::Ptr<cv::BackgroundSubtractorMOG2> m_fgbg;
+    // cv::Ptr<cv::BackgroundSubtractorMOG2> m_fgbg;
+    // cv::Ptr<cv::BackgroundSubtractorKNN> m_fgbg;
+    cv::Ptr<cv::bgsegm::BackgroundSubtractorCNT> m_fgbg;
 
     // defaults
     int m_current_channel = 1;
@@ -61,8 +64,8 @@ class MotionDetector {
 
     cv::Mat m_frame0 = cv::Mat::zeros(W_0, H_0, CV_8UC3);
     cv::Mat m_main_c3r2 = cv::Mat(cv::Size(W_HD * 3, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0)); // all
-    cv::Mat m_main_c1r1 = cv::Mat::zeros(W_HD, H_HD, CV_8UC3); // fullscreenCh, tour
-    cv::Mat m_main_c3r3; // KING, TOP
+    cv::Mat m_main_c1r1 = cv::Mat::zeros(W_HD, H_HD, CV_8UC3);                                 // fullscreenCh, tour
+    cv::Mat m_main_c3r3;                                                                       // KING, TOP
 
     cv::Rect m_motion_region;
     bool m_motion_detected = false;
