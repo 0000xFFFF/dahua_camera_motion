@@ -60,7 +60,6 @@ class MotionDetector {
     bool m_enableTour = ENABLE_TOUR;
 
     cv::Mat m_frame0 = cv::Mat::zeros(W_0, H_0, CV_8UC3);
-    cv::Mat m_frame0_drawed = cv::Mat::zeros(W_0, H_0, CV_8UC3);
     cv::Mat m_main_c3r2 = cv::Mat(cv::Size(W_HD * 3, H_HD * 2), CV_8UC3, cv::Scalar(0, 0, 0)); // all
     cv::Mat m_main_c1r1 = cv::Mat::zeros(W_HD, H_HD, CV_8UC3); // fullscreenCh, tour
     cv::Mat m_main_c3r3; // KING, TOP

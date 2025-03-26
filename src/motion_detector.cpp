@@ -79,7 +79,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     for (const auto& contour : contours) {
         if (cv::contourArea(contour) >= m_motion_area) {
             cv::Rect rect = cv::boundingRect(contour);
-            cv::rectangle(m_frame0_drawed, rect, cv::Scalar(0, 255, 0), 1);
+            cv::rectangle(m_frame0, rect, cv::Scalar(0, 255, 0), 1);
             double area = rect.width * rect.height;
             if (area > max_area) {
                 max_area = area;
@@ -91,7 +91,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
 
     // Update current channel based on motion position
     if (m_motion_detected) {
-        cv::rectangle(m_frame0_drawed, m_motion_region, cv::Scalar(0, 0, 255), 2);
+        cv::rectangle(m_frame0, m_motion_region, cv::Scalar(0, 0, 255), 2);
         m_tour_frame_index = 0; // reset so it doesn't auto switch on new tour so we can show a little bit of motion
         float rel_x = m_motion_region.x / static_cast<float>(CROP_WIDTH);
         float rel_y = m_motion_region.y / static_cast<float>(CROP_HEIGHT);
@@ -126,7 +126,7 @@ void MotionDetector::sort_channels_by_motion_area_motion_channels()
     for (const auto& contour : contours) {
         if (cv::contourArea(contour) >= m_motion_area) {
             cv::Rect rect = cv::boundingRect(contour);
-            cv::rectangle(m_frame0_drawed, rect, cv::Scalar(0, 255, 0), 1);
+            cv::rectangle(m_frame0, rect, cv::Scalar(0, 255, 0), 1);
             double area = rect.width * rect.height;
 
             float rel_x = rect.x / static_cast<float>(CROP_WIDTH);
@@ -152,7 +152,7 @@ void MotionDetector::sort_channels_by_motion_area_motion_channels()
 void MotionDetector::draw_minimap()
 {
     cv::Mat minimap;
-    cv::resize(m_frame0_drawed, minimap, cv::Size(MINIMAP_WIDTH, MINIMAP_HEIGHT));
+    cv::resize(m_frame0, minimap, cv::Size(MINIMAP_WIDTH, MINIMAP_HEIGHT));
 
     // Add white border
     cv::Mat minimap_padded;
@@ -451,21 +451,13 @@ void MotionDetector::start()
     }
 
     try {
-
-        int frame_counter = 0;
-        const int PROCESS_EVERY_N_FRAMES = 3; // Process only every 3rd frame
         while (m_running) {
 
-            frame_counter++;
-            if (frame_counter % PROCESS_EVERY_N_FRAMES != 0) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS));
-                continue;
-            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS));
 
             cv::Mat frame0_get = m_readers[0]->get_latest_frame();
             if (!frame0_get.empty()) {
                 m_frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
-                m_frame0_drawed = m_frame0.clone();
             }
 
             cv::Mat main_frame_get = cv::Mat();
@@ -486,7 +478,7 @@ void MotionDetector::start()
             if (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_MULTI) { sort_channels_by_motion_area_motion_channels(); }
 
             if (m_enableMinimapFullscreen) {
-                main_frame_get = m_frame0_drawed;
+                main_frame_get = m_frame0;
             }
             else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT) {
                 main_frame_get = paint_main_mat_sort();
