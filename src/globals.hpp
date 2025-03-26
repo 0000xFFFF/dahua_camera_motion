@@ -14,8 +14,8 @@
 #define ENABLE_TOUR 0
 #define ENABLE_FULLSCREEN_CHANNEL 0
 #define TOUR_SLEEP_MS 3000
-#define MOTION_SLEEP_MS 100
-#define DRAW_SLEEP_MS 100
+#define MOTION_SLEEP_MS 150
+#define DRAW_SLEEP_MS 50
 #define ERROR_SLEEP_MS 10
 
 #define MOTION_DETECT_MIN_MS 500 // half a sec of motion

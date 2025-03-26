@@ -1,5 +1,4 @@
 #include "motion_detector.hpp"
-#include "debug.h"
 #include "globals.hpp"
 #include "opencv2/core.hpp"
 #include <exception>
@@ -20,8 +19,11 @@ MotionDetector::MotionDetector(const std::string& ip, const std::string& usernam
       m_display_width(w),
       m_display_height(h),
       m_fullscreen(fullscreen),
-      m_main_display(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0)),
+      m_frame0(cv::Mat::zeros(W_0, H_0, CV_8UC3)),
+      m_canv(cv::Mat(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0))),
+      m_main_display(cv::Mat(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_sorted_chs_area_all({1, 2, 3, 4, 5, 6})
+
 {
 
     // Initialize background subtractor
@@ -122,7 +124,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
 void MotionDetector::draw_minimap()
 {
     cv::Mat frame0 = m_frame0_dbuff.get();
-    if (frame0.empty()) { return; } 
+    if (frame0.empty()) { return; }
 
     cv::Mat minimap;
     cv::resize(frame0, minimap, cv::Size(MINIMAP_WIDTH, MINIMAP_HEIGHT));
@@ -192,7 +194,7 @@ cv::Mat MotionDetector::paint_main_mat_all() // need to fix this
     //     mat.copyTo(m_main_display(roi));
     // }
 
-    return m_main_display;
+    return m_canv;
 }
 
 cv::Mat MotionDetector::paint_main_mat_sort() // need to fix this
@@ -219,7 +221,7 @@ cv::Mat MotionDetector::paint_main_mat_sort() // need to fix this
     //     mat.copyTo(m_main_display(roi));
     // }
 
-    return m_main_display;
+    return m_canv;
 }
 
 cv::Mat MotionDetector::paint_main_mat_king()
@@ -237,7 +239,7 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
     size_t h = m_display_height / 3;
 
     int x = 1;
-    for (int i : chs) {
+    for (const int& i : chs) {
         cv::Mat mat = m_readers[i]->get_latest_frame();
         if (mat.empty()) { continue; }
 
@@ -268,10 +270,10 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
                 roi = cv::Rect(2 * w, 2 * h, w, h);
                 break;
         }
-        mat.copyTo(m_main_display(roi));
+        mat.copyTo(m_canv(roi));
     }
 
-    return m_main_display;
+    return m_canv;
 }
 
 cv::Mat MotionDetector::paint_main_mat_top()
@@ -358,40 +360,38 @@ void MotionDetector::draw_loop()
 
     try {
         while (m_running) {
-
             std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP_MS));
-
-            cv::Mat main_frame_get = cv::Mat();
 
             if (m_enableTour) { do_tour_logic(); }
 
+            cv::Mat get;
             if (m_enableMinimapFullscreen) {
-                main_frame_get = m_frame0_dbuff.get();
+                get = m_frame0_dbuff.get();
             }
             else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_SORT) {
-                main_frame_get = paint_main_mat_sort();
+                get = paint_main_mat_sort();
             }
             else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_KING) {
-                main_frame_get = paint_main_mat_king();
+                get = paint_main_mat_king();
             }
             else if (m_motionDisplayMode == MOTION_DISPLAY_MODE_TOP) {
-                main_frame_get = paint_main_mat_top();
+                get = paint_main_mat_top();
             }
             else if (m_enableFullscreenChannel ||
                      m_enableTour ||
                      (m_enableMotion && m_motionDisplayMode == MOTION_DISPLAY_MODE_LARGEST && m_motion_detected_min_frames)) {
-                main_frame_get = m_readers[m_current_channel]->get_latest_frame();
+                get = m_readers[m_current_channel]->get_latest_frame();
             }
             else {
-                main_frame_get = paint_main_mat_king();
+                get = paint_main_mat_king();
             }
 
-            if (!main_frame_get.empty()) {
-                if (main_frame_get.size() != cv::Size(m_display_width, m_display_height)) {
-                    cv::resize(main_frame_get, m_main_display, cv::Size(m_display_width, m_display_height));
+            if (!get.empty()) {
+                if (get.size() != cv::Size(m_display_width, m_display_height)) {
+                    cv::resize(get, m_main_display, cv::Size(m_display_width, m_display_height));
                 }
                 else {
-                    m_main_display = main_frame_get;
+                    m_main_display = get;
                 }
             }
 

@@ -4,7 +4,6 @@
 #include <opencv2/bgsegm.hpp>
 #include <opencv2/opencv.hpp>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "frame_reader.hpp"
@@ -67,8 +66,9 @@ class MotionDetector {
     bool m_enableFullscreenChannel = ENABLE_FULLSCREEN_CHANNEL;
     bool m_enableTour = ENABLE_TOUR;
 
-    cv::Mat m_frame0 = cv::Mat::zeros(W_0, H_0, CV_8UC3); // only motion thread should see this
-    DoubleBufferMat m_frame0_dbuff; // coms for motion thread and draw thread
+    cv::Mat m_frame0;
+    DoubleBufferMat m_frame0_dbuff;
+    cv::Mat m_canv;
     cv::Mat m_main_display;
 
     std::atomic<bool> m_motion_detected{false};
