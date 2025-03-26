@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
                 program.get<std::string>("password"),
                 program.get<int>("area"), width, height, program.get<bool>("fullscreen"));
 
-            motionDetector.start();
+            motionDetector.draw_loop();
         }
     }
     catch (const std::exception& e) {
