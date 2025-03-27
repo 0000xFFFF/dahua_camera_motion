@@ -58,7 +58,7 @@ void MotionDetector::do_tour_logic()
     if (m_tour_frame_index >= m_tour_frame_count) {
         m_tour_frame_index = 0;
 #if KING_LAYOUT == KING_LAYOUT_CIRC
-        change_channel(m_king_chain.get().back());
+        change_channel(m_king_chain.get()[5]);
 #else
         m_tour_current_channel++;
         if (m_tour_current_channel > 6) { m_tour_current_channel = 1; }
