@@ -30,6 +30,13 @@
 #define DISPLAY_MODE_KING 3
 #define DISPLAY_MODE_TOP 4
 
+#define KING_LAYOUT_REL 1
+#define KING_LAYOUT_CIRC 2
+
+#ifndef KING_LAYOUT
+#define KING_LAYOUT 1
+#endif
+
 #ifndef DISPLAY_MODE
 #define DISPLAY_MODE DISPLAY_MODE_SINGLE
 #endif

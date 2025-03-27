@@ -53,7 +53,7 @@ void MotionDetector::do_tour_logic()
     m_tour_frame_index++;
     if (m_tour_frame_index >= m_tour_frame_count) {
         m_tour_frame_index = 0;
-#if KING_LAYOUT == 1
+#if KING_LAYOUT == KING_LAYOUT_CIRC
         change_channel(m_king_chain.get().back());
 #else
         m_tour_current_channel++;
@@ -232,12 +232,6 @@ cv::Mat MotionDetector::paint_main_mat_king()
     return paint_main_mat_king(m_king_chain.get());
 }
 
-#define KING_LAYOUT_REL 1
-#define KING_LAYOUT_CIRC 2
-
-#ifndef KING_LAYOUT
-#define KING_LAYOUT 1
-#endif
 cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
 {
     size_t w = m_display_width / 3;
