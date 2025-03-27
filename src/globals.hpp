@@ -29,7 +29,7 @@
 #define ENABLE_MINIMAP 1
 #endif
 
-#ifdef FAST
+#ifdef CPU_HIGH_FAST
 #undef OVERRIDE_SLEEP
 #define OVERRIDE_SLEEP 0
 #endif
