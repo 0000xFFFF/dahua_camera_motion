@@ -286,7 +286,7 @@ cv::Mat MotionDetector::paint_main_mat_top()
 void MotionDetector::handle_keys()
 {
     // clang-format off
-    char key = cv::waitKey(1);
+    int key = cv::waitKey(1);
     if (key == 'q') { stop(); }
     else if (key == 'm') { m_enableMotion = !m_enableMotion; }
     else if (key == 'l') { m_enableMotionZoomLargest = !m_enableMotionZoomLargest; }
@@ -312,6 +312,14 @@ void MotionDetector::handle_keys()
     else if (key == '0') {
         m_enableMinimapFullscreen = !m_enableMinimapFullscreen;
     }
+    else if (key == 81 || key == 65361) { // Left arrow (81 on Windows, 65361 on Linux)
+        int new_ch = m_current_channel + 1;
+        m_current_channel = new_ch > 6 ? 1 : new_ch;
+    } else if (key == 83 || key == 65363) { // Right arrow (83 on Windows, 65363 on Linux)
+        int new_ch = m_current_channel - 1;
+        m_current_channel = new_ch < 1 ? 6 : new_ch;
+    }
+
     else if (key >= '1' && key <= '6') {
         m_current_channel = key - '0';
         m_enableFullscreenChannel = true;
