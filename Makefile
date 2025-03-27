@@ -3,7 +3,7 @@ FILES = src/*.cpp
 ARGS = -fcolor-diagnostics -O3
 DEBUG_ARGS = -D DEBUG -g -fno-omit-frame-pointer
 RELEASE_ARGS = -Wall -Wextra -s -march=native
-LIBS = `pkg-config --cflags --libs opencv4`
+LIBS = `pkg-config --cflags --libs opencv4` -fopenmp
 EXEC = dcm_master
 
 PREFIX = /usr/local
@@ -46,6 +46,9 @@ single:
 
 all:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_ALL $(LIBS) $(FILES) -o $(EXEC)
+
+allo:
+	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_ALL -D ENABLE_MOTION=0 $(LIBS) $(FILES) -o $(EXEC)
 
 # ALL + ZOOM LARGEST MOTION
 lall:

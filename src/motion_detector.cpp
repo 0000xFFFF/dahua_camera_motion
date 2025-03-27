@@ -1,4 +1,5 @@
 #include "motion_detector.hpp"
+#include "debug.hpp"
 #include "globals.hpp"
 #include "opencv2/core.hpp"
 #include <exception>
@@ -8,6 +9,8 @@
 #include <string>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include <omp.h>
 
 #define MINIMAP_WIDTH 300
 #define MINIMAP_HEIGHT 160
@@ -222,6 +225,30 @@ cv::Mat MotionDetector::paint_main_mat_all(const std::list<int>& chs)
     return m_canv3x2;
 }
 
+cv::Mat MotionDetector::paint_main_mat_all_fast()
+{
+    size_t w = m_display_width / 3;
+    size_t h = m_display_height / 2;
+
+    cv::parallel_for_(cv::Range(0, 6), [&](const cv::Range& range) {
+        for (int i = range.start; i < range.end; i++) {
+            cv::Mat mat = m_readers[i + 1]->get_latest_frame();
+            if (mat.empty()) { continue; }
+
+            cv::Mat resized_mat;
+            cv::resize(mat, resized_mat, cv::Size(w, h));
+
+            int row = i / 3;
+            int col = i % 3;
+            cv::Rect roi(col * w, row * h, w, h);
+
+            resized_mat.copyTo(m_canv3x2(roi));
+        }
+    });
+
+    return m_canv3x2;
+}
+
 cv::Mat MotionDetector::paint_main_mat_sort() // need to fix this
 {
     return paint_main_mat_all(m_king_chain.get());
@@ -409,6 +436,9 @@ void MotionDetector::draw_loop()
 #ifdef DEBUG_VERBOSE
         int i = 0;
 #endif
+
+        CpuTimer cpuTimer;
+
         while (m_running) {
 
 #ifdef DEBUG_VERBOSE
@@ -440,7 +470,9 @@ void MotionDetector::draw_loop()
                 get = paint_main_mat_top();
             }
             else if (m_displayMode == DISPLAY_MODE_ALL) {
-                get = paint_main_mat_all();
+                cpuTimer.start();
+                get = paint_main_mat_all_fast();
+                cpuTimer.stop();
             }
 
             if (!get.empty()) {

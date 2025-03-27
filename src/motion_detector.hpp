@@ -33,6 +33,7 @@ class MotionDetector {
     void draw_info();
     cv::Mat paint_main_mat_all();
     cv::Mat paint_main_mat_all(const std::list<int>& chs);
+    cv::Mat paint_main_mat_all_fast();
     cv::Mat paint_main_mat_sort();
     cv::Mat paint_main_mat_multi();
     cv::Mat paint_main_mat_king();
