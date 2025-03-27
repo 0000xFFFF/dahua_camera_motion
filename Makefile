@@ -109,20 +109,19 @@ uninstall:
 #
 
 # king, circ, motion slow, draw fast, tour
-king_circ_ms_df_tour:
+r1:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_KING -D KING_LAYOUT=2 -D SLEEP_MS_MOTION=300 -D SLEEP_MS_DRAW=80 -D ENABLE_TOUR=1 $(LIBS) $(FILES) -o $(EXEC)
 
 # king, circ, motion slow, draw fast, tour, zoom
-king_circ_ms_df_tour_zoom:
+r2:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_KING -D KING_LAYOUT=2 -D SLEEP_MS_MOTION=300 -D SLEEP_MS_DRAW=80 -D ENABLE_TOUR=1 -D ENABLE_MOTION_ZOOM_LARGEST=1 $(LIBS) $(FILES) -o $(EXEC)
 
 # single, motion slow, draw fast, tour
-single_ms_df_tour:
-	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_SINGLE -D SLEEP_MS_MOTION=300 -D SLEEP_MS_DRAW=20 -D ENABLE_TOUR=1 $(LIBS) $(FILES) -o $(EXEC)
+r3:
+	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_SINGLE -D SLEEP_MS_MOTION=300 -D SLEEP_MS_DRAW=50 -D ENABLE_TOUR=1 $(LIBS) $(FILES) -o $(EXEC)
 
-r1: king_circ_ms_df_tour
-r2: king_circ_ms_df_tour_zoom
-r3: single_ms_df_tour
+r3_test:
+	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DEBUG_CPU -D DISPLAY_MODE=DISPLAY_MODE_SINGLE -D SLEEP_MS_MOTION=300 -D SLEEP_MS_DRAW=50 -D ENABLE_TOUR=1 $(LIBS) $(FILES) -o $(EXEC)
 
 release: r2
 	
