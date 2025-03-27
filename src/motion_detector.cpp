@@ -58,7 +58,7 @@ void MotionDetector::do_tour_logic()
     if (m_tour_frame_index >= m_tour_frame_count) {
         m_tour_frame_index = 0;
 #if KING_LAYOUT == KING_LAYOUT_CIRC
-        change_channel(m_king_chain.get()[5]);
+        change_channel(m_king_chain.get().back());
 #else
         m_tour_current_channel++;
         if (m_tour_current_channel > 6) { m_tour_current_channel = 1; }
@@ -93,7 +93,7 @@ void MotionDetector::move_to_front(int ch)
             new_vec[x++] = value;
         }
     }
-    m_king_chain.update(vec);
+    m_king_chain.update(new_vec);
 }
 
 void MotionDetector::detect_largest_motion_area_set_channel()
@@ -191,7 +191,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_display, "Fullscreen (f): " + bool_to_str(m_enableFullscreenChannel),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(m_tour_frame_index) + "/" + std::to_string(m_tour_frame_count) + " = " + std::to_string(m_tour_current_channel),
+    cv::putText(m_main_display, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(m_tour_frame_index) + "/" + std::to_string(m_tour_frame_count),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_display, "Reset (r)",
