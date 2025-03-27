@@ -94,8 +94,8 @@ single_ms_df_tour:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_SINGLE -D SLEEP_MS_MOTION=300 -D SLEEP_MS_DRAW=20 -D ENABLE_TOUR=1 $(LIBS) $(FILES) -o $(EXEC)
 
 
-r1: king_circ_slow_tour
-r2: king_circ_slow_tour_zoom
+r1: king_circ_ms_df_tour
+r2: king_circ_ms_df_tour_zoom
 r3: single_ms_df_tour
 
 release: r2
