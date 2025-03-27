@@ -1,6 +1,15 @@
 #pragma once
 
+#include <atomic>
+#include <chrono>
+#include <fstream>
 #include <iostream>
+#include <sstream>
+#include <thread>
+#include <unistd.h> // For getpid()
+#include <vector>
+#include <x86intrin.h> // For __rdtsc()
+
 #ifdef DEBUG
 #define D(x) x
 #else
@@ -10,14 +19,17 @@
 #define DP(x) D(printf("[DEBUG] %s", x))
 #define DPL(x) D(printf("[DEBUG] %s\n", x))
 
-#ifdef DEBUG_VERBOSE
-#include <fstream>
+#ifdef DEBUG_CPU
+#define D_CPU(x) x
+#else
+#define D_CPU(x)
+#endif
 
 class CpuUsageMonitor {
-
   public:
     CpuUsageMonitor()
     {
+        m_num_cores = std::thread::hardware_concurrency();
         m_thread = std::thread([this]() { cpu_usage_monitor(); });
     }
 
@@ -28,81 +40,88 @@ class CpuUsageMonitor {
     }
 
   private:
-    double m_max_cpu;
+    double m_max_cpu = 0.0;
     std::thread m_thread;
     std::atomic<bool> m_running{true};
+    pid_t m_pid = getpid(); // Store the process ID
+    unsigned int m_num_cores;
 
-    std::vector<unsigned long long> get_cpu_stats()
+    std::vector<unsigned long long> get_process_cpu_stats()
     {
-        std::ifstream file("/proc/stat");
+        std::ifstream file("/proc/" + std::to_string(m_pid) + "/stat");
         std::string line;
-        std::vector<unsigned long long> cpu_stats;
+        std::vector<unsigned long long> process_stats;
 
-        // Read the first line for the "cpu" stats
         if (getline(file, line)) {
             std::stringstream ss(line);
-            std::string cpu;
-            unsigned long long user, nice, system, idle, iowait, irq, softirq, steal;
+            std::string temp;
+            unsigned long long utime, stime, cutime, cstime;
 
-            ss >> cpu >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal;
+            // Skip unwanted fields
+            for (int i = 1; i <= 13; ++i) {
+                ss >> temp;
+            }
 
-            cpu_stats.push_back(user);
-            cpu_stats.push_back(nice);
-            cpu_stats.push_back(system);
-            cpu_stats.push_back(idle);
-            cpu_stats.push_back(iowait);
-            cpu_stats.push_back(irq);
-            cpu_stats.push_back(softirq);
-            cpu_stats.push_back(steal);
+            ss >> utime >> stime >> cutime >> cstime;
+
+            process_stats.push_back(utime);
+            process_stats.push_back(stime);
+            process_stats.push_back(cutime);
+            process_stats.push_back(cstime);
         }
 
-        return cpu_stats;
+        return process_stats;
     }
 
-    double calculate_cpu_usage(const std::vector<unsigned long long>& prev_stats, const std::vector<unsigned long long>& curr_stats)
+    double calculate_process_cpu_usage(const std::vector<unsigned long long>& prev_stats, const std::vector<unsigned long long>& curr_stats, long long time_diff)
     {
-        unsigned long long prev_idle = prev_stats[3] + prev_stats[4];
-        unsigned long long curr_idle = curr_stats[3] + curr_stats[4];
-
-        unsigned long long prev_non_idle = prev_stats[0] + prev_stats[1] + prev_stats[2] + prev_stats[5] + prev_stats[6] + prev_stats[7];
-        unsigned long long curr_non_idle = curr_stats[0] + curr_stats[1] + curr_stats[2] + curr_stats[5] + curr_stats[6] + curr_stats[7];
-
-        unsigned long long prev_total = prev_idle + prev_non_idle;
-        unsigned long long curr_total = curr_idle + curr_non_idle;
+        if (time_diff == 0) {
+            return 0.0; // Avoid division by zero
+        }
+        unsigned long long prev_total = prev_stats[0] + prev_stats[1] + prev_stats[2] + prev_stats[3];
+        unsigned long long curr_total = curr_stats[0] + curr_stats[1] + curr_stats[2] + curr_stats[3];
 
         unsigned long long total_diff = curr_total - prev_total;
-        unsigned long long idle_diff = curr_idle - prev_idle;
 
         // Calculate the CPU usage as a percentage
-        return (1.0 - static_cast<double>(idle_diff) / total_diff) * 100;
+        double cpu_usage = (static_cast<double>(total_diff) / sysconf(_SC_CLK_TCK) / time_diff) * 100.0;
+
+        return cpu_usage;
     }
 
     void cpu_usage_monitor()
     {
-        std::vector<unsigned long long> prev_stats = get_cpu_stats();
+        std::this_thread::sleep_for(std::chrono::seconds(12));
+
+        std::vector<unsigned long long> prev_stats = get_process_cpu_stats();
+        auto prev_time = std::chrono::steady_clock::now();
 
         while (m_running) {
-            // Wait for a second before getting stats again
-            std::this_thread::sleep_for(std::chrono::seconds(12));
+            std::this_thread::sleep_for(std::chrono::seconds(1));
 
-            // Get current CPU stats
-            std::vector<unsigned long long> curr_stats = get_cpu_stats();
+            auto curr_time = std::chrono::steady_clock::now();
+            auto time_diff = std::chrono::duration_cast<std::chrono::seconds>(curr_time - prev_time).count();
 
-            // Calculate and print CPU usage percentage
-            double cpu_usage = calculate_cpu_usage(prev_stats, curr_stats);
-            if (cpu_usage > m_max_cpu) { m_max_cpu = cpu_usage; }
-            std::cout << "CPU Usage: " << cpu_usage << "%" << std::endl;
+            std::vector<unsigned long long> curr_stats = get_process_cpu_stats();
 
-            // Update previous stats
+            double cpu_usage = calculate_process_cpu_usage(prev_stats, curr_stats, time_diff);
+
+            // Normalize CPU usage by the number of cores
+            double normalized_cpu_usage = cpu_usage / m_num_cores;
+
+            if (normalized_cpu_usage > m_max_cpu) {
+                m_max_cpu = normalized_cpu_usage;
+            }
+
+            std::cout << "Normalized Process CPU Usage: " << normalized_cpu_usage << "%" << std::endl;
+
             prev_stats = curr_stats;
+            prev_time = curr_time;
         }
 
-        std::cout << "Max CPU Usage: " << m_max_cpu << "%" << std::endl;
+        std::cout << "Max Normalized Process CPU Usage: " << m_max_cpu << "%" << std::endl;
     }
 };
-#endif
-
-#include <chrono>
 
 class CpuTimerMs {
 
@@ -125,8 +144,6 @@ class CpuTimerMs {
     double& m_max;
     std::chrono::time_point<std::chrono::high_resolution_clock> m_start;
 };
-
-#include <x86intrin.h> // For __rdtsc()
 
 class MeasureTime {
 
@@ -154,26 +171,29 @@ class CpuTimer {
   public:
     CpuTimer() {}
 
-    void start() {
+    void start()
+    {
         m_start = __rdtsc();
     }
 
-    void print() {
+    void print()
+    {
         std::cout << "CPU Cycles: " << (m_end - m_start) << "\t\t" << m_max << "\n";
     }
 
     void stop()
     {
+        m_index++;
+        if (m_index < 600) { return; } // ignore first
+
         m_end = __rdtsc();
         auto e = m_end - m_start;
         if (e > m_max) m_max = e;
 
-        m_index++;
-        if (m_index % 200 == 0) {
+        if (m_index % 300 == 0) {
             print();
         }
     }
-
 
   private:
     unsigned long long m_index;

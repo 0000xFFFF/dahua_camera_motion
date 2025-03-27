@@ -11,7 +11,7 @@
 #include "motion_detector.hpp"
 #include "utils.h"
 
-#ifdef DEBUG_VERBOSE
+#ifdef DEBUG_CPU
 #include "debug.hpp"
 #endif
 
@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
         std::exit(0);
     });
 
-#ifdef DEBUG_VERBOSE
+#ifdef DEBUG_CPU
     CpuUsageMonitor monitor;
 #endif
 

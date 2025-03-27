@@ -2,13 +2,10 @@
 #include "globals.hpp"
 #include "utils.h"
 #include <atomic>
+#include <chrono>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <thread>
-
-#ifdef DEBUG_VERBOSE
-#include <chrono>
-#endif
 
 #include "frame_reader.hpp"
 
@@ -107,7 +104,7 @@ void FrameReader::connect_and_read()
             double fps = 30.0 / elapsed.count();
             captured_fps = fps;
 
-#ifdef DEBUG_VERBOSE
+#ifdef DEBUG_FPS
             if (i % 100 == 0) {
                 std::cout << "Channel " << m_channel << " Frame Rate: " << fps << " FPS" << std::endl;
             }

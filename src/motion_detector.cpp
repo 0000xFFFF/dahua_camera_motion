@@ -213,13 +213,12 @@ cv::Mat MotionDetector::paint_main_mat_all(const std::list<int>& chs)
         cv::Mat mat = m_readers[i]->get_latest_frame();
         if (mat.empty()) { continue; }
 
-        cv::resize(mat, mat, cv::Size(w, h));
-
         // Compute position in the 3x2 grid
         int row = (x - 1) / 3;
         int col = (x - 1) % 3;
         cv::Rect roi(col * w, row * h, w, h);
-        mat.copyTo(m_canv3x2(roi));
+
+        cv::resize(mat, m_canv3x2(roi), cv::Size(w, h));
     }
 
     return m_canv3x2;
@@ -329,8 +328,8 @@ cv::Mat MotionDetector::paint_main_mat_top()
                 mat = m_readers[m_current_channel]->get_latest_frame();
                 if (mat.empty()) { continue; }
 
-                cv::resize(mat, mat, cv::Size(w * 2, h * 2));
                 roi = cv::Rect(0 * w, 0 * h, w * 2, h * 2);
+                cv::resize(mat, m_canv3x3(roi), cv::Size(w * 2, h * 2));
             }
             else {
                 // Other slots are from active_channels (excluding m_current_channel)
@@ -338,7 +337,6 @@ cv::Mat MotionDetector::paint_main_mat_top()
                 mat = m_readers[channel]->get_latest_frame();
                 if (mat.empty()) { continue; }
 
-                cv::resize(mat, mat, cv::Size(w, h));
 
                 // Layout for circular arrangement
                 switch (i) {
@@ -348,9 +346,10 @@ cv::Mat MotionDetector::paint_main_mat_top()
                     case 4: roi = cv::Rect(1 * w, 2 * h, w, h); break;
                     case 5: roi = cv::Rect(0 * w, 2 * h, w, h); break;
                 }
-            }
 
-            mat.copyTo(m_canv3x3(roi));
+                cv::resize(mat, m_canv3x3(roi), cv::Size(w, h));
+
+            }
         }
     });
 
@@ -410,12 +409,12 @@ void MotionDetector::detect_motion()
     m_motion_sleep_ms = SLEEP_MS_MOTION;
 #endif
 
-#ifdef DEBUG_VERBOSE
+#ifdef DEBUG_SLEEP
     int i = 0;
 #endif
     while (m_running) {
 
-#ifdef DEBUG_VERBOSE
+#ifdef DEBUG_SLEEP
         i++;
 #endif
 
@@ -444,7 +443,7 @@ void MotionDetector::detect_motion()
         m_motion_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
 #endif
 
-#ifdef DEBUG_VERBOSE
+#ifdef DEBUG_SLEEP
         if (i % 300 == 0) {
             std::cout << "Motion thread sleep time: " << m_motion_sleep_ms << " ms" << std::endl;
         }
@@ -470,15 +469,15 @@ void MotionDetector::draw_loop()
 
     try {
 
-#ifdef DEBUG_VERBOSE
+#ifdef DEBUG_SLEEP
         int i = 0;
 #endif
 
-        CpuTimer cpuTimer;
+        D_CPU(CpuTimer cpuTimer);
 
         while (m_running) {
 
-#ifdef DEBUG_VERBOSE
+#ifdef DEBUG_SLEEP
             i++;
 #endif
 
@@ -504,12 +503,12 @@ void MotionDetector::draw_loop()
                 get = paint_main_mat_king();
             }
             else if (m_displayMode == DISPLAY_MODE_TOP) {
-                cpuTimer.start();
                 get = paint_main_mat_top();
-                cpuTimer.stop();
             }
             else if (m_displayMode == DISPLAY_MODE_ALL) {
+                D_CPU(cpuTimer.start());
                 get = paint_main_mat_all_fast();
+                D_CPU(cpuTimer.stop());
             }
 
             if (!get.empty()) {
@@ -539,7 +538,7 @@ void MotionDetector::draw_loop()
             m_tour_frame_count = (m_draw_sleep_ms > 0) ? SLEEP_MS_TOUR / m_draw_sleep_ms : SLEEP_MS_TOUR / 10;
 #endif
 
-#ifdef DEBUG_VERBOSE
+#ifdef DEBUG_SLEEP
             if (i % 300 == 0) {
                 std::cout << "Draw thread sleep time: " << m_draw_sleep_ms << " ms" << std::endl;
             }
