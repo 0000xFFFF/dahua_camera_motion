@@ -109,7 +109,6 @@ void MotionDetector::detect_largest_motion_area_set_channel()
 
         m_motion_ch_frames++;
         if (m_motion_detected_min_frames && m_current_channel != new_channel) {
-            m_tour_frame_index = 0; // reset so it doesn't auto switch on new tour so we can show a little bit of motion
             m_current_channel = new_channel;
             move_to_front(m_current_channel);
         }
@@ -120,6 +119,10 @@ void MotionDetector::detect_largest_motion_area_set_channel()
 
     m_motion_detect_min_frames = (m_motion_sleep_ms > 0) ? MOTION_DETECT_MIN_MS / m_motion_sleep_ms : MOTION_DETECT_MIN_MS / 10;
     m_motion_detected_min_frames = m_motion_ch_frames >= m_motion_detect_min_frames;
+
+    if (m_motion_detected_min_frames) {
+        m_tour_frame_index = 0; // reset so it doesn't auto switch on new tour so we can show a little bit of motion
+    }
 
     m_frame0_dbuff.update(m_frame0);
 }
