@@ -1,29 +1,68 @@
 #pragma once
 
+#ifndef ENABLE_INFO 
 #define ENABLE_INFO 0
+#endif
+
+#ifndef ENABLE_MINIMAP 
 #define ENABLE_MINIMAP 0
+#endif
+
+#ifndef ENABLE_MINIMAP_FULLSCREEN 
 #define ENABLE_MINIMAP_FULLSCREEN 0
+#endif
+
+#ifndef ENABLE_MOTION 
 #define ENABLE_MOTION 1
+#endif
+
+#ifndef ENABLE_MOTION_ZOOM_LARGEST 
 #define ENABLE_MOTION_ZOOM_LARGEST 0
+#endif
+
+#ifndef MOTION_DETECT_AREA 
 #define MOTION_DETECT_AREA 10
+#endif
 
 #define DISPLAY_MODE_SINGLE 0
-#define DISPLAY_MODE_KING 1
-#define DISPLAY_MODE_TOP 2
-#define DISPLAY_MODE_ALL 3
-#define DISPLAY_MODE_SORT 4
+#define DISPLAY_MODE_ALL 1
+#define DISPLAY_MODE_SORT 2
+#define DISPLAY_MODE_KING 3
+#define DISPLAY_MODE_TOP 4
 
+#ifndef DISPLAY_MODE
 #define DISPLAY_MODE DISPLAY_MODE_ALL
+#endif
+
+#ifndef ENABLE_TOUR 
 #define ENABLE_TOUR 0
+#endif
+
+#ifndef ENABLE_FULLSCREEN_CHANNEL 
 #define ENABLE_FULLSCREEN_CHANNEL 0
+#endif
 
 // milis
+
+#ifndef OVERRIDE_SLEEP 
 #define OVERRIDE_SLEEP 1 // sleep by default is calced by fps, to override with values below set to 1
+#endif
+
+#ifndef SLEEP_MS_TOUR 
 #define SLEEP_MS_TOUR 3000
+#endif
+#ifndef SLEEP_MS_MOTION 
 #define SLEEP_MS_MOTION 300
+#endif
+#ifndef SLEEP_MS_DRAW 
 #define SLEEP_MS_DRAW 200
+#endif
+#ifndef SLEEP_MS_ERROR 
 #define SLEEP_MS_ERROR 10
+#endif
+#ifndef MOTION_DETECT_MIN_MS 
 #define MOTION_DETECT_MIN_MS 1000
+#endif
 
 #ifdef DEBUG
 #undef ENABLE_INFO
@@ -31,64 +70,6 @@
 #undef ENABLE_MINIMAP
 #define ENABLE_MINIMAP 1
 #endif
-
-#ifdef CPU_HIGH_FAST
-#undef OVERRIDE_SLEEP
-#define OVERRIDE_SLEEP 0
-#endif
-
-#ifdef TOUR
-#undef ENABLE_TOUR
-#define ENABLE_TOUR 1
-#endif
-
-#ifdef TOUR_ONLY
-#undef ENABLE_TOUR
-#define ENABLE_TOUR 1
-#undef ENABLE_MOTION
-#define ENABLE_MOTION 0
-#endif
-
-#ifdef KING
-#undef DISPLAY_MODE
-#define DISPLAY_MODE DISPLAY_MODE_KING
-#endif
-
-#ifdef LKING
-#undef DISPLAY_MODE
-#define DISPLAY_MODE DISPLAY_MODE_KING
-#undef ENABLE_MOTION_ZOOM_LARGEST
-#define ENABLE_MOTION_ZOOM_LARGEST 1
-#endif
-
-#ifdef TOP
-#undef DISPLAY_MODE
-#define DISPLAY_MODE DISPLAY_MODE_TOP
-#endif
-
-#ifdef LTOP
-#undef DISPLAY_MODE
-#define DISPLAY_MODE DISPLAY_MODE_TOP
-#undef ENABLE_MOTION_ZOOM_LARGEST
-#define ENABLE_MOTION_ZOOM_LARGEST 1
-#endif
-
-#ifdef TOUR_TOP
-#undef ENABLE_TOUR
-#define ENABLE_TOUR 1
-#undef DISPLAY_MODE
-#define DISPLAY_MODE DISPLAY_MODE_TOP
-#endif
-
-#ifdef TOUR_ONLY_TOP
-#undef ENABLE_TOUR
-#define ENABLE_TOUR 1
-#undef ENABLE_MOTION
-#define ENABLE_MOTION 0
-#undef DISPLAY_MODE
-#define DISPLAY_MODE DISPLAY_MODE_TOP
-#endif
-
 
 #define USE_SUBTYPE1 false
 #define W_0 704
