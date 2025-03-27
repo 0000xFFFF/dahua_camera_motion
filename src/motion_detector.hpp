@@ -32,12 +32,9 @@ class MotionDetector {
     void draw_minimap();
     void draw_info();
     cv::Mat paint_main_mat_all();
-    cv::Mat paint_main_mat_all(const std::list<int>& chs);
-    cv::Mat paint_main_mat_all_fast();
     cv::Mat paint_main_mat_sort();
     cv::Mat paint_main_mat_multi();
     cv::Mat paint_main_mat_king();
-    cv::Mat paint_main_mat_king(const std::list<int>& chs);
     cv::Mat paint_main_mat_top();
     std::string bool_to_str(bool b);
     void handle_keys();
@@ -86,6 +83,6 @@ class MotionDetector {
     std::atomic<int> m_tour_frame_count{0};
     std::atomic<int> m_tour_frame_index{0};
 
-    DoubleBufferList m_king_chain;
+    DoubleBufferVec m_king_chain;
     void move_to_front(int value);
 };

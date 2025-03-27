@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include <omp.h>
+#include <vector>
 
 #define MINIMAP_WIDTH 300
 #define MINIMAP_HEIGHT 160
@@ -79,18 +80,20 @@ std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
     return contours;
 }
 
-void MotionDetector::move_to_front(int value)
+void MotionDetector::move_to_front(int ch)
 {
-    auto list = m_king_chain.get();
+    auto vec = m_king_chain.get();
+    std::vector<int> new_vec(vec.size());
 
-    // Find the element
-    auto it = std::find(list.begin(), list.end(), value);
-    if (it != list.end()) {
-        list.erase(it);         // Remove from current position (O(1) with iterator)
-        list.push_front(value); // Insert at the beginning (O(1))
+    int x = 0;
+    new_vec[x++] = ch;
+    for (size_t i = 0; i < vec.size(); i++) {
+        int value = vec[i];
+        if (value != ch) {
+            new_vec[x++] = value;
+        }
     }
-
-    m_king_chain.update(list);
+    m_king_chain.update(vec);
 }
 
 void MotionDetector::detect_largest_motion_area_set_channel()
@@ -198,34 +201,6 @@ void MotionDetector::draw_info()
 
 cv::Mat MotionDetector::paint_main_mat_all()
 {
-    return paint_main_mat_all({1, 2, 3, 4, 5, 6});
-}
-
-cv::Mat MotionDetector::paint_main_mat_all(const std::list<int>& chs)
-{
-    size_t w = m_display_width / 3;
-    size_t h = m_display_height / 2;
-
-    int x = 0;
-    for (const int& i : chs) {
-        x++;
-
-        cv::Mat mat = m_readers[i]->get_latest_frame();
-        if (mat.empty()) { continue; }
-
-        // Compute position in the 3x2 grid
-        int row = (x - 1) / 3;
-        int col = (x - 1) % 3;
-        cv::Rect roi(col * w, row * h, w, h);
-
-        cv::resize(mat, m_canv3x2(roi), cv::Size(w, h));
-    }
-
-    return m_canv3x2;
-}
-
-cv::Mat MotionDetector::paint_main_mat_all_fast()
-{
     size_t w = m_display_width / 3;
     size_t h = m_display_height / 2;
 
@@ -250,56 +225,70 @@ cv::Mat MotionDetector::paint_main_mat_all_fast()
 
 cv::Mat MotionDetector::paint_main_mat_sort() // need to fix this
 {
-    return paint_main_mat_all(m_king_chain.get());
+    size_t w = m_display_width / 3;
+    size_t h = m_display_height / 2;
+
+    std::vector vec = m_king_chain.get();
+
+    cv::parallel_for_(cv::Range(0, 6), [&](const cv::Range& range) {
+        for (int i = range.start; i < range.end; i++) {
+            cv::Mat mat = m_readers[vec[i]]->get_latest_frame();
+            if (mat.empty()) { continue; }
+
+            cv::Mat resized_mat;
+            cv::resize(mat, resized_mat, cv::Size(w, h));
+
+            int row = i / 3;
+            int col = i % 3;
+            cv::Rect roi(col * w, row * h, w, h);
+
+            resized_mat.copyTo(m_canv3x2(roi));
+        }
+    });
+
+    return m_canv3x2;
 }
 
 cv::Mat MotionDetector::paint_main_mat_king()
 {
-    return paint_main_mat_king(m_king_chain.get());
-}
-
-cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
-{
     size_t w = m_display_width / 3;
     size_t h = m_display_height / 3;
 
-    int x = 0;
-    for (const int& i : chs) {
-        x++;
-        cv::Mat mat = m_readers[i]->get_latest_frame();
-        if (mat.empty()) { continue; }
+    std::vector vec = m_king_chain.get();
 
-        cv::Rect roi;
+    cv::parallel_for_(cv::Range(0, 6), [&](const cv::Range& range) {
+        for (int i = range.start; i < range.end; i++) {
+            cv::Mat mat = m_readers[vec[i]]->get_latest_frame();
+            if (mat.empty()) { continue; }
 
 #if KING_LAYOUT == KING_LAYOUT_REL
-        switch (x) {
-                // clang-format off
-            case 1: cv::resize(mat, mat, cv::Size(w * 2, h * 2)); roi = cv::Rect(0 * w, 0 * h, w * 2, h * 2); break;
-            case 2: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(2 * w, 0 * h, w, h);         break;
-            case 3: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(2 * w, 1 * h, w, h);         break;
-            case 4: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(0 * w, 2 * h, w, h);         break;
-            case 5: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(1 * w, 2 * h, w, h);         break;
-            case 6: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(2 * w, 2 * h, w, h);         break;
-                // clang-format on
-        }
+            switch (i) {
+                    // clang-format off
+            case 0: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w * 2, h * 2)), cv::Size(w * 2, h * 2)); break;
+            case 1: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 0 * h, w, h)),         cv::Size(w, h));         break;
+            case 2: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 1 * h, w, h)),         cv::Size(w, h));         break;
+            case 3: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
+            case 4: cv::resize(mat, m_canv3x3(cv::Rect(1 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
+            case 5: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
+                    // clang-format on
+            }
 #endif
 
 #if KING_LAYOUT == KING_LAYOUT_CIRC
-        // CIRCLE LAYOUR
-        switch (x) {
-                // clang-format off
-            case 1: cv::resize(mat, mat, cv::Size(w * 2, h * 2)); roi = cv::Rect(0 * w, 0 * h, w * 2, h * 2); break;
-            case 2: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(2 * w, 0 * h, w, h);         break;
-            case 3: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(2 * w, 1 * h, w, h);         break;
-            case 4: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(2 * w, 2 * h, w, h);         break;
-            case 5: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(1 * w, 2 * h, w, h);         break;
-            case 6: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(0 * w, 2 * h, w, h);         break;
-                // clang-format on
-        }
+            // CIRCLE LAYOUR
+            switch (x) {
+                    // clang-format off
+            case 0: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w * 2, h * 2)), cv::Size(w * 2, h * 2)); break;
+            case 1: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 0 * h, w, h)),         cv::Size(w, h));         break;
+            case 2: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 1 * h, w, h)),         cv::Size(w, h));         break;
+            case 3: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
+            case 4: cv::resize(mat, m_canv3x3(cv::Rect(1 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
+            case 5: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
+                    // clang-format on
+            }
 #endif
-
-        mat.copyTo(m_canv3x3(roi));
-    }
+        }
+    });
 
     return m_canv3x3;
 }
@@ -337,7 +326,6 @@ cv::Mat MotionDetector::paint_main_mat_top()
                 mat = m_readers[channel]->get_latest_frame();
                 if (mat.empty()) { continue; }
 
-
                 // Layout for circular arrangement
                 switch (i) {
                     case 1: roi = cv::Rect(2 * w, 0 * h, w, h); break;
@@ -348,7 +336,6 @@ cv::Mat MotionDetector::paint_main_mat_top()
                 }
 
                 cv::resize(mat, m_canv3x3(roi), cv::Size(w, h));
-
             }
         }
     });
@@ -506,9 +493,7 @@ void MotionDetector::draw_loop()
                 get = paint_main_mat_top();
             }
             else if (m_displayMode == DISPLAY_MODE_ALL) {
-                D_CPU(cpuTimer.start());
-                get = paint_main_mat_all_fast();
-                D_CPU(cpuTimer.stop());
+                get = paint_main_mat_all();
             }
 
             if (!get.empty()) {

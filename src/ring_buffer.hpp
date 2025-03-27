@@ -66,21 +66,21 @@ class DoubleBufferMat {
     }
 };
 
-class DoubleBufferList {
+class DoubleBufferVec {
   private:
-    std::list<int> buffers[2];
+    std::vector<int> buffers[2];
     std::atomic<int> activeBuffer{0}; // read buffer
 
   public:
-    DoubleBufferList() {}
-    DoubleBufferList(std::list<int> initialData)
+    DoubleBufferVec() {}
+    DoubleBufferVec(std::vector<int> initialData)
     {
         buffers[0] = initialData;
         buffers[1] = initialData;
     }
 
     // Writer updates the non-active buffer and then swaps
-    void update(const std::list<int>& newData)
+    void update(const std::vector<int>& newData)
     {
         int writeIndex = 1 - activeBuffer.load(std::memory_order_acquire);
         buffers[writeIndex] = newData;
@@ -88,7 +88,7 @@ class DoubleBufferList {
     }
 
     // Reader reads from the active buffer
-    std::list<int> get() const
+    std::vector<int> get() const
     {
         int readIndex = activeBuffer.load(std::memory_order_acquire);
         return buffers[readIndex]; // Return a copy
