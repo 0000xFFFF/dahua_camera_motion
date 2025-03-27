@@ -366,6 +366,9 @@ void MotionDetector::detect_motion()
                 detect_largest_motion_area_set_channel();
             }
         }
+        else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
 
 #ifndef SLEEP_MS_MOTION
         // Calculate sleep time based on measured FPS
