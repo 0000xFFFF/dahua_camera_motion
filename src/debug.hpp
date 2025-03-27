@@ -2,9 +2,9 @@
 
 #include <iostream>
 #ifdef DEBUG
-#	define D(x) x
+#define D(x) x
 #else
-#	define D(x)
+#define D(x)
 #endif
 #define UNUSED(x) (void)(x)
 #define DP(x) D(printf("[DEBUG] %s", x))
@@ -102,18 +102,82 @@ class CpuUsageMonitor {
 };
 #endif
 
-#include <x86intrin.h>  // For __rdtsc()
+#include <chrono>
+
+class CpuTimerMs {
+
+  public:
+    CpuTimerMs(double& max) : m_max(max)
+    {
+        m_start = std::chrono::high_resolution_clock::now();
+    }
+
+    ~CpuTimerMs()
+    {
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed = end - m_start;
+        double e = elapsed.count();
+        std::cout << "took: " << e << " ms\t" << m_max << "ms\n";
+        if (e > m_max) m_max = e;
+    }
+
+  private:
+    double& m_max;
+    std::chrono::time_point<std::chrono::high_resolution_clock> m_start;
+};
+
+#include <x86intrin.h> // For __rdtsc()
+
+class MeasureTime {
+
+  public:
+    MeasureTime(unsigned long long& max) : m_max(max)
+    {
+        m_start = __rdtsc();
+    }
+
+    ~MeasureTime()
+    {
+        unsigned long long end = __rdtsc();
+        auto e = end - m_start;
+        std::cout << "CPU Cycles: " << (end - m_start) << "\t\t" << m_max << "\n";
+        if (e > m_max) m_max = e;
+    }
+
+  private:
+    unsigned long long& m_max;
+    unsigned long long m_start;
+};
 
 class CpuTimer {
 
-    unsigned long long start;
-    CpuTimer() {
-        start = __rdtsc();
+  public:
+    CpuTimer() {}
+
+    void start() {
+        m_start = __rdtsc();
+    }
+
+    void print() {
+        std::cout << "CPU Cycles: " << (m_end - m_start) << "\t\t" << m_max << "\n";
+    }
+
+    void stop()
+    {
+        m_end = __rdtsc();
+        auto e = m_end - m_start;
+        if (e > m_max) m_max = e;
+
+        m_index++;
+        if (m_index % 200 == 0) {
+            print();
+        }
     }
 
 
-    ~CpuTimer() {
-        unsigned long long end = __rdtsc();
-        std::cout << "CpuTimer: " << (end - start) << "\n";
-    }
+  private:
+    unsigned long long m_index;
+    unsigned long long m_max;
+    unsigned long long m_start;
+    unsigned long long m_end;
 };
