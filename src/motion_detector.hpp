@@ -81,6 +81,7 @@ class MotionDetector {
     std::atomic<bool> m_motion_detected_min_frames{false};
 
     long long int m_draw_sleep_ms{0};
+    std::atomic<int> m_tour_current_channel{1};
     std::atomic<int> m_tour_frame_count{0};
     std::atomic<int> m_tour_frame_index{0};
 

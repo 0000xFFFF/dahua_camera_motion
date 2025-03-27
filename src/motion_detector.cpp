@@ -53,7 +53,9 @@ void MotionDetector::do_tour_logic()
     m_tour_frame_index++;
     if (m_tour_frame_index >= m_tour_frame_count) {
         m_tour_frame_index = 0;
-        change_channel(m_current_channel % 6 + 1);
+        m_tour_current_channel++;
+        if (m_tour_current_channel > 6) { m_tour_current_channel = 1; }
+        change_channel(m_tour_current_channel);
     }
 }
 
@@ -179,7 +181,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_display, "Fullscreen (f): " + bool_to_str(m_enableFullscreenChannel),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(m_tour_frame_index) + "/" + std::to_string(m_tour_frame_count),
+    cv::putText(m_main_display, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(m_tour_frame_index) + "/" + std::to_string(m_tour_frame_count) + " = " + std::to_string(m_tour_current_channel),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_display, "Reset (r)",

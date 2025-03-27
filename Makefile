@@ -79,6 +79,7 @@ install:
 uninstall:
 	rm -f $(BINDIR)/$(EXEC)
 
-release: top
+release:
+	$(GCC) $(ARGS) $(RELEASE_ARGS) -D OVERRIDE_SLEEP=0 -D ENABLE_TOUR=1 $(LIBS) $(FILES) -o $(EXEC)
 	
 
