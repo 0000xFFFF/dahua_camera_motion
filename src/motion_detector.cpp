@@ -398,7 +398,6 @@ void MotionDetector::draw_loop()
                 get = m_frame0_dbuff.get();
             }
             else if (m_enableFullscreenChannel ||
-                     m_enableTour ||
                      (m_displayMode == DISPLAY_MODE_SINGLE) ||
                      (m_enableMotion && m_enableMotionZoomLargest && m_motion_detected_min_frames)) {
                 get = m_readers[m_current_channel]->get_latest_frame();
@@ -413,9 +412,6 @@ void MotionDetector::draw_loop()
                 get = paint_main_mat_top();
             }
             else if (m_displayMode == DISPLAY_MODE_ALL) {
-                get = paint_main_mat_all();
-            }
-            else {
                 get = paint_main_mat_all();
             }
 
