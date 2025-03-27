@@ -43,23 +43,14 @@
 #endif
 
 // milis
-
-#ifndef OVERRIDE_SLEEP 
-#define OVERRIDE_SLEEP 1 // sleep by default is calced by fps, to override with values below set to 1
-#endif
+//#define SLEEP_MS_MOTION 300
+//#define SLEEP_MS_DRAW 200
+//#define SLEEP_MS_ERROR 10
 
 #ifndef SLEEP_MS_TOUR 
 #define SLEEP_MS_TOUR 3000
 #endif
-#ifndef SLEEP_MS_MOTION 
-#define SLEEP_MS_MOTION 300
-#endif
-#ifndef SLEEP_MS_DRAW 
-#define SLEEP_MS_DRAW 200
-#endif
-#ifndef SLEEP_MS_ERROR 
-#define SLEEP_MS_ERROR 10
-#endif
+
 #ifndef MOTION_DETECT_MIN_MS 
 #define MOTION_DETECT_MIN_MS 1000
 #endif

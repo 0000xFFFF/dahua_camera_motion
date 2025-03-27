@@ -20,8 +20,8 @@ debugv:
 cputest:
 	$(GCC) $(ARGS) -D DEBUG -D DEBUG_VERBOSE $(RELEASE_ARGS) $(FILES) $(LIBS) -o $(EXEC)
 
-fast:
-	$(GCC) $(ARGS) $(RELEASE_ARGS) -D OVERRIDE_SLEEP=0 $(LIBS) $(FILES) -o $(EXEC)
+slowmotion:
+	$(GCC) $(ARGS) $(RELEASE_ARGS) -D SLEEP_MS_MOTION=300 $(LIBS) $(FILES) -o $(EXEC)
 
 tour:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D ENABLE_TOUR=1 $(LIBS) $(FILES) -o $(EXEC)
@@ -80,6 +80,6 @@ uninstall:
 	rm -f $(BINDIR)/$(EXEC)
 
 release:
-	$(GCC) $(ARGS) $(RELEASE_ARGS) -D OVERRIDE_SLEEP=0 -D ENABLE_TOUR=1 $(LIBS) $(FILES) -o $(EXEC)
+	$(GCC) $(ARGS) $(RELEASE_ARGS) -D SLEEP_MS_MOTION=300 -D SLEEP_MS_DRAW=80 -D ENABLE_TOUR=1 $(LIBS) $(FILES) -o $(EXEC)
 	
 
