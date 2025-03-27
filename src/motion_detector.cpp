@@ -396,12 +396,12 @@ void MotionDetector::detect_motion()
     m_motion_sleep_ms = SLEEP_MS_MOTION;
 #endif
 
-#ifdef DEBUG_SLEEP
+#ifdef DEBUG_FPS
     int i = 0;
 #endif
     while (m_running) {
 
-#ifdef DEBUG_SLEEP
+#ifdef DEBUG_FPS
         i++;
 #endif
 
@@ -430,7 +430,7 @@ void MotionDetector::detect_motion()
         m_motion_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
 #endif
 
-#ifdef DEBUG_SLEEP
+#ifdef DEBUG_FPS
         if (i % 300 == 0) {
             std::cout << "Motion thread sleep time: " << m_motion_sleep_ms << " ms" << std::endl;
         }
@@ -456,7 +456,7 @@ void MotionDetector::draw_loop()
 
     try {
 
-#ifdef DEBUG_SLEEP
+#ifdef DEBUG_FPS
         int i = 0;
 #endif
 
@@ -464,7 +464,7 @@ void MotionDetector::draw_loop()
 
         while (m_running) {
 
-#ifdef DEBUG_SLEEP
+#ifdef DEBUG_FPS
             i++;
 #endif
 
@@ -523,7 +523,7 @@ void MotionDetector::draw_loop()
             m_tour_frame_count = (m_draw_sleep_ms > 0) ? SLEEP_MS_TOUR / m_draw_sleep_ms : SLEEP_MS_TOUR / 10;
 #endif
 
-#ifdef DEBUG_SLEEP
+#ifdef DEBUG_FPS
             if (i % 300 == 0) {
                 std::cout << "Draw thread sleep time: " << m_draw_sleep_ms << " ms" << std::endl;
             }
