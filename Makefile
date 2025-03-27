@@ -17,9 +17,25 @@ debug:
 debug_fps:
 	$(GCC) $(ARGS) $(DEBUG_ARGS) -D DEBUG_FPS $(FILES) $(LIBS) -o $(EXEC)
 
+#
+# ==[ TESTING CPU
+#
 debug_cpu:
 	$(GCC) $(ARGS) $(DEBUG_ARGS) -D DEBUG_CPU $(FILES) $(LIBS) -o $(EXEC)
 
+test_all:
+	$(GCC) $(ARGS) -D DEBUG_CPU -D DISPLAY_MODE=DISPLAY_MODE_ALL -D ENABLE_MOTION=0 $(LIBS) $(FILES) -o $(EXEC)
+
+test_king:
+	$(GCC) $(ARGS) -D DEBUG_CPU -D DISPLAY_MODE=DISPLAY_MODE_KING -D ENABLE_MOTION=0 $(LIBS) $(FILES) -o $(EXEC)
+
+test_top:
+	$(GCC) $(ARGS) -D DEBUG_CPU -D DISPLAY_MODE=DISPLAY_MODE_TOP -D ENABLE_MOTION=0 $(LIBS) $(FILES) -o $(EXEC)
+
+
+#
+# ==[ funky opts
+#
 tour:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D ENABLE_TOUR=1 $(LIBS) $(FILES) -o $(EXEC)
 
@@ -38,8 +54,7 @@ circfast:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D ENABLE_TOUR=1 -D ENABLE_MOTION=0 -D DISPLAY_MODE=DISPLAY_MODE_KING -D KING_LAYOUT=2 -D OVERRIDE_SLEEP=0 $(LIBS) $(FILES) -o $(EXEC)
 
 #
-# layout options
-#
+# ==[ layout options
 #
 single:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_SINGLE $(LIBS) $(FILES) -o $(EXEC)
@@ -47,10 +62,6 @@ single:
 all:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_ALL $(LIBS) $(FILES) -o $(EXEC)
 
-test_all:
-	$(GCC) $(ARGS) -D DEBUG_CPU -D DISPLAY_MODE=DISPLAY_MODE_ALL -D ENABLE_MOTION=0 $(LIBS) $(FILES) -o $(EXEC)
-
-# ALL + ZOOM LARGEST MOTION
 lall:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_ALL -D ENABLE_MOTION_ZOOM_LARGEST=1 $(LIBS) $(FILES) -o $(EXEC)
 
@@ -66,27 +77,28 @@ lking:
 top:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_TOP $(LIBS) $(FILES) -o $(EXEC)
 
-test_top:
-	$(GCC) $(ARGS) -D DEBUG_CPU -D DISPLAY_MODE=DISPLAY_MODE_TOP -D ENABLE_MOTION=0 $(LIBS) $(FILES) -o $(EXEC)
-
 ltop:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_TOP -D ENABLE_MOTION_ZOOM_LARGEST=1 $(LIBS) $(FILES) -o $(EXEC)
 
-# tour top
 ttop:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D ENABLE_TOUR=1 DISPLAY_MODE=DISPLAY_MODE_TOP $(LIBS) $(FILES) -o $(EXEC)
 
-# tour only top
 totop:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D ENABLE_TOUR=1 -D ENABLE_MOTION=0 -D DISPLAY_MODE=DISPLAY_MODE_TOP $(LIBS) $(FILES) -o $(EXEC)
 
+#
+# ==[ install / uninstall
+#
 install:
 	install -m 755 $(EXEC) $(BINDIR)
 
 uninstall:
 	rm -f $(BINDIR)/$(EXEC)
 
-# releases
+#
+# ==[ releases
+#
+
 # king, circ, motion slow, draw fast, tour
 king_circ_ms_df_tour:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_KING -D KING_LAYOUT=2 -D SLEEP_MS_MOTION=300 -D SLEEP_MS_DRAW=80 -D ENABLE_TOUR=1 $(LIBS) $(FILES) -o $(EXEC)
@@ -98,7 +110,6 @@ king_circ_ms_df_tour_zoom:
 # single, motion slow, draw fast, tour
 single_ms_df_tour:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_SINGLE -D SLEEP_MS_MOTION=300 -D SLEEP_MS_DRAW=20 -D ENABLE_TOUR=1 $(LIBS) $(FILES) -o $(EXEC)
-
 
 r1: king_circ_ms_df_tour
 r2: king_circ_ms_df_tour_zoom

@@ -91,7 +91,7 @@ class CpuUsageMonitor {
 
     void cpu_usage_monitor()
     {
-        std::this_thread::sleep_for(std::chrono::seconds(12));
+        std::this_thread::sleep_for(std::chrono::seconds(15));
 
         std::vector<unsigned long long> prev_stats = get_process_cpu_stats();
         auto prev_time = std::chrono::steady_clock::now();
