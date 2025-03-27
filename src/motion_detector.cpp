@@ -307,17 +307,54 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
 
 cv::Mat MotionDetector::paint_main_mat_top()
 {
+    size_t w = m_display_width / 3;
+    size_t h = m_display_height / 3;
 
-    std::list<int> chs;
-    chs.emplace_back(m_current_channel);
+    std::vector<int> active_channels;
 
-    for (size_t i = 0; i < 6; i++) {
-        int x = i + 1;
-        if ((int)x == m_current_channel) continue;
-        chs.emplace_back(x);
+    // Fill active_channels with [1,2,3,4,5,6] excluding m_current_channel
+    for (int i = 1; i <= 6; i++) {
+        if (i != m_current_channel) {
+            active_channels.push_back(i);
+        }
     }
 
-    return paint_main_mat_king(chs);
+    cv::parallel_for_(cv::Range(0, 6), [&](const cv::Range& range) {
+        for (int i = range.start; i < range.end; i++) {
+            cv::Mat mat;
+            cv::Rect roi;
+
+            if (i == 0) {
+                // First slot (biggest image) is m_current_channel
+                mat = m_readers[m_current_channel]->get_latest_frame();
+                if (mat.empty()) { continue; }
+
+                cv::resize(mat, mat, cv::Size(w * 2, h * 2));
+                roi = cv::Rect(0 * w, 0 * h, w * 2, h * 2);
+            }
+            else {
+                // Other slots are from active_channels (excluding m_current_channel)
+                int channel = active_channels[i - 1]; // Skip 0th slot
+                mat = m_readers[channel]->get_latest_frame();
+                if (mat.empty()) { continue; }
+
+                cv::resize(mat, mat, cv::Size(w, h));
+
+                // Layout for circular arrangement
+                switch (i) {
+                    case 1: roi = cv::Rect(2 * w, 0 * h, w, h); break;
+                    case 2: roi = cv::Rect(2 * w, 1 * h, w, h); break;
+                    case 3: roi = cv::Rect(2 * w, 2 * h, w, h); break;
+                    case 4: roi = cv::Rect(1 * w, 2 * h, w, h); break;
+                    case 5: roi = cv::Rect(0 * w, 2 * h, w, h); break;
+                }
+            }
+
+            mat.copyTo(m_canv3x3(roi));
+        }
+    });
+
+    return m_canv3x3;
 }
 
 void MotionDetector::handle_keys()
@@ -467,12 +504,12 @@ void MotionDetector::draw_loop()
                 get = paint_main_mat_king();
             }
             else if (m_displayMode == DISPLAY_MODE_TOP) {
+                cpuTimer.start();
                 get = paint_main_mat_top();
+                cpuTimer.stop();
             }
             else if (m_displayMode == DISPLAY_MODE_ALL) {
-                cpuTimer.start();
                 get = paint_main_mat_all_fast();
-                cpuTimer.stop();
             }
 
             if (!get.empty()) {
