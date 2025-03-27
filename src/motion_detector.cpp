@@ -276,7 +276,7 @@ cv::Mat MotionDetector::paint_main_mat_king()
 
 #if KING_LAYOUT == KING_LAYOUT_CIRC
             // CIRCLE LAYOUR
-            switch (x) {
+            switch (i) {
                     // clang-format off
             case 0: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w * 2, h * 2)), cv::Size(w * 2, h * 2)); break;
             case 1: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 0 * h, w, h)),         cv::Size(w, h));         break;
