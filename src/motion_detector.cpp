@@ -153,10 +153,10 @@ void MotionDetector::draw_info()
     cv::putText(m_main_display, "Info (i): " + bool_to_str(m_enableInfo),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Display Mode (n/a/s/x/k): " + std::to_string(m_displayMode),
+    cv::putText(m_main_display, "Display Mode (n/a/s/k/x): " + std::to_string(m_displayMode),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Motion (m/l): " + bool_to_str(m_enableMotion) + "/" + std::to_string(m_enableMotionZoomLargest),
+    cv::putText(m_main_display, "Motion (m/l): " + bool_to_str(m_enableMotion) + "/" + bool_to_str(m_enableMotionZoomLargest),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_display, "Minimap (o/0): " + bool_to_str(m_enableMinimap) + "/" + bool_to_str(m_enableMinimapFullscreen),

@@ -70,6 +70,6 @@ install:
 uninstall:
 	rm -f $(BINDIR)/$(EXEC)
 
-release:
-	$(GCC) $(ARGS) $(RELEASE_ARGS) $(LIBS) $(FILES) -o $(EXEC)
+release: top
+	
 
