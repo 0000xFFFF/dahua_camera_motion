@@ -31,10 +31,11 @@ class MotionDetector {
     void draw_minimap();
     void draw_info();
     cv::Mat paint_main_mat_all();
+    cv::Mat paint_main_mat_all(const std::list<int>& chs);
     cv::Mat paint_main_mat_sort();
     cv::Mat paint_main_mat_multi();
     cv::Mat paint_main_mat_king();
-    cv::Mat paint_main_mat_king(const std::list<int>& chs, int layout = 1);
+    cv::Mat paint_main_mat_king(const std::list<int>& chs);
     cv::Mat paint_main_mat_top();
     std::string bool_to_str(bool b);
     void handle_keys();
@@ -60,15 +61,17 @@ class MotionDetector {
     std::atomic<int> m_motion_ch_frames{0};
 
     bool m_enableInfo = ENABLE_INFO;
-    int m_motionDisplayMode = MOTION_DISPLAY_MODE;
+    int m_displayMode = DISPLAY_MODE;
     bool m_enableMinimap = ENABLE_MINIMAP;
     bool m_enableMinimapFullscreen = ENABLE_MINIMAP_FULLSCREEN;
     bool m_enableFullscreenChannel = ENABLE_FULLSCREEN_CHANNEL;
+    bool m_enableMotionZoomLargest = ENABLE_MOTION_ZOOM_LARGEST;
     bool m_enableTour = ENABLE_TOUR;
 
     cv::Mat m_frame0;
     DoubleBufferMat m_frame0_dbuff;
-    cv::Mat m_canv;
+    cv::Mat m_canv3x3;
+    cv::Mat m_canv3x2;
     cv::Mat m_main_display;
 
     std::atomic<bool> m_motion_detected{false};
