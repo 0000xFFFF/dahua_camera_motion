@@ -231,7 +231,7 @@ cv::Mat MotionDetector::paint_main_mat_king()
     return paint_main_mat_king(m_sorted_chs_area_all.get());
 }
 
-cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
+cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs, int layout)
 {
     size_t w = m_display_width / 3;
     size_t h = m_display_height / 3;
@@ -243,32 +243,40 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
         if (mat.empty()) { continue; }
 
         cv::Rect roi;
-        switch (x) {
+
+        switch (layout) {
+
+            case 0:
+                {
+                    // clang-format off
+                    switch (x) {
+                        case 1: cv::resize(mat, mat, cv::Size(w * 2, h * 2)); roi = cv::Rect(0 * w, 0 * h, w * 2, h * 2); break;
+                        case 2: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(2 * w, 0 * h, w, h);         break;
+                        case 3: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(2 * w, 1 * h, w, h);         break;
+                        case 4: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(0 * w, 2 * h, w, h);         break;
+                        case 5: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(1 * w, 2 * h, w, h);         break;
+                        case 6: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(2 * w, 2 * h, w, h);         break;
+                    }
+                    // clang-format on
+                    break;
+                }
+
             case 1:
-                cv::resize(mat, mat, cv::Size(w * 2, h * 2));
-                roi = cv::Rect(0 * w, 0 * h, w * 2, h * 2);
-                break;
-            case 2:
-                cv::resize(mat, mat, cv::Size(w, h));
-                roi = cv::Rect(2 * w, 0 * h, w, h);
-                break;
-            case 3:
-                cv::resize(mat, mat, cv::Size(w, h));
-                roi = cv::Rect(2 * w, 1 * h, w, h);
-                break;
-            case 4:
-                cv::resize(mat, mat, cv::Size(w, h));
-                roi = cv::Rect(0 * w, 2 * h, w, h);
-                break;
-            case 5:
-                cv::resize(mat, mat, cv::Size(w, h));
-                roi = cv::Rect(1 * w, 2 * h, w, h);
-                break;
-            case 6:
-                cv::resize(mat, mat, cv::Size(w, h));
-                roi = cv::Rect(2 * w, 2 * h, w, h);
-                break;
+                {
+                    // clang-format off
+                    switch (x) {
+                        case 1: cv::resize(mat, mat, cv::Size(w * 2, h * 2)); roi = cv::Rect(0 * w, 0 * h, w * 2, h * 2); break;
+                        case 2: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(2 * w, 0 * h, w, h);         break;
+                        case 3: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(2 * w, 1 * h, w, h);         break;
+                        case 4: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(2 * w, 2 * h, w, h);         break;
+                        case 5: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(1 * w, 2 * h, w, h);         break;
+                        case 6: cv::resize(mat, mat, cv::Size(w, h));         roi = cv::Rect(0 * w, 2 * h, w, h);         break;
+                    }
+                    // clang-format on
+                    break;
+                }
         }
+
         mat.copyTo(m_canv(roi));
     }
 
@@ -287,7 +295,7 @@ cv::Mat MotionDetector::paint_main_mat_top()
         chs.emplace_back(x);
     }
 
-    return paint_main_mat_king(chs);
+    return paint_main_mat_king(chs, 1);
 }
 
 void MotionDetector::handle_keys()
@@ -449,7 +457,7 @@ void MotionDetector::draw_loop()
 #if OVERRIDE_SLEEP
             m_draw_sleep_ms = SLEEP_MS_DRAW;
 #endif
-            m_tour_frame_count = (m_draw_sleep_ms > 0) ? SLEEP_MS_TOUR/m_draw_sleep_ms : SLEEP_MS_TOUR/10;
+            m_tour_frame_count = (m_draw_sleep_ms > 0) ? SLEEP_MS_TOUR / m_draw_sleep_ms : SLEEP_MS_TOUR / 10;
             if (sleep_time.count() > 0) {
 #ifdef DEBUG_VERBOSE
                 if (i % 300 == 0) {
