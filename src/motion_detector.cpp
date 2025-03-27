@@ -42,12 +42,18 @@ MotionDetector::MotionDetector(const std::string& ip, const std::string& usernam
     m_thread_detect_motion = std::thread([this]() { detect_motion(); });
 }
 
+void MotionDetector::change_channel(int ch)
+{
+    move_to_front(ch);
+    m_current_channel = ch;
+}
+
 void MotionDetector::do_tour_logic()
 {
     m_tour_frame_index++;
     if (m_tour_frame_index >= m_tour_frame_count) {
         m_tour_frame_index = 0;
-        m_current_channel = m_current_channel % 6 + 1;
+        change_channel(m_current_channel % 6 + 1);
     }
 }
 
@@ -109,8 +115,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
 
         m_motion_ch_frames++;
         if (m_motion_detected_min_frames && m_current_channel != new_channel) {
-            m_current_channel = new_channel;
-            move_to_front(m_current_channel);
+            change_channel(new_channel);
         }
     }
     else {
@@ -221,7 +226,9 @@ cv::Mat MotionDetector::paint_main_mat_king()
     return paint_main_mat_king(m_sorted_chs_area_all.get());
 }
 
+#ifndef KING_LAYOUT
 #define KING_LAYOUT 1
+#endif
 cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
 {
     size_t w = m_display_width / 3;
@@ -301,6 +308,7 @@ void MotionDetector::handle_keys()
     else if (key == 't') { m_enableTour = !m_enableTour; }
     else if (key == 'r') {
         m_current_channel = 1;
+        m_sorted_chs_area_all.update({1, 2, 3, 4, 5, 6});
         m_motion_detected = false;
         m_tour_frame_index = 0;
         m_enableInfo = ENABLE_INFO;
@@ -314,14 +322,16 @@ void MotionDetector::handle_keys()
     }
     else if (key == 81 || key == 65361) { // Left arrow (81 on Windows, 65361 on Linux)
         int new_ch = m_current_channel + 1;
-        m_current_channel = new_ch > 6 ? 1 : new_ch;
+        if (new_ch > 6) new_ch = 1;
+        change_channel(new_ch);
     } else if (key == 83 || key == 65363) { // Right arrow (83 on Windows, 65363 on Linux)
         int new_ch = m_current_channel - 1;
-        m_current_channel = new_ch < 1 ? 6 : new_ch;
+        if (new_ch < 1) new_ch = 6;
+        change_channel(new_ch);
     }
 
     else if (key >= '1' && key <= '6') {
-        m_current_channel = key - '0';
+        change_channel(key - '0');
     }
     // clang-format on
 }

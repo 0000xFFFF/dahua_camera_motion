@@ -25,6 +25,7 @@ class MotionDetector {
     std::vector<std::vector<cv::Point>> find_contours_frame0();
     void detect_largest_motion_area_set_channel();
 
+    void change_channel(int ch);
     void do_tour_logic();
 
     // drawing
