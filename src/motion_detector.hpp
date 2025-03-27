@@ -85,6 +85,6 @@ class MotionDetector {
     std::atomic<int> m_tour_frame_count{0};
     std::atomic<int> m_tour_frame_index{0};
 
-    DoubleBufferList m_sorted_chs_area_all;
+    DoubleBufferList m_king_chain;
     void move_to_front(int value);
 };

@@ -24,7 +24,7 @@ MotionDetector::MotionDetector(const std::string& ip, const std::string& usernam
       m_canv3x3(cv::Mat(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_canv3x2(cv::Mat(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_main_display(cv::Mat(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0))),
-      m_sorted_chs_area_all({1, 2, 3, 4, 5, 6})
+      m_king_chain({1, 2, 3, 4, 5, 6})
 
 {
 
@@ -53,9 +53,13 @@ void MotionDetector::do_tour_logic()
     m_tour_frame_index++;
     if (m_tour_frame_index >= m_tour_frame_count) {
         m_tour_frame_index = 0;
+#if KING_LAYOUT == 1
+        change_channel(m_king_chain.get().back());
+#else
         m_tour_current_channel++;
         if (m_tour_current_channel > 6) { m_tour_current_channel = 1; }
         change_channel(m_tour_current_channel);
+#endif
     }
 }
 
@@ -74,7 +78,7 @@ std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
 
 void MotionDetector::move_to_front(int value)
 {
-    auto list = m_sorted_chs_area_all.get();
+    auto list = m_king_chain.get();
 
     // Find the element
     auto it = std::find(list.begin(), list.end(), value);
@@ -83,7 +87,7 @@ void MotionDetector::move_to_front(int value)
         list.push_front(value); // Insert at the beginning (O(1))
     }
 
-    m_sorted_chs_area_all.update(list);
+    m_king_chain.update(list);
 }
 
 void MotionDetector::detect_largest_motion_area_set_channel()
@@ -220,13 +224,16 @@ cv::Mat MotionDetector::paint_main_mat_all(const std::list<int>& chs)
 
 cv::Mat MotionDetector::paint_main_mat_sort() // need to fix this
 {
-    return paint_main_mat_all(m_sorted_chs_area_all.get());
+    return paint_main_mat_all(m_king_chain.get());
 }
 
 cv::Mat MotionDetector::paint_main_mat_king()
 {
-    return paint_main_mat_king(m_sorted_chs_area_all.get());
+    return paint_main_mat_king(m_king_chain.get());
 }
+
+#define KING_LAYOUT_REL 1
+#define KING_LAYOUT_CIRC 2
 
 #ifndef KING_LAYOUT
 #define KING_LAYOUT 1
@@ -244,7 +251,7 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
 
         cv::Rect roi;
 
-#if KING_LAYOUT == 1
+#if KING_LAYOUT == KING_LAYOUT_REL
         switch (x) {
                 // clang-format off
             case 1: cv::resize(mat, mat, cv::Size(w * 2, h * 2)); roi = cv::Rect(0 * w, 0 * h, w * 2, h * 2); break;
@@ -257,7 +264,7 @@ cv::Mat MotionDetector::paint_main_mat_king(const std::list<int>& chs)
         }
 #endif
 
-#if KING_LAYOUT == 2
+#if KING_LAYOUT == KING_LAYOUT_CIRC
         // CIRCLE LAYOUR
         switch (x) {
                 // clang-format off
@@ -310,7 +317,7 @@ void MotionDetector::handle_keys()
     else if (key == 't') { m_enableTour = !m_enableTour; }
     else if (key == 'r') {
         m_current_channel = 1;
-        m_sorted_chs_area_all.update({1, 2, 3, 4, 5, 6});
+        m_king_chain.update({1, 2, 3, 4, 5, 6});
         m_motion_detected = false;
         m_tour_frame_index = 0;
         m_enableInfo = ENABLE_INFO;
