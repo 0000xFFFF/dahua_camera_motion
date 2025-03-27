@@ -11,7 +11,9 @@
 #include "motion_detector.hpp"
 #include "utils.h"
 
+#ifdef DEBUG_VERBOSE
 #include "debug.hpp"
+#endif
 
 int main(int argc, char* argv[])
 {
