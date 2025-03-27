@@ -290,11 +290,11 @@ void MotionDetector::handle_keys()
     if (key == 'q') { stop(); }
     else if (key == 'm') { m_enableMotion = !m_enableMotion; }
     else if (key == 'l') { m_enableMotionZoomLargest = !m_enableMotionZoomLargest; }
-    else if (key == 'n') { m_enableFullscreenChannel = false; m_displayMode = DISPLAY_MODE_SINGLE; }
-    else if (key == 'a') { m_enableFullscreenChannel = false; m_displayMode = DISPLAY_MODE_ALL; }
-    else if (key == 's') { m_enableFullscreenChannel = false; m_displayMode = DISPLAY_MODE_SORT; }
-    else if (key == 'x') { m_enableFullscreenChannel = false; m_displayMode = DISPLAY_MODE_TOP; }
-    else if (key == 'k') { m_enableFullscreenChannel = false; m_displayMode = DISPLAY_MODE_KING; }
+    else if (key == 'n') { m_displayMode = DISPLAY_MODE_SINGLE; }
+    else if (key == 'a') { m_displayMode = DISPLAY_MODE_ALL; }
+    else if (key == 's') { m_displayMode = DISPLAY_MODE_SORT; }
+    else if (key == 'x') { m_displayMode = DISPLAY_MODE_TOP; }
+    else if (key == 'k') { m_displayMode = DISPLAY_MODE_KING; }
     else if (key == 'i') { m_enableInfo = !m_enableInfo; }
     else if (key == 'o') { m_enableMinimap = !m_enableMinimap; }
     else if (key == 'f') { m_enableFullscreenChannel = !m_enableFullscreenChannel; }
@@ -322,7 +322,6 @@ void MotionDetector::handle_keys()
 
     else if (key >= '1' && key <= '6') {
         m_current_channel = key - '0';
-        m_enableFullscreenChannel = true;
     }
     // clang-format on
 }
