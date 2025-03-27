@@ -1,4 +1,4 @@
-#include "debug.h"
+#include "debug.hpp"
 #include "globals.hpp"
 #include "utils.h"
 #include <atomic>
