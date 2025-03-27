@@ -372,7 +372,6 @@ void MotionDetector::detect_motion()
         double fps = m_readers[0]->get_fps();                        // get fps from any 1-6 ch they all have the same fps
         double detect_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 30.0; // Default to 30 FPS if zero
         auto motion_time = std::chrono::high_resolution_clock::now() - motion_start;
-
         auto sleep_time = std::chrono::duration<double>(detect_time) - motion_time;
         m_motion_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
 #endif
@@ -398,6 +397,7 @@ void MotionDetector::draw_loop()
 
 #ifdef SLEEP_MS_DRAW
     m_draw_sleep_ms = SLEEP_MS_DRAW;
+    m_tour_frame_count = SLEEP_MS_TOUR / SLEEP_MS_DRAW;
 #endif
 
     try {
