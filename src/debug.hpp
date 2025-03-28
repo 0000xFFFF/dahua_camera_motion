@@ -117,8 +117,6 @@ class CpuUsageMonitor {
                 m_max_cpu = normalized_cpu_usage;
             }
 
-            std::cout << "CPU Usage: " << normalized_cpu_usage << "%" << std::endl;
-
             if (normalized_cpu_usage > m_max) m_max = normalized_cpu_usage;
             if (normalized_cpu_usage < m_min) m_min = normalized_cpu_usage;
             m_total += normalized_cpu_usage;
@@ -158,30 +156,9 @@ class CpuTimerMs {
     std::chrono::time_point<std::chrono::high_resolution_clock> m_start;
 };
 
-class MeasureTime {
-
+class CpuCyclesTimer {
   public:
-    MeasureTime(unsigned long long& max) : m_max(max)
-    {
-        m_start = __rdtsc();
-    }
-
-    ~MeasureTime()
-    {
-        unsigned long long end = __rdtsc();
-        auto e = end - m_start;
-        std::cout << "CPU Cycles: " << (end - m_start) << "\t\t" << m_max << "\n";
-        if (e > m_max) m_max = e;
-    }
-
-  private:
-    unsigned long long& m_max;
-    unsigned long long m_start;
-};
-
-class CpuTimer {
-  public:
-    CpuTimer()
+    CpuCyclesTimer()
         : m_index(0), m_max(0), m_min(std::numeric_limits<unsigned long long>::max()),
           m_total(0), m_count(0), m_start(0), m_end(0) {}
 

@@ -400,7 +400,7 @@ void MotionDetector::detect_motion()
     int i = 0;
 #endif
 
-    D_CPU(CpuTimer cpuTimer);
+    D_CPU(CpuCyclesTimer cpuTimer);
 
     while (m_running) {
 
