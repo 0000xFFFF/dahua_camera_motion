@@ -16,9 +16,7 @@ FrameReader::FrameReader(int ch, const std::string& ip,
       m_ip(ip),
       m_username(username),
       m_password(password),
-      m_channel(ch),
-      captured_fps(30.0)
-
+      m_channel(ch)
 {
 
     m_thread = std::thread([this]() { connect_and_read(); });
