@@ -24,11 +24,9 @@ MotionDetector::MotionDetector(const std::string& ip, const std::string& usernam
       m_display_width(w),
       m_display_height(h),
       m_fullscreen(fullscreen),
-      m_frame0(cv::Mat::zeros(W_0, H_0, CV_8UC3)),
       m_canv3x3(cv::Mat(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_canv3x2(cv::Mat(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0))),
-      m_main_display(cv::Mat(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0))),
-      m_king_chain({1, 2, 3, 4, 5, 6})
+      m_main_display(cv::Mat(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0)))
 
 {
 

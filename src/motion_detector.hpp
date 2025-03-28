@@ -67,7 +67,7 @@ class MotionDetector {
     bool m_enableMotionZoomLargest = ENABLE_MOTION_ZOOM_LARGEST;
     bool m_enableTour = ENABLE_TOUR;
 
-    cv::Mat m_frame0;
+    cv::Mat m_frame0 = cv::Mat::zeros(W_0, H_0, CV_8UC3);
     DoubleBufferMat m_frame0_dbuff;
     cv::Mat m_canv3x3;
     cv::Mat m_canv3x2;
@@ -83,6 +83,6 @@ class MotionDetector {
     std::atomic<int> m_tour_frame_count{0};
     std::atomic<int> m_tour_frame_index{0};
 
-    DoubleBufferVec m_king_chain;
+    DoubleBufferVec m_king_chain{{1, 2, 3, 4, 5, 6}};
     void move_to_front(int value);
 };
