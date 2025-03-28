@@ -1,9 +1,9 @@
+#include "ring_buffer.hpp"
 #include <atomic>
 #include <mutex>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <thread>
-#include "ring_buffer.hpp"
 
 class FrameReader {
   public:
@@ -16,8 +16,8 @@ class FrameReader {
 
   private:
     void connect_and_read();
-    std::string construct_rtsp_url(const std::string& ip, const std::string& username,
-                                   const std::string& password);
+    std::string construct_rtsp_url(const std::string& ip, const std::string& username, const std::string& password);
+    void put_placeholder();
 
   private:
     std::thread m_thread;
