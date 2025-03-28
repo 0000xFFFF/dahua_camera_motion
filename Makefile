@@ -1,6 +1,6 @@
 GCC = clang++
 FILES = src/*.cpp
-ARGS = -fcolor-diagnostics -O3
+ARGS = -O3
 DEBUG_ARGS = -D DEBUG -g -fno-omit-frame-pointer
 RELEASE_ARGS = -Wall -Wextra -s -march=native
 LIBS = `pkg-config --cflags --libs opencv4` -fopenmp
