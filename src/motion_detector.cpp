@@ -399,6 +399,9 @@ void MotionDetector::detect_motion()
 #ifdef DEBUG_FPS
     int i = 0;
 #endif
+
+    D_CPU(CpuTimer cpuTimer);
+
     while (m_running) {
 
 #ifdef DEBUG_FPS
@@ -414,7 +417,9 @@ void MotionDetector::detect_motion()
             cv::Mat frame0_get = m_readers[0]->get_latest_frame();
             if (!frame0_get.empty()) {
                 m_frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
+                D_CPU(cpuTimer.start());
                 detect_largest_motion_area_set_channel();
+                D_CPU(cpuTimer.stop());
             }
         }
         else {
@@ -460,7 +465,6 @@ void MotionDetector::draw_loop()
         int i = 0;
 #endif
 
-        D_CPU(CpuTimer cpuTimer);
 
         while (m_running) {
 

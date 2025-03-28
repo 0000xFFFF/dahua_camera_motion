@@ -20,6 +20,10 @@ debug_fps:
 #
 # ==[ TESTING CPU
 #
+
+test_0:
+	$(GCC) $(ARGS) -D DEBUG_CPU -D ENABLE_MINIMAP_FULLSCREEN=1 $(LIBS) $(FILES) -o $(EXEC)
+
 debug_cpu:
 	$(GCC) $(ARGS) $(DEBUG_ARGS) -D DEBUG_CPU $(FILES) $(LIBS) -o $(EXEC)
 

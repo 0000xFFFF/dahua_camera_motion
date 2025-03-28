@@ -97,7 +97,7 @@ class CpuUsageMonitor {
         auto prev_time = std::chrono::steady_clock::now();
 
         while (m_running) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(std::chrono::seconds(10));
 
             auto curr_time = std::chrono::steady_clock::now();
             auto time_diff = std::chrono::duration_cast<std::chrono::seconds>(curr_time - prev_time).count();
@@ -167,37 +167,48 @@ class MeasureTime {
 };
 
 class CpuTimer {
-
-  public:
-    CpuTimer() {}
+public:
+    CpuTimer()
+        : m_index(0), m_max(0), m_min(std::numeric_limits<unsigned long long>::max()),
+          m_total(0), m_count(0), m_start(0), m_end(0) {}
 
     void start()
     {
         m_start = __rdtsc();
     }
 
-    void print()
-    {
-        std::cout << "CPU Cycles: " << (m_end - m_start) << "\t\t" << m_max << "\n";
-    }
-
     void stop()
     {
         m_index++;
-        if (m_index < 600) { return; } // ignore first
+        if (m_index < 600) { return; } // warm-up
 
         m_end = __rdtsc();
-        auto e = m_end - m_start;
-        if (e > m_max) m_max = e;
+        auto elapsed = m_end - m_start;
+
+        if (elapsed > m_max) m_max = elapsed;
+        if (elapsed < m_min) m_min = elapsed;
+        m_total += elapsed;
+        m_count++;
 
         if (m_index % 300 == 0) {
             print();
         }
     }
 
-  private:
+    void print()
+    {
+        auto avg = m_count > 0 ? m_total / m_count : 0;
+        std::cout << "CPU Cycles - Min: " << m_min
+                  << " | Max: " << m_max
+                  << " | Avg: " << avg << "\n";
+    }
+
+private:
     unsigned long long m_index;
     unsigned long long m_max;
+    unsigned long long m_min;
+    unsigned long long m_total;
+    unsigned long long m_count;
     unsigned long long m_start;
     unsigned long long m_end;
 };
