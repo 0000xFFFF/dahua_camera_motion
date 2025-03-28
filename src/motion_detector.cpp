@@ -15,8 +15,8 @@
 
 #define MINIMAP_WIDTH 300
 #define MINIMAP_HEIGHT 160
-#define CROP_HEIGHT 384
 #define CROP_WIDTH 704
+#define CROP_HEIGHT 384
 
 MotionDetector::MotionDetector(const std::string& ip, const std::string& username,
                                const std::string& password, int area, int w, int h, bool fullscreen)
