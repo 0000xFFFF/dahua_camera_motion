@@ -45,6 +45,10 @@ class CpuUsageMonitor {
     std::atomic<bool> m_running{true};
     pid_t m_pid = getpid(); // Store the process ID
     unsigned int m_num_cores;
+    double m_min = std::numeric_limits<double>::max();
+    double m_max = 0;
+    double m_total = 0;
+    double m_count = 0;
 
     std::vector<unsigned long long> get_process_cpu_stats()
     {
@@ -113,13 +117,22 @@ class CpuUsageMonitor {
                 m_max_cpu = normalized_cpu_usage;
             }
 
-            std::cout << "Normalized Process CPU Usage: " << normalized_cpu_usage << "%" << std::endl;
+            std::cout << "CPU Usage: " << normalized_cpu_usage << "%" << std::endl;
+
+            if (normalized_cpu_usage > m_max) m_max = normalized_cpu_usage;
+            if (normalized_cpu_usage < m_min) m_min = normalized_cpu_usage;
+            m_total += normalized_cpu_usage;
+            m_count++;
+
+            double avg = m_count > 0 ? m_total / m_count : 0;
+
+            std::cout << "CPU Usage - Min: " << m_min
+                      << " | Max: " << m_max
+                      << " | Avg: " << avg << "\n";
 
             prev_stats = curr_stats;
             prev_time = curr_time;
         }
-
-        std::cout << "Max Normalized Process CPU Usage: " << m_max_cpu << "%" << std::endl;
     }
 };
 
@@ -167,7 +180,7 @@ class MeasureTime {
 };
 
 class CpuTimer {
-public:
+  public:
     CpuTimer()
         : m_index(0), m_max(0), m_min(std::numeric_limits<unsigned long long>::max()),
           m_total(0), m_count(0), m_start(0), m_end(0) {}
@@ -203,7 +216,7 @@ public:
                   << " | Avg: " << avg << "\n";
     }
 
-private:
+  private:
     unsigned long long m_index;
     unsigned long long m_max;
     unsigned long long m_min;
