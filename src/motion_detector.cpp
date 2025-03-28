@@ -413,7 +413,7 @@ void MotionDetector::detect_motion()
         m_motion_detected = false;
         if (m_enableMotion) {
             cv::Mat frame0_get = m_readers[0]->get_latest_frame();
-            if (!frame0_get.empty()) {
+            if (!frame0_get.empty() && frame0_get.size() == cv::Size(W_0, H_0)) {
                 m_frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
                 D_CPU(cpuTimer.start());
                 detect_largest_motion_area_set_channel();
@@ -462,7 +462,6 @@ void MotionDetector::draw_loop()
 #ifdef DEBUG_FPS
         int i = 0;
 #endif
-
 
         while (m_running) {
 

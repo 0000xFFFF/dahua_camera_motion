@@ -29,7 +29,7 @@ FrameReader::FrameReader(int ch, const std::string& ip,
 void FrameReader::put_placeholder()
 {
 
-    cv::Mat placeholder(cv::Size(500, 500), CV_8UC3);
+    cv::Mat placeholder(cv::Size(100, 100), CV_8UC3);
 
     const cv::Scalar text_color(255, 255, 255);
     const double font_scale = 0.8;
