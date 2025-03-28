@@ -3,7 +3,6 @@
 #include "utils.h"
 #include <atomic>
 #include <chrono>
-#include <exception>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <sys/types.h>
@@ -29,22 +28,24 @@ FrameReader::FrameReader(int ch, const std::string& ip,
 void FrameReader::put_placeholder()
 {
 
-    cv::Mat placeholder(cv::Size(100, 100), CV_8UC3);
+    cv::Mat placeholder(cv::Size(1000, 1000), CV_8UC3);
 
     const cv::Scalar text_color(255, 255, 255);
-    const double font_scale = 0.8;
-    const int font_thickness = 2;
+    const double font_scale = 10;
+    const int font_thickness = 20;
+
+    std::string text = std::to_string(m_channel);
 
     // Get the text size to calculate the correct position
     int baseline = 0;
-    cv::Size text_size = cv::getTextSize(std::to_string(m_channel), cv::FONT_HERSHEY_SIMPLEX, font_scale, font_thickness, &baseline);
+    cv::Size text_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, font_scale, font_thickness, &baseline);
 
     // Calculate the position for the text to be centered
     cv::Point text_origin((placeholder.cols - text_size.width) / 2, (placeholder.rows + text_size.height) / 2);
 
     // Draw the text on the placeholder
     cv::putText(placeholder,
-                std::to_string(m_channel),
+                text,
                 text_origin,
                 cv::FONT_HERSHEY_SIMPLEX,
                 font_scale,
