@@ -21,7 +21,7 @@
 #endif
 
 #ifndef MOTION_DETECT_AREA 
-#define MOTION_DETECT_AREA 10
+#define MOTION_DETECT_AREA 300
 #endif
 
 #define DISPLAY_MODE_SINGLE 0
