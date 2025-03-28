@@ -67,7 +67,7 @@ class MotionDetector {
     bool m_enableMotionZoomLargest{ENABLE_MOTION_ZOOM_LARGEST};
     bool m_enableTour{ENABLE_TOUR};
 
-    cv::Mat m_frame0{cv::Mat::zeros(W_0, H_0, CV_8UC3)};
+    cv::Mat m_frame0;
     DoubleBufferMat m_frame0_dbuff;
     cv::Mat m_canv3x3;
     cv::Mat m_canv3x2;
