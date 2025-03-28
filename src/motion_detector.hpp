@@ -59,15 +59,15 @@ class MotionDetector {
     std::atomic<int> m_motion_ch{1};
     std::atomic<int> m_motion_ch_frames{0};
 
-    bool m_enableInfo = ENABLE_INFO;
-    int m_displayMode = DISPLAY_MODE;
-    bool m_enableMinimap = ENABLE_MINIMAP;
-    bool m_enableMinimapFullscreen = ENABLE_MINIMAP_FULLSCREEN;
-    bool m_enableFullscreenChannel = ENABLE_FULLSCREEN_CHANNEL;
-    bool m_enableMotionZoomLargest = ENABLE_MOTION_ZOOM_LARGEST;
-    bool m_enableTour = ENABLE_TOUR;
+    bool m_enableInfo{ENABLE_INFO};
+    int m_displayMode{DISPLAY_MODE};
+    bool m_enableMinimap{ENABLE_MINIMAP};
+    bool m_enableMinimapFullscreen{ENABLE_MINIMAP_FULLSCREEN};
+    bool m_enableFullscreenChannel{ENABLE_FULLSCREEN_CHANNEL};
+    bool m_enableMotionZoomLargest{ENABLE_MOTION_ZOOM_LARGEST};
+    bool m_enableTour{ENABLE_TOUR};
 
-    cv::Mat m_frame0 = cv::Mat::zeros(W_0, H_0, CV_8UC3);
+    cv::Mat m_frame0{cv::Mat::zeros(W_0, H_0, CV_8UC3)};
     DoubleBufferMat m_frame0_dbuff;
     cv::Mat m_canv3x3;
     cv::Mat m_canv3x2;
