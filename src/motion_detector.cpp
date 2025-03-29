@@ -529,6 +529,10 @@ void MotionDetector::draw_loop()
                 std::cout << "Draw thread sleep time: " << m_draw_sleep_ms << " ms" << std::endl;
             }
 #endif
+
+#ifdef SLEEP_MS_DRAW_DETECTED
+            if (m_motion_detected_min_frames) { m_draw_sleep_ms = DRAW_SLEEP_MS_DETECTED; }
+#endif
             std::this_thread::sleep_for(std::chrono::milliseconds(m_draw_sleep_ms));
         }
     }

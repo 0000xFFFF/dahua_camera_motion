@@ -1,26 +1,26 @@
 #pragma once
 
-#ifndef ENABLE_INFO 
+#ifndef ENABLE_INFO
 #define ENABLE_INFO 0
 #endif
 
-#ifndef ENABLE_MINIMAP 
+#ifndef ENABLE_MINIMAP
 #define ENABLE_MINIMAP 0
 #endif
 
-#ifndef ENABLE_MINIMAP_FULLSCREEN 
+#ifndef ENABLE_MINIMAP_FULLSCREEN
 #define ENABLE_MINIMAP_FULLSCREEN 0
 #endif
 
-#ifndef ENABLE_MOTION 
+#ifndef ENABLE_MOTION
 #define ENABLE_MOTION 1
 #endif
 
-#ifndef ENABLE_MOTION_ZOOM_LARGEST 
+#ifndef ENABLE_MOTION_ZOOM_LARGEST
 #define ENABLE_MOTION_ZOOM_LARGEST 0
 #endif
 
-#ifndef MOTION_DETECT_AREA 
+#ifndef MOTION_DETECT_AREA
 #define MOTION_DETECT_AREA 200
 #endif
 
@@ -41,24 +41,26 @@
 #define DISPLAY_MODE DISPLAY_MODE_SINGLE
 #endif
 
-#ifndef ENABLE_TOUR 
+#ifndef ENABLE_TOUR
 #define ENABLE_TOUR 0
 #endif
 
-#ifndef ENABLE_FULLSCREEN_CHANNEL 
+#ifndef ENABLE_FULLSCREEN_CHANNEL
 #define ENABLE_FULLSCREEN_CHANNEL 0
 #endif
 
 // milis
-//#define SLEEP_MS_MOTION 300
-//#define SLEEP_MS_DRAW 200
-//#define SLEEP_MS_ERROR 10
+// #define SLEEP_MS_MOTION 300
+// #define SLEEP_MS_DRAW 200           // idle
+// #define SLEEP_MS_DRAW_DETECTED 65   // motion detected
+// #define SLEEP_MS_DRAW_IDLE 200
+// #define SLEEP_MS_ERROR 10
 
-#ifndef SLEEP_MS_TOUR 
+#ifndef SLEEP_MS_TOUR
 #define SLEEP_MS_TOUR 3000
 #endif
 
-#ifndef MOTION_DETECT_MIN_MS 
+#ifndef MOTION_DETECT_MIN_MS
 #define MOTION_DETECT_MIN_MS 1000
 #endif
 
