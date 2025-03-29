@@ -76,12 +76,6 @@ void MotionDetector::do_tour_logic()
             }
         }
         m_king_chain.update(n);
-
-        std::cout << "--" << std::endl;
-        for (size_t i = 0; i < n.size(); i++) {
-            std::cout << n[i] << std::endl;
-        }
-
         m_current_channel = ch;
 #else
         // fight to top
