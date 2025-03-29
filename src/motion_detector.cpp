@@ -58,9 +58,37 @@ void MotionDetector::do_tour_logic()
 #if KING_LAYOUT == KING_LAYOUT_CIRC
         change_channel(m_king_chain.get().back());
 #else
+
+#if KING_LAYOUT == KING_LAYOUT_REL
+
+        m_tour_current_channel++;
+        if (m_tour_current_channel > 6) { m_tour_current_channel = 1; }
+
+        int ch = m_tour_current_channel;
+        auto vec = m_king_chain.get();
+        std::vector<int> n(vec.size());
+        int x = 0;
+        n[x++] = ch;
+        for (int i = 0; i < 6; i++) {
+            int value = i+1;
+            if (value != ch) {
+                n[x++] = value;
+            }
+        }
+        m_king_chain.update(n);
+
+        std::cout << "--" << std::endl;
+        for (size_t i = 0; i < n.size(); i++) {
+            std::cout << n[i] << std::endl;
+        }
+
+        m_current_channel = ch;
+#else
+        // fight to top
         m_tour_current_channel++;
         if (m_tour_current_channel > 6) { m_tour_current_channel = 1; }
         change_channel(m_tour_current_channel);
+#endif
 #endif
     }
 }
