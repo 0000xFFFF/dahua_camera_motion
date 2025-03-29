@@ -10,7 +10,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <omp.h>
 #include <vector>
 
 #define MINIMAP_WIDTH 300

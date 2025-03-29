@@ -3,7 +3,7 @@ FILES = src/*.cpp
 ARGS = -O3
 DEBUG_ARGS = -D DEBUG -g -fno-omit-frame-pointer
 RELEASE_ARGS = -Wall -Wextra -s -march=native
-LIBS = `pkg-config --cflags --libs opencv4` -fopenmp
+LIBS = `pkg-config --cflags --libs opencv4`
 EXEC = dcm_master
 
 PREFIX = /usr/local
