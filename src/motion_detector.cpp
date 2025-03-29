@@ -465,6 +465,11 @@ void MotionDetector::draw_loop()
 
         while (m_running) {
 
+#ifdef SLEEP_MS_DRAW_DETECTED
+            m_draw_sleep_ms = SLEEP_MS_DRAW;
+            m_tour_frame_count = SLEEP_MS_TOUR / m_draw_sleep_ms;
+#endif
+
 #ifdef DEBUG_FPS
             i++;
 #endif
@@ -531,7 +536,11 @@ void MotionDetector::draw_loop()
 #endif
 
 #ifdef SLEEP_MS_DRAW_DETECTED
-            if (m_motion_detected_min_frames) { m_draw_sleep_ms = DRAW_SLEEP_MS_DETECTED; }
+            if (m_motion_detected_min_frames) {
+                m_draw_sleep_ms = DRAW_SLEEP_MS_DETECTED;
+                m_tour_frame_count = SLEEP_MS_TOUR / m_draw_sleep_ms;
+                std::cout << "set: " << m_draw_sleep_ms << std::endl;
+            }
 #endif
             std::this_thread::sleep_for(std::chrono::milliseconds(m_draw_sleep_ms));
         }
