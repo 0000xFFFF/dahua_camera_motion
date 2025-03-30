@@ -98,7 +98,7 @@ void FrameReader::connect_and_read()
 
     // Set FFMPEG options for better stream handling
     m_cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('H', '2', '6', '4'));
-    m_cap.set(cv::CAP_PROP_BUFFERSIZE, 2);
+    m_cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
 
     // use GPU
     m_cap.set(cv::CAP_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY); // Use any available hardware acceleration
