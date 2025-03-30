@@ -29,6 +29,7 @@ void FrameReader::put_placeholder()
 {
 
     cv::Mat placeholder(cv::Size(1000, 1000), CV_8UC3);
+    cv::copyMakeBorder(placeholder, placeholder, 2, 2, 2, 2, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
 
     const cv::Scalar text_color(255, 255, 255);
     const double font_scale = 10;
