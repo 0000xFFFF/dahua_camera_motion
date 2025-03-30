@@ -8,6 +8,12 @@
 #include <sys/types.h>
 #include <thread>
 
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+}
+
 #include "frame_reader.hpp"
 
 FrameReader::FrameReader(int ch, const std::string& ip,
@@ -90,27 +96,50 @@ std::string FrameReader::construct_rtsp_url(const std::string& ip, const std::st
 
 void FrameReader::connect_and_read()
 {
-
     set_thread_affinity(m_channel % std::thread::hardware_concurrency()); // Assign different core to each camera
 
     D(std::cout << "start capture: " << m_channel << std::endl);
     std::string rtsp_url = construct_rtsp_url(m_ip, m_username, m_password);
 
-    // Set FFMPEG options for better stream handling
-    m_cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('H', '2', '6', '4'));
-    m_cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
+    avformat_network_init();
+    AVFormatContext* formatCtx = avformat_alloc_context();
 
-    // use GPU
-    m_cap.set(cv::CAP_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY); // Use any available hardware acceleration
-    m_cap.set(cv::CAP_PROP_HW_DEVICE, 0);                                // Use default GPU
-
-    // Set environment variable for RTSP transport
-    putenv((char*)"OPENCV_FFMPEG_CAPTURE_OPTIONS=rtsp_transport;udp");
-
-    if (!m_cap.open(rtsp_url, cv::CAP_FFMPEG)) {
-        throw std::runtime_error("Failed to open RTSP stream for channel " +
-                                 std::to_string(m_channel));
+    if (avformat_open_input(&formatCtx, rtsp_url.c_str(), NULL, NULL) != 0) {
+        throw std::runtime_error("Failed to open RTSP stream for channel " + std::to_string(m_channel));
     }
+
+    if (avformat_find_stream_info(formatCtx, NULL) < 0) {
+        avformat_close_input(&formatCtx);
+        throw std::runtime_error("Failed to retrieve stream info for channel " + std::to_string(m_channel));
+    }
+
+    int videoStreamIndex = -1;
+    for (unsigned int i = 0; i < formatCtx->nb_streams; i++) {
+        if (formatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+            videoStreamIndex = i;
+            break;
+        }
+    }
+
+    if (videoStreamIndex == -1) {
+        avformat_close_input(&formatCtx);
+        throw std::runtime_error("No video stream found for channel " + std::to_string(m_channel));
+    }
+
+    AVCodecParameters* codecParams = formatCtx->streams[videoStreamIndex]->codecpar;
+    const AVCodec* codec = avcodec_find_decoder(codecParams->codec_id);
+    AVCodecContext* codecCtx = avcodec_alloc_context3(codec);
+    avcodec_parameters_to_context(codecCtx, codecParams);
+    avcodec_open2(codecCtx, codec, NULL);
+
+    AVPacket* packet = av_packet_alloc();
+    AVFrame* frame = av_frame_alloc();
+    SwsContext* swsCtx = sws_getContext(
+        codecCtx->width, codecCtx->height, codecCtx->pix_fmt,
+        codecCtx->width, codecCtx->height, AV_PIX_FMT_BGR24,
+        SWS_BILINEAR, NULL, NULL, NULL);
+
+    cv::Mat image(codecCtx->height, codecCtx->width, CV_8UC3);
 
     D(std::cout << "connected: " << m_channel << std::endl);
 
@@ -118,37 +147,44 @@ void FrameReader::connect_and_read()
     auto start_time = std::chrono::high_resolution_clock::now();
 
     while (m_running) {
-        if (!m_cap.isOpened()) {
-            std::cerr << "Camera " << m_channel << " is not open. Exiting thread." << std::endl;
-            break;
+        if (av_read_frame(formatCtx, packet) < 0) {
+            continue;
         }
 
-        cv::Mat frame;
-        // Blocks until a frame is available
-        if (!m_cap.read(frame)) { continue; }
+        if (packet->stream_index == videoStreamIndex) {
+            avcodec_send_packet(codecCtx, packet);
+            if (avcodec_receive_frame(codecCtx, frame) == 0) {
+                uint8_t* data[1] = {image.data};
+                int linesize[1] = {3 * codecCtx->width};
+                sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, data, linesize);
 
-        m_frame_buffer.push(std::move(frame));
+                m_frame_buffer.push(std::move(image.clone()));
 
-        i++;
-        if (i % 30 == 0) { // Measure FPS every 30 frames
-            auto end_time = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> elapsed = end_time - start_time;
-            double fps = 30.0 / elapsed.count();
-            captured_fps = fps;
+                i++;
+                if (i % 30 == 0) {
+                    auto end_time = std::chrono::high_resolution_clock::now();
+                    std::chrono::duration<double> elapsed = end_time - start_time;
+                    double fps = 30.0 / elapsed.count();
+                    captured_fps = fps;
 
 #ifdef DEBUG_FPS
-            if (i % 100 == 0) {
-                std::cout << "Channel " << m_channel << " Frame Rate: " << fps << " FPS" << std::endl;
-            }
+                    if (i % 100 == 0) {
+                        std::cout << "Channel " << m_channel << " Frame Rate: " << fps << " FPS" << std::endl;
+                    }
 #endif
-            // Reset timer
-            start_time = std::chrono::high_resolution_clock::now();
+                    start_time = std::chrono::high_resolution_clock::now();
+                }
+            }
         }
+
+        av_packet_unref(packet);
     }
 
-    if (m_cap.isOpened()) {
-        m_cap.release();
-    }
+    av_packet_free(&packet);
+    av_frame_free(&frame);
+    avcodec_free_context(&codecCtx);
+    avformat_close_input(&formatCtx);
+    sws_freeContext(swsCtx);
 
     D(std::cout << "Exiting readFrames() thread for channel " << m_channel << std::endl);
 }
