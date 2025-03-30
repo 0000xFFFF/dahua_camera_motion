@@ -28,7 +28,6 @@
 #define MOTION_DETECT_MIN_MS 100
 #endif
 
-
 #ifndef MOTION_DETECT_LINGER_MS
 #define MOTION_DETECT_LINGER_MS 3000 // after motion keep zoom for X ms
 #endif
@@ -68,6 +67,7 @@
 // #define SLEEP_MS_DRAW_DETECTED 65   // motion detected
 // #define SLEEP_MS_DRAW_IDLE 200
 // #define SLEEP_MS_ERROR 10
+// #define SLEEP_MS_FRAME 50  // frame reader sleep
 
 #ifndef SLEEP_MS_TOUR
 #define SLEEP_MS_TOUR 3000

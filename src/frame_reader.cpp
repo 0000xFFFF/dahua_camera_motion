@@ -94,7 +94,8 @@ std::string FrameReader::construct_rtsp_url(const std::string& ip, const std::st
            "&subtype=" + std::to_string(subtype);
 }
 
-void FrameReader::connect_and_read() {
+void FrameReader::connect_and_read()
+{
     set_thread_affinity(m_channel % std::thread::hardware_concurrency());
 
     D(std::cout << "start capture: " << m_channel << std::endl);
@@ -103,11 +104,11 @@ void FrameReader::connect_and_read() {
     avformat_network_init();
     AVFormatContext* formatCtx = avformat_alloc_context();
 
-    // RTSP Options
+    // RTSP Options (Less Aggressive)
     AVDictionary* options = NULL;
-    av_dict_set(&options, "rtsp_transport", "tcp", 0); // Use TCP for stability
-    av_dict_set(&options, "buffer_size", "1024000", 0); // Reduce buffering
-    av_dict_set(&options, "max_delay", "500000", 0); // Reduce latency
+    av_dict_set(&options, "rtsp_transport", "tcp", 0);
+    av_dict_set(&options, "buffer_size", "1024000", 0);
+    av_dict_set(&options, "max_delay", "500000", 0);
 
     // Open RTSP stream
     if (avformat_open_input(&formatCtx, rtsp_url.c_str(), NULL, &options) != 0) {
@@ -140,10 +141,10 @@ void FrameReader::connect_and_read() {
 
     // Enable Low-Latency HEVC Decoding
     codecCtx->flags |= AV_CODEC_FLAG_LOW_DELAY;
-    codecCtx->thread_count = 4; // Use multiple threads
-    codecCtx->skip_frame = AVDISCARD_DEFAULT; // Avoid decoding unnecessary frames
+    codecCtx->thread_count = 4;
+    codecCtx->skip_frame = AVDISCARD_DEFAULT;
 
-    // Try to enable hardware acceleration (CUDA, VAAPI, etc.)
+    // Try to enable hardware acceleration
     AVHWDeviceType hw_type = av_hwdevice_find_type_by_name("cuda");
     if (hw_type != AV_HWDEVICE_TYPE_NONE) {
         av_hwdevice_ctx_create(&codecCtx->hw_device_ctx, hw_type, NULL, NULL, 0);
@@ -151,8 +152,8 @@ void FrameReader::connect_and_read() {
 
     // Open Codec
     AVDictionary* codecOptions = NULL;
-    av_dict_set(&codecOptions, "preset", "ultrafast", 0); // Reduce delay
-    av_dict_set(&codecOptions, "tune", "zerolatency", 0); // Optimize for real-time
+    av_dict_set(&codecOptions, "preset", "ultrafast", 0);
+    av_dict_set(&codecOptions, "tune", "zerolatency", 0);
     avcodec_open2(codecCtx, codec, &codecOptions);
 
     // Prepare for Frame Processing
@@ -168,8 +169,18 @@ void FrameReader::connect_and_read() {
     D(std::cout << "connected: " << m_channel << std::endl);
 
     int i = 0;
-    int framesDecoded = 0; // Track decoded frames
+    int framesDecoded = 0;
     auto start_time = std::chrono::high_resolution_clock::now();
+    int64_t last_pts = AV_NOPTS_VALUE;
+
+#define SLEEP_MS_FRAME 10
+
+#ifdef SLEEP_MS_FRAME
+    double estimated_fps = 15.0;
+    double time_per_frame_ms = 1000.0 / estimated_fps; // Calculate time per frame (milliseconds)
+    double estimated_frames_skipped = static_cast<double>(SLEEP_MS_FRAME) / time_per_frame_ms;
+    int64_t pts_tolerance = static_cast<int64_t>(estimated_frames_skipped * formatCtx->streams[videoStreamIndex]->time_base.den / formatCtx->streams[videoStreamIndex]->time_base.num);
+#endif
 
     // Read Frames
     while (m_running) {
@@ -182,13 +193,21 @@ void FrameReader::connect_and_read() {
             av_packet_unref(&packet);
 
             while (avcodec_receive_frame(codecCtx, frame) == 0) {
-                if (++framesDecoded < 5) continue; // Skip first 5 frames to allow HEVC reference frame buildup
+                if (++framesDecoded < 5) continue; // Skip first 5 frames for HEVC reference frame buildup
+
+                // Frame skipping logic
+                if (last_pts != AV_NOPTS_VALUE && frame->pts <= last_pts) {
+                    av_frame_unref(frame);
+                    continue; // Skip this frame
+                }
+
+                last_pts = frame->pts;
 
                 uint8_t* data[1] = {image.data};
                 int linesize[1] = {3 * codecCtx->width};
                 sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, data, linesize);
 
-                m_frame_buffer.push(std::move(image.clone()));
+                m_frame_buffer.push(image.clone());
 
                 i++;
                 if (i % 30 == 0) {
@@ -196,6 +215,13 @@ void FrameReader::connect_and_read() {
                     std::chrono::duration<double> elapsed = end_time - start_time;
                     double fps = 30.0 / elapsed.count();
                     captured_fps = fps;
+
+#ifdef SLEEP_MS_FRAME
+                    estimated_fps = fps;
+                    time_per_frame_ms = 1000.0 / estimated_fps; // Calculate time per frame (milliseconds)
+                    estimated_frames_skipped = static_cast<double>(SLEEP_MS_FRAME) / time_per_frame_ms;
+                    pts_tolerance = static_cast<int64_t>(estimated_frames_skipped * formatCtx->streams[videoStreamIndex]->time_base.den / formatCtx->streams[videoStreamIndex]->time_base.num);
+#endif
 
 #ifdef DEBUG_FPS
                     if (i % 100 == 0) {
@@ -206,6 +232,26 @@ void FrameReader::connect_and_read() {
                 }
             }
         }
+
+
+#ifdef SLEEP_MS_FRAME
+        std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_MS_FRAME));
+
+        // Attempt to skip buffered frames
+        AVPacket skip_packet;
+        while (av_read_frame(formatCtx, &skip_packet) >= 0 && skip_packet.stream_index == videoStreamIndex) {
+            avcodec_send_packet(codecCtx, &skip_packet);
+            av_packet_unref(&skip_packet);
+            AVFrame* skip_frame = av_frame_alloc();
+            if (avcodec_receive_frame(codecCtx, skip_frame) == 0) {
+                if (skip_frame->pts > last_pts + pts_tolerance) {
+                    av_frame_free(&skip_frame);
+                    break;
+                }
+                av_frame_free(&skip_frame);
+            }
+        }
+#endif
     }
 
     // Cleanup
