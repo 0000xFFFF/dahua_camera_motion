@@ -94,9 +94,8 @@ std::string FrameReader::construct_rtsp_url(const std::string& ip, const std::st
            "&subtype=" + std::to_string(subtype);
 }
 
-void FrameReader::connect_and_read()
-{
-    set_thread_affinity(m_channel % std::thread::hardware_concurrency()); // Assign different core to each camera
+void FrameReader::connect_and_read() {
+    set_thread_affinity(m_channel % std::thread::hardware_concurrency());
 
     D(std::cout << "start capture: " << m_channel << std::endl);
     std::string rtsp_url = construct_rtsp_url(m_ip, m_username, m_password);
@@ -104,7 +103,14 @@ void FrameReader::connect_and_read()
     avformat_network_init();
     AVFormatContext* formatCtx = avformat_alloc_context();
 
-    if (avformat_open_input(&formatCtx, rtsp_url.c_str(), NULL, NULL) != 0) {
+    // RTSP Options
+    AVDictionary* options = NULL;
+    av_dict_set(&options, "rtsp_transport", "tcp", 0); // Use TCP for stability
+    av_dict_set(&options, "buffer_size", "1024000", 0); // Reduce buffering
+    av_dict_set(&options, "max_delay", "500000", 0); // Reduce latency
+
+    // Open RTSP stream
+    if (avformat_open_input(&formatCtx, rtsp_url.c_str(), NULL, &options) != 0) {
         throw std::runtime_error("Failed to open RTSP stream for channel " + std::to_string(m_channel));
     }
 
@@ -113,6 +119,7 @@ void FrameReader::connect_and_read()
         throw std::runtime_error("Failed to retrieve stream info for channel " + std::to_string(m_channel));
     }
 
+    // Find video stream
     int videoStreamIndex = -1;
     for (unsigned int i = 0; i < formatCtx->nb_streams; i++) {
         if (formatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
@@ -130,9 +137,26 @@ void FrameReader::connect_and_read()
     const AVCodec* codec = avcodec_find_decoder(codecParams->codec_id);
     AVCodecContext* codecCtx = avcodec_alloc_context3(codec);
     avcodec_parameters_to_context(codecCtx, codecParams);
-    avcodec_open2(codecCtx, codec, NULL);
 
-    AVPacket* packet = av_packet_alloc();
+    // Enable Low-Latency HEVC Decoding
+    codecCtx->flags |= AV_CODEC_FLAG_LOW_DELAY;
+    codecCtx->thread_count = 4; // Use multiple threads
+    codecCtx->skip_frame = AVDISCARD_DEFAULT; // Avoid decoding unnecessary frames
+
+    // Try to enable hardware acceleration (CUDA, VAAPI, etc.)
+    AVHWDeviceType hw_type = av_hwdevice_find_type_by_name("cuda");
+    if (hw_type != AV_HWDEVICE_TYPE_NONE) {
+        av_hwdevice_ctx_create(&codecCtx->hw_device_ctx, hw_type, NULL, NULL, 0);
+    }
+
+    // Open Codec
+    AVDictionary* codecOptions = NULL;
+    av_dict_set(&codecOptions, "preset", "ultrafast", 0); // Reduce delay
+    av_dict_set(&codecOptions, "tune", "zerolatency", 0); // Optimize for real-time
+    avcodec_open2(codecCtx, codec, &codecOptions);
+
+    // Prepare for Frame Processing
+    AVPacket packet;
     AVFrame* frame = av_frame_alloc();
     SwsContext* swsCtx = sws_getContext(
         codecCtx->width, codecCtx->height, codecCtx->pix_fmt,
@@ -144,16 +168,22 @@ void FrameReader::connect_and_read()
     D(std::cout << "connected: " << m_channel << std::endl);
 
     int i = 0;
+    int framesDecoded = 0; // Track decoded frames
     auto start_time = std::chrono::high_resolution_clock::now();
 
+    // Read Frames
     while (m_running) {
-        if (av_read_frame(formatCtx, packet) < 0) {
+        if (av_read_frame(formatCtx, &packet) < 0) {
             continue;
         }
 
-        if (packet->stream_index == videoStreamIndex) {
-            avcodec_send_packet(codecCtx, packet);
-            if (avcodec_receive_frame(codecCtx, frame) == 0) {
+        if (packet.stream_index == videoStreamIndex) {
+            avcodec_send_packet(codecCtx, &packet);
+            av_packet_unref(&packet);
+
+            while (avcodec_receive_frame(codecCtx, frame) == 0) {
+                if (++framesDecoded < 5) continue; // Skip first 5 frames to allow HEVC reference frame buildup
+
                 uint8_t* data[1] = {image.data};
                 int linesize[1] = {3 * codecCtx->width};
                 sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, data, linesize);
@@ -176,11 +206,9 @@ void FrameReader::connect_and_read()
                 }
             }
         }
-
-        av_packet_unref(packet);
     }
 
-    av_packet_free(&packet);
+    // Cleanup
     av_frame_free(&frame);
     avcodec_free_context(&codecCtx);
     avformat_close_input(&formatCtx);
