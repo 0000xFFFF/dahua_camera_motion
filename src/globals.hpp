@@ -16,16 +16,25 @@
 #define ENABLE_MOTION 1
 #endif
 
-#ifndef ENABLE_MOTION_ZOOM_LARGEST
-#define ENABLE_MOTION_ZOOM_LARGEST 0
-#endif
-
 #ifndef MOTION_DETECT_AREA
 #define MOTION_DETECT_AREA 50
 #endif
 
 #ifndef MOTION_DETECT_RECT_AREA
 #define MOTION_DETECT_RECT_AREA 500
+#endif
+
+#ifndef MOTION_DETECT_MIN_MS
+#define MOTION_DETECT_MIN_MS 100
+#endif
+
+
+#ifndef MOTION_DETECT_LINGER_MS
+#define MOTION_DETECT_LINGER_MS 3000 // after motion keep zoom for X ms
+#endif
+
+#ifndef ENABLE_MOTION_ZOOM_LARGEST
+#define ENABLE_MOTION_ZOOM_LARGEST 0
 #endif
 
 #define DISPLAY_MODE_SINGLE 0
@@ -62,10 +71,6 @@
 
 #ifndef SLEEP_MS_TOUR
 #define SLEEP_MS_TOUR 3000
-#endif
-
-#ifndef MOTION_DETECT_MIN_MS
-#define MOTION_DETECT_MIN_MS 100
 #endif
 
 #ifdef DEBUG

@@ -165,10 +165,25 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     }
 
     m_motion_detect_min_frames = (m_motion_sleep_ms > 0) ? MOTION_DETECT_MIN_MS / m_motion_sleep_ms : MOTION_DETECT_MIN_MS / 10;
-    m_motion_detected_min_frames = m_motion_ch_frames >= m_motion_detect_min_frames;
+    m_motion_detected_min_frames = m_motion_detect_linger || m_motion_ch_frames >= m_motion_detect_min_frames;
 
     if (m_motion_detected_min_frames) {
-        m_tour_frame_index = 0; // reset so it doesn't auto switch on new tour so we can show a little bit of motion
+        // reset so it doesn't auto switch on new tour so we can show a little bit of motion
+        m_tour_frame_index = 0;
+
+        // also linger motion
+        if (!m_motion_detect_linger) {
+            m_motion_detect_linger_index = 0;
+            m_motion_detect_linger = true;
+        }
+    }
+
+    if (m_motion_detect_linger) {
+        m_motion_detect_linger_index++;
+        std::cout << m_motion_detect_linger_index << "-" << m_motion_detect_linger_count << std::endl;
+        if (m_motion_detect_linger_index >= m_motion_detect_linger_count) {
+            m_motion_detect_linger = false;
+        }
     }
 
     if (m_enableMinimap || m_enableMinimapFullscreen) m_frame0_dbuff.update(m_frame0);
@@ -424,6 +439,7 @@ void MotionDetector::detect_motion()
 
 #ifdef SLEEP_MS_MOTION
     m_motion_sleep_ms = SLEEP_MS_MOTION;
+    m_motion_detect_linger_count = MOTION_DETECT_LINGER_MS / m_motion_sleep_ms;
 #endif
 
 #ifdef DEBUG_FPS
@@ -463,6 +479,7 @@ void MotionDetector::detect_motion()
         auto motion_time = std::chrono::high_resolution_clock::now() - motion_start;
         auto sleep_time = std::chrono::duration<double>(detect_time) - motion_time;
         m_motion_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
+        m_motion_detect_linger_count = (m_motion_sleep_ms > 0) ? MOTION_DETECT_LINGER_MS / m_motion_sleep_ms : MOTION_DETECT_LINGER_MS / 10;
 #endif
 
 #ifdef DEBUG_FPS
