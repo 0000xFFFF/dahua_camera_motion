@@ -180,7 +180,6 @@ void MotionDetector::detect_largest_motion_area_set_channel()
 
     if (m_motion_detect_linger) {
         m_motion_detect_linger_index++;
-        std::cout << m_motion_detect_linger_index << "-" << m_motion_detect_linger_count << std::endl;
         if (m_motion_detect_linger_index >= m_motion_detect_linger_count) {
             m_motion_detect_linger = false;
         }
