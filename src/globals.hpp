@@ -21,7 +21,11 @@
 #endif
 
 #ifndef MOTION_DETECT_AREA
-#define MOTION_DETECT_AREA 200
+#define MOTION_DETECT_AREA 50
+#endif
+
+#ifndef MOTION_DETECT_RECT_AREA
+#define MOTION_DETECT_RECT_AREA 500
 #endif
 
 #define DISPLAY_MODE_SINGLE 0
@@ -61,7 +65,7 @@
 #endif
 
 #ifndef MOTION_DETECT_MIN_MS
-#define MOTION_DETECT_MIN_MS 1000
+#define MOTION_DETECT_MIN_MS 100
 #endif
 
 #ifdef DEBUG

@@ -17,9 +17,16 @@
 #define CROP_WIDTH 704
 #define CROP_HEIGHT 384
 
-MotionDetector::MotionDetector(const std::string& ip, const std::string& username,
-                               const std::string& password, int area, int w, int h, bool fullscreen)
-    : m_motion_area(area),
+MotionDetector::MotionDetector(const std::string& ip,
+                               const std::string& username,
+                               const std::string& password,
+                               int area,
+                               int rarea,
+                               int w,
+                               int h,
+                               bool fullscreen)
+    : m_motion_min_area(area),
+      m_motion_min_rect_area(rarea),
       m_display_width(w),
       m_display_height(h),
       m_fullscreen(fullscreen),
@@ -69,7 +76,7 @@ void MotionDetector::do_tour_logic()
         int x = 0;
         n[x++] = ch;
         for (int i = 0; i < 6; i++) {
-            int value = i+1;
+            int value = i + 1;
             if (value != ch) {
                 n[x++] = value;
             }
@@ -122,22 +129,26 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     // Find largest motion area
     cv::Rect m_motion_region;
     double max_area = 0;
+
+    if (m_enableMinimap || m_enableMinimapFullscreen) cv::drawContours(m_frame0, contours, -1, cv::Scalar(255, 0, 0), 1);
     for (const auto& contour : contours) {
-        if (cv::contourArea(contour) >= m_motion_area) {
+        if (cv::contourArea(contour) >= m_motion_min_area) {
             cv::Rect rect = cv::boundingRect(contour);
-            cv::rectangle(m_frame0, rect, cv::Scalar(0, 255, 0), 1);
             double area = rect.width * rect.height;
-            if (area > max_area) {
-                max_area = area;
-                m_motion_region = rect;
-                m_motion_detected = true;
+            if (area >= m_motion_min_rect_area) {
+                if (m_enableMinimap || m_enableMinimapFullscreen) cv::rectangle(m_frame0, rect, cv::Scalar(0, 255, 0), 1);
+                if (area > max_area) {
+                    max_area = area;
+                    m_motion_region = rect;
+                    m_motion_detected = true;
+                }
             }
         }
     }
 
     // Update current channel based on motion position
     if (m_motion_detected) {
-        cv::rectangle(m_frame0, m_motion_region, cv::Scalar(0, 0, 255), 2);
+        if (m_enableMinimap || m_enableMinimapFullscreen) cv::rectangle(m_frame0, m_motion_region, cv::Scalar(0, 0, 255), 2);
         float rel_x = m_motion_region.x / static_cast<float>(CROP_WIDTH);
         float rel_y = m_motion_region.y / static_cast<float>(CROP_HEIGHT);
         int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
@@ -160,7 +171,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         m_tour_frame_index = 0; // reset so it doesn't auto switch on new tour so we can show a little bit of motion
     }
 
-    m_frame0_dbuff.update(m_frame0);
+    if (m_enableMinimap || m_enableMinimapFullscreen) m_frame0_dbuff.update(m_frame0);
 }
 
 void MotionDetector::draw_minimap()

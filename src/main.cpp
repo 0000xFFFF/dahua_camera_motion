@@ -40,8 +40,12 @@ int main(int argc, char* argv[])
         .help("Account password")
         .required();
     program.add_argument("-a", "--area")
-        .help("Contour area for detection")
+        .help("Min contour area for detection")
         .default_value(MOTION_DETECT_AREA)
+        .scan<'i', int>();
+    program.add_argument("-ra", "--rarea")
+        .help("Min contour's bounding rectangle area for detection")
+        .default_value(MOTION_DETECT_RECT_AREA)
         .scan<'i', int>();
     program.add_argument("-ww", "--width")
         .help("Window width")
@@ -83,7 +87,11 @@ int main(int argc, char* argv[])
                 program.get<std::string>("ip"),
                 program.get<std::string>("username"),
                 program.get<std::string>("password"),
-                program.get<int>("area"), width, height, program.get<bool>("fullscreen"));
+                program.get<int>("area"),
+                program.get<int>("rarea"),
+                width,
+                height,
+                program.get<bool>("fullscreen"));
 
             motionDetector.draw_loop();
         }

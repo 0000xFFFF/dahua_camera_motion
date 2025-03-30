@@ -13,8 +13,14 @@
 class MotionDetector {
 
   public:
-    MotionDetector(const std::string& ip, const std::string& username,
-                   const std::string& password, int area, int w, int h, bool fullscreen);
+    MotionDetector(const std::string& ip,
+                   const std::string& username,
+                   const std::string& password,
+                   int area,
+                   int rarea,
+                   int w,
+                   int h,
+                   bool fullscreen);
 
     void draw_loop();
     void stop();
@@ -40,7 +46,8 @@ class MotionDetector {
     void handle_keys();
 
     // set from params
-    int m_motion_area;
+    int m_motion_min_area;
+    int m_motion_min_rect_area;
     int m_display_width;
     int m_display_height;
     bool m_fullscreen;
