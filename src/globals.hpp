@@ -36,6 +36,11 @@
 #define ENABLE_MOTION_ZOOM_LARGEST 0
 #endif
 
+
+#ifndef USE_CUDA
+#define USE_CUDA 0
+#endif
+
 #define DISPLAY_MODE_SINGLE 0
 #define DISPLAY_MODE_ALL 1
 #define DISPLAY_MODE_SORT 2

@@ -144,11 +144,13 @@ void FrameReader::connect_and_read()
     codecCtx->thread_count = 4;
     codecCtx->skip_frame = AVDISCARD_DEFAULT;
 
+#if USE_CUDA
     // Try to enable hardware acceleration
     AVHWDeviceType hw_type = av_hwdevice_find_type_by_name("cuda");
     if (hw_type != AV_HWDEVICE_TYPE_NONE) {
         av_hwdevice_ctx_create(&codecCtx->hw_device_ctx, hw_type, NULL, NULL, 0);
     }
+#endif
 
     // Open Codec
     AVDictionary* codecOptions = NULL;
