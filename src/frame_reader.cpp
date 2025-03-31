@@ -61,13 +61,12 @@ void FrameReader::put_placeholder()
                 text_color,
                 font_thickness);
 
-    m_frame_buffer.push(placeholder);
+    m_frame_buffer.update(placeholder);
 }
 
 cv::Mat FrameReader::get_latest_frame()
 {
-    auto frame = m_frame_buffer.pop();
-    return frame ? *frame : cv::Mat();
+    return m_frame_buffer.get();
 }
 
 double FrameReader::get_fps()
@@ -220,7 +219,7 @@ void FrameReader::connect_and_read()
                 int linesize[1] = {3 * codecCtx->width};
                 sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, data, linesize);
 
-                m_frame_buffer.push(image.clone());
+                m_frame_buffer.update(image.clone());
 
                 i++;
                 if (i % 30 == 0) {
