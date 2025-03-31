@@ -199,11 +199,8 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     m_motion_detected_min_ms = m_motion_detect_linger || (m_motion_detect_start_set && motion_detect_elapsed >= MOTION_DETECT_MIN_MS);
 
     if (m_motion_detected_min_ms) {
-
-        if (!m_motion_detect_linger) {
-            m_motion_detect_linger_start = std::chrono::high_resolution_clock::now();
-            m_motion_detect_linger = true;
-        }
+        m_motion_detect_linger_start = std::chrono::high_resolution_clock::now();
+        m_motion_detect_linger = true;
 
         m_disabled_sleep_for_channel = m_current_channel;
         m_readers[m_current_channel]->disable_sleep();
