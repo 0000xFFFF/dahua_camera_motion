@@ -173,7 +173,7 @@ void FrameReader::connect_and_read()
     auto start_time = std::chrono::high_resolution_clock::now();
     int64_t last_pts = AV_NOPTS_VALUE;
 
-#define SLEEP_MS_FRAME 10
+//#define SLEEP_MS_FRAME 10
 
 #ifdef SLEEP_MS_FRAME
     double estimated_fps = 15.0;

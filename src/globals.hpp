@@ -69,8 +69,8 @@
 // #define SLEEP_MS_ERROR 10
 // #define SLEEP_MS_FRAME 50  // frame reader sleep
 
-#ifndef SLEEP_MS_TOUR
-#define SLEEP_MS_TOUR 3000
+#ifndef TOUR_MS
+#define TOUR_MS 3000
 #endif
 
 #ifdef DEBUG

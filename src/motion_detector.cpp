@@ -58,9 +58,16 @@ void MotionDetector::change_channel(int ch)
 
 void MotionDetector::do_tour_logic()
 {
-    m_tour_frame_index++;
-    if (m_tour_frame_index >= m_tour_frame_count) {
-        m_tour_frame_index = 0;
+    if (!m_tour_set) {
+        m_tour_start = std::chrono::high_resolution_clock::now();
+        m_tour_set = true;
+    }
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_tour_start).count();
+
+    if (elapsed >= TOUR_MS) {
+        m_tour_start = std::chrono::high_resolution_clock::now();
 #if KING_LAYOUT == KING_LAYOUT_CIRC
         change_channel(m_king_chain.get().back());
 #else
@@ -168,9 +175,6 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     m_motion_detected_min_frames = m_motion_detect_linger || m_motion_ch_frames >= m_motion_detect_min_frames;
 
     if (m_motion_detected_min_frames) {
-        // reset so it doesn't auto switch on new tour so we can show a little bit of motion
-        m_tour_frame_index = 0;
-
         // also linger motion
         if (!m_motion_detect_linger) {
             m_motion_detect_linger_index = 0;
@@ -235,7 +239,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_display, "Fullscreen (f): " + bool_to_str(m_enableFullscreenChannel),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Tour (t): " + bool_to_str(m_enableTour) + " " + std::to_string(m_tour_frame_index) + "/" + std::to_string(m_tour_frame_count),
+    cv::putText(m_main_display, "Tour (t): " + bool_to_str(m_enableTour),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_display, "Reset (r)",
@@ -407,7 +411,6 @@ void MotionDetector::handle_keys()
         m_current_channel = 1;
         m_king_chain.update({1, 2, 3, 4, 5, 6});
         m_motion_detected = false;
-        m_tour_frame_index = 0;
         m_enableInfo = ENABLE_INFO;
         m_enableMotion = ENABLE_MOTION;
         m_enableMinimap = ENABLE_MINIMAP;
@@ -502,7 +505,6 @@ void MotionDetector::draw_loop()
 
 #ifdef SLEEP_MS_DRAW
     m_draw_sleep_ms = SLEEP_MS_DRAW;
-    m_tour_frame_count = SLEEP_MS_TOUR / SLEEP_MS_DRAW;
 #endif
 
     try {
@@ -515,7 +517,6 @@ void MotionDetector::draw_loop()
 
 #ifdef SLEEP_MS_DRAW_DETECTED
             m_draw_sleep_ms = SLEEP_MS_DRAW;
-            m_tour_frame_count = SLEEP_MS_TOUR / m_draw_sleep_ms;
 #endif
 
 #ifdef DEBUG_FPS
@@ -574,7 +575,6 @@ void MotionDetector::draw_loop()
 
             auto sleep_time = std::chrono::duration<double>(frame_time) - draw_time;
             m_draw_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
-            m_tour_frame_count = (m_draw_sleep_ms > 0) ? SLEEP_MS_TOUR / m_draw_sleep_ms : SLEEP_MS_TOUR / 10;
 #endif
 
 #ifdef DEBUG_FPS
@@ -586,7 +586,6 @@ void MotionDetector::draw_loop()
 #ifdef SLEEP_MS_DRAW_DETECTED
             if (m_motion_detected_min_frames) {
                 m_draw_sleep_ms = SLEEP_MS_DRAW_DETECTED;
-                m_tour_frame_count = SLEEP_MS_TOUR / m_draw_sleep_ms;
             }
 #endif
             std::this_thread::sleep_for(std::chrono::milliseconds(m_draw_sleep_ms));

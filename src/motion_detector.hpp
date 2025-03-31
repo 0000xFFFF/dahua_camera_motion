@@ -90,9 +90,11 @@ class MotionDetector {
     int m_motion_detect_linger_count{0};
 
     long long int m_draw_sleep_ms{0};
+
     std::atomic<int> m_tour_current_channel{1};
-    std::atomic<int> m_tour_frame_index{0};
-    std::atomic<int> m_tour_frame_count{0};
+    std::chrono::high_resolution_clock::time_point m_tour_start;
+    bool m_tour_set{false};
+
 
     DoubleBufferVec m_king_chain{{1, 2, 3, 4, 5, 6}};
     void move_to_front(int value);
