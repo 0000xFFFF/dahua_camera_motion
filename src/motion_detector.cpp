@@ -487,7 +487,9 @@ void MotionDetector::detect_motion()
 
     D_CPU(CpuCyclesTimer cpuTimer);
 
+#ifdef SLEEP_MS_FRAME
     m_readers[0]->disable_sleep();
+#endif
 
     while (m_running) {
 

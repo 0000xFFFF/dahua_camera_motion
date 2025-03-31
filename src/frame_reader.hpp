@@ -13,8 +13,10 @@ class FrameReader {
                 const std::string& password);
 
     cv::Mat get_latest_frame();
+#ifdef SLEEP_MS_FRAME
     void disable_sleep();
     void enable_sleep();
+#endif
     double get_fps();
     void stop();
 
@@ -31,7 +33,9 @@ class FrameReader {
     int m_channel;
     std::atomic<double> captured_fps{30.0};
 
+#ifdef SLEEP_MS_FRAME
     std::atomic<bool> m_sleep{true};
+#endif
 
     LockFreeRingBuffer<cv::Mat, 2> m_frame_buffer;
     cv::VideoCapture m_cap;

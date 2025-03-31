@@ -70,6 +70,7 @@ cv::Mat FrameReader::get_latest_frame()
     return frame ? *frame : cv::Mat();
 }
 
+#ifdef SLEEP_MS_FRAME
 void FrameReader::enable_sleep()
 {
     m_sleep = true;
@@ -79,6 +80,7 @@ void FrameReader::disable_sleep()
 {
     m_sleep = false;
 }
+#endif
 
 double FrameReader::get_fps()
 {
