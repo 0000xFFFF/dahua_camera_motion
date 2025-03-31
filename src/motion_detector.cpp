@@ -155,6 +155,11 @@ void MotionDetector::detect_largest_motion_area_set_channel()
 
     // Update current channel based on motion position
     if (m_motion_detected) {
+        if (!m_motion_detect_start_set) {
+            m_motion_detect_start = std::chrono::high_resolution_clock::now();
+            m_motion_detect_start_set = true;
+        }
+
         if (m_enableMinimap || m_enableMinimapFullscreen) cv::rectangle(m_frame0, m_motion_region, cv::Scalar(0, 0, 255), 2);
         float rel_x = m_motion_region.x / static_cast<float>(CROP_WIDTH);
         float rel_y = m_motion_region.y / static_cast<float>(CROP_HEIGHT);
@@ -162,23 +167,21 @@ void MotionDetector::detect_largest_motion_area_set_channel()
 
         if (m_motion_ch != new_channel) { m_motion_ch = new_channel; }
 
-        m_motion_ch_frames++;
-        if (m_motion_detected_min_frames && m_current_channel != new_channel) {
+        if (m_motion_detected_min_ms && m_current_channel != new_channel) {
             change_channel(new_channel);
         }
     }
     else {
-        m_motion_ch_frames = 0;
+        m_motion_detect_start_set = false;
     }
 
-    m_motion_detect_min_frames = (m_motion_sleep_ms > 0) ? MOTION_DETECT_MIN_MS / m_motion_sleep_ms : MOTION_DETECT_MIN_MS / 10;
-    m_motion_detected_min_frames = m_motion_detect_linger || m_motion_ch_frames >= m_motion_detect_min_frames;
+    auto motion_detect_current_time = std::chrono::high_resolution_clock::now();
+    auto motion_detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(motion_detect_current_time - m_motion_detect_linger_start).count();
+    m_motion_detected_min_ms = m_motion_detect_linger || (m_motion_detect_start_set && motion_detect_elapsed >= MOTION_DETECT_MIN_MS);
 
-    if (m_motion_detected_min_frames) {
-        if (!m_motion_detect_linger) {
-            m_motion_detect_linger_start = std::chrono::high_resolution_clock::now();
-            m_motion_detect_linger = true;
-        }
+    if (m_motion_detected_min_ms && !m_motion_detect_linger) {
+        m_motion_detect_linger_start = std::chrono::high_resolution_clock::now();
+        m_motion_detect_linger = true;
     }
 
     if (m_motion_detect_linger) {
@@ -230,10 +233,10 @@ void MotionDetector::draw_info()
     cv::putText(m_main_display, "Minimap (o/0): " + bool_to_str(m_enableMinimap) + "/" + bool_to_str(m_enableMinimapFullscreen),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Motion Detected: " + std::to_string(m_motion_detected) + " " + std::to_string(m_motion_detected_min_frames),
+    cv::putText(m_main_display, "Motion Detected: " + std::to_string(m_motion_detected) + " " + std::to_string(m_motion_detected_min_ms),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Channel (num): " + std::to_string(m_current_channel) + " <- " + std::to_string(m_motion_ch) + " " + std::to_string(m_motion_ch_frames) + "/" + std::to_string(m_motion_detect_min_frames),
+    cv::putText(m_main_display, "Channel (num): " + std::to_string(m_current_channel),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_display, "Fullscreen (f): " + bool_to_str(m_enableFullscreenChannel),
@@ -533,7 +536,7 @@ void MotionDetector::draw_loop()
             }
             else if (m_enableFullscreenChannel ||
                      (m_displayMode == DISPLAY_MODE_SINGLE) ||
-                     (m_enableMotion && m_enableMotionZoomLargest && m_motion_detected_min_frames)) {
+                     (m_enableMotion && m_enableMotionZoomLargest && m_motion_detected_min_ms)) {
                 get = m_readers[m_current_channel]->get_latest_frame();
             }
             else if (m_displayMode == DISPLAY_MODE_SORT) {

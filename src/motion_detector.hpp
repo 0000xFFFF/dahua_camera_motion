@@ -80,21 +80,26 @@ class MotionDetector {
     cv::Mat m_canv3x2;
     cv::Mat m_main_display;
 
-    std::atomic<bool> m_motion_detected{false};
-    long long int m_motion_sleep_ms{0};
-    std::atomic<int> m_motion_detect_min_frames{0};
-    std::atomic<bool> m_motion_detected_min_frames{false};
 
+    // motion detecting / min frames
+    std::atomic<bool> m_motion_detected{false};
+    std::atomic<bool> m_motion_detected_min_ms{false};
+    std::chrono::high_resolution_clock::time_point m_motion_detect_start;
+    bool m_motion_detect_start_set;
+
+    // motion linger
     bool m_motion_detect_linger{false};
     std::chrono::high_resolution_clock::time_point m_motion_detect_linger_start;
     bool m_motion_detect_linger_start_set;
 
+    // draw & motion sleeps
     long long int m_draw_sleep_ms{0};
+    long long int m_motion_sleep_ms{0};
 
+    // tour
     std::atomic<int> m_tour_current_channel{1};
     std::chrono::high_resolution_clock::time_point m_tour_start;
     bool m_tour_start_set{false};
-
 
     DoubleBufferVec m_king_chain{{1, 2, 3, 4, 5, 6}};
     void move_to_front(int value);
