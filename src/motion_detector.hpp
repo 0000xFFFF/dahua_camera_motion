@@ -86,14 +86,14 @@ class MotionDetector {
     std::atomic<bool> m_motion_detected_min_frames{false};
 
     bool m_motion_detect_linger{false};
-    int m_motion_detect_linger_index{0};
-    int m_motion_detect_linger_count{0};
+    std::chrono::high_resolution_clock::time_point m_motion_detect_linger_start;
+    bool m_motion_detect_linger_start_set;
 
     long long int m_draw_sleep_ms{0};
 
     std::atomic<int> m_tour_current_channel{1};
     std::chrono::high_resolution_clock::time_point m_tour_start;
-    bool m_tour_set{false};
+    bool m_tour_start_set{false};
 
 
     DoubleBufferVec m_king_chain{{1, 2, 3, 4, 5, 6}};

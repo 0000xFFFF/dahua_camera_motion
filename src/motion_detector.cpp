@@ -58,9 +58,9 @@ void MotionDetector::change_channel(int ch)
 
 void MotionDetector::do_tour_logic()
 {
-    if (!m_tour_set) {
+    if (!m_tour_start_set) {
         m_tour_start = std::chrono::high_resolution_clock::now();
-        m_tour_set = true;
+        m_tour_start_set = true;
     }
 
     auto currentTime = std::chrono::high_resolution_clock::now();
@@ -175,16 +175,16 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     m_motion_detected_min_frames = m_motion_detect_linger || m_motion_ch_frames >= m_motion_detect_min_frames;
 
     if (m_motion_detected_min_frames) {
-        // also linger motion
         if (!m_motion_detect_linger) {
-            m_motion_detect_linger_index = 0;
+            m_motion_detect_linger_start = std::chrono::high_resolution_clock::now();
             m_motion_detect_linger = true;
         }
     }
 
     if (m_motion_detect_linger) {
-        m_motion_detect_linger_index++;
-        if (m_motion_detect_linger_index >= m_motion_detect_linger_count) {
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_motion_detect_linger_start).count();
+        if (elapsed >= MOTION_DETECT_LINGER_MS) {
             m_motion_detect_linger = false;
         }
     }
@@ -441,7 +441,6 @@ void MotionDetector::detect_motion()
 
 #ifdef SLEEP_MS_MOTION
     m_motion_sleep_ms = SLEEP_MS_MOTION;
-    m_motion_detect_linger_count = MOTION_DETECT_LINGER_MS / m_motion_sleep_ms;
 #endif
 
 #ifdef DEBUG_FPS
@@ -481,7 +480,6 @@ void MotionDetector::detect_motion()
         auto motion_time = std::chrono::high_resolution_clock::now() - motion_start;
         auto sleep_time = std::chrono::duration<double>(detect_time) - motion_time;
         m_motion_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
-        m_motion_detect_linger_count = (m_motion_sleep_ms > 0) ? MOTION_DETECT_LINGER_MS / m_motion_sleep_ms : MOTION_DETECT_LINGER_MS / 10;
 #endif
 
 #ifdef DEBUG_FPS
