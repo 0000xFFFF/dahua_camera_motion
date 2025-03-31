@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef CURRENT_CHANNEL
+#define CURRENT_CHANNEL 1
+#endif
+
 #ifndef ENABLE_INFO
 #define ENABLE_INFO 0
 #endif
@@ -17,7 +21,7 @@
 #endif
 
 #ifndef MOTION_DETECT_AREA
-#define MOTION_DETECT_AREA 10
+#define MOTION_DETECT_AREA 50
 #endif
 
 #ifndef MOTION_DETECT_RECT_AREA

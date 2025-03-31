@@ -7,8 +7,10 @@
 
 class FrameReader {
   public:
-    FrameReader(int ch, const std::string& ip,
-                const std::string& username, const std::string& password);
+    FrameReader(int channel,
+                const std::string& ip,
+                const std::string& username,
+                const std::string& password);
 
     cv::Mat get_latest_frame();
     void get_latest_frame_no_sleep();

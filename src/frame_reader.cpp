@@ -16,14 +16,16 @@ extern "C" {
 
 #include "frame_reader.hpp"
 
-FrameReader::FrameReader(int ch, const std::string& ip,
-                         const std::string& username, const std::string& password)
+FrameReader::FrameReader(int channel,
+                         const std::string& ip,
+                         const std::string& username,
+                         const std::string& password)
     :
 
       m_ip(ip),
       m_username(username),
       m_password(password),
-      m_channel(ch)
+      m_channel(channel)
 {
 
     put_placeholder();
@@ -94,10 +96,12 @@ std::string FrameReader::construct_rtsp_url(const std::string& ip, const std::st
            "&subtype=" + std::to_string(subtype);
 }
 
-void FrameReader::get_latest_frame_no_sleep() {
+void FrameReader::get_latest_frame_no_sleep()
+{
     m_no_sleep = true;
 }
-void FrameReader::get_latest_frame_sleep() {
+void FrameReader::get_latest_frame_sleep()
+{
     m_no_sleep = false;
 }
 
@@ -182,7 +186,7 @@ void FrameReader::connect_and_read()
     auto start_time = std::chrono::high_resolution_clock::now();
     int64_t last_pts = AV_NOPTS_VALUE;
 
-//#define SLEEP_MS_FRAME 10
+    // #define SLEEP_MS_FRAME 10
 
 #ifdef SLEEP_MS_FRAME
     double estimated_fps = 15.0;
@@ -241,7 +245,6 @@ void FrameReader::connect_and_read()
                 }
             }
         }
-
 
 #ifdef SLEEP_MS_FRAME
         if (m_no_sleep) { continue; }

@@ -20,23 +20,43 @@
 MotionDetector::MotionDetector(const std::string& ip,
                                const std::string& username,
                                const std::string& password,
+                               int width,
+                               int height,
+                               bool fullscreen,
+                               int display_mode,
                                int area,
                                int rarea,
-                               int w,
-                               int h,
-                               bool fullscreen)
-    : m_motion_min_area(area),
-      m_motion_min_rect_area(rarea),
-      m_display_width(w),
-      m_display_height(h),
+                               int current_channel,
+                               int enable_motion,
+                               int enable_motion_zoom_largest,
+                               int enable_tour,
+                               int enable_info,
+                               int enable_minimap,
+                               int enable_minimap_fullscreen,
+                               int enable_fullscreen_channel)
+    :
+
+      m_display_width(width),
+      m_display_height(height),
       m_fullscreen(fullscreen),
-      m_canv3x3(cv::Mat(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0))),
-      m_canv3x2(cv::Mat(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0))),
-      m_main_display(cv::Mat(cv::Size(w, h), CV_8UC3, cv::Scalar(0, 0, 0)))
+      m_display_mode(display_mode),
+      m_motion_min_area(area),
+      m_motion_min_rect_area(rarea),
+      m_enable_motion(enable_motion),
+      m_enable_motion_zoom_largest(enable_motion_zoom_largest),
+      m_enable_tour(enable_tour),
+      m_enable_info(enable_info),
+      m_enable_minimap(enable_minimap),
+      m_enable_minimap_fullscreen(enable_minimap_fullscreen),
+      m_enable_fullscreen_channel(enable_fullscreen_channel),
+      m_canv3x3(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
+      m_canv3x2(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
+      m_main_display(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0)))
 
 {
 
-    // Initialize background subtractor
+    change_channel(current_channel);
+
     // m_fgbg = cv::createBackgroundSubtractorMOG2(20, 32, true);
     m_fgbg = cv::createBackgroundSubtractorKNN(20, 400.0, true);
     // m_fgbg = cv::bgsegm::createBackgroundSubtractorCNT(true, 15, true);
@@ -137,13 +157,14 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     cv::Rect m_motion_region;
     double max_area = 0;
 
-    if (m_enableMinimap || m_enableMinimapFullscreen) cv::drawContours(m_frame0, contours, -1, cv::Scalar(255, 0, 0), 1);
+    if (m_enable_minimap || m_enable_minimap_fullscreen) cv::drawContours(m_frame0, contours, -1, cv::Scalar(255, 0, 0), 1);
     for (const auto& contour : contours) {
+        if (m_enable_minimap || m_enable_minimap_fullscreen) cv::rectangle(m_frame0, cv::boundingRect(contour), cv::Scalar(255, 0, 0), 1);
         if (cv::contourArea(contour) >= m_motion_min_area) {
             cv::Rect rect = cv::boundingRect(contour);
             double area = rect.width * rect.height;
             if (area >= m_motion_min_rect_area) {
-                if (m_enableMinimap || m_enableMinimapFullscreen) cv::rectangle(m_frame0, rect, cv::Scalar(0, 255, 0), 1);
+                if (m_enable_minimap || m_enable_minimap_fullscreen) cv::rectangle(m_frame0, rect, cv::Scalar(0, 255, 0), 1);
                 if (area > max_area) {
                     max_area = area;
                     m_motion_region = rect;
@@ -160,12 +181,10 @@ void MotionDetector::detect_largest_motion_area_set_channel()
             m_motion_detect_start_set = true;
         }
 
-        if (m_enableMinimap || m_enableMinimapFullscreen) cv::rectangle(m_frame0, m_motion_region, cv::Scalar(0, 0, 255), 2);
+        if (m_enable_minimap || m_enable_minimap_fullscreen) cv::rectangle(m_frame0, m_motion_region, cv::Scalar(0, 0, 255), 2);
         float rel_x = m_motion_region.x / static_cast<float>(CROP_WIDTH);
         float rel_y = m_motion_region.y / static_cast<float>(CROP_HEIGHT);
         int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
-
-        if (m_motion_ch != new_channel) { m_motion_ch = new_channel; }
 
         if (m_motion_detected_min_ms && m_current_channel != new_channel) {
             change_channel(new_channel);
@@ -192,7 +211,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         }
     }
 
-    if (m_enableMinimap || m_enableMinimapFullscreen) m_frame0_dbuff.update(m_frame0);
+    if (m_enable_minimap || m_enable_minimap_fullscreen) m_frame0_dbuff.update(m_frame0);
 }
 
 void MotionDetector::draw_minimap()
@@ -221,16 +240,16 @@ void MotionDetector::draw_info()
     const int font_thickness = 2;
     int i = 0;
 
-    cv::putText(m_main_display, "Info (i): " + bool_to_str(m_enableInfo),
+    cv::putText(m_main_display, "Info (i): " + bool_to_str(m_enable_info),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Display Mode (n/a/s/k/x): " + std::to_string(m_displayMode),
+    cv::putText(m_main_display, "Display Mode (n/a/s/k/x): " + std::to_string(m_display_mode),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Motion (m/l): " + bool_to_str(m_enableMotion) + "/" + bool_to_str(m_enableMotionZoomLargest),
+    cv::putText(m_main_display, "Motion (m/l): " + bool_to_str(m_enable_motion) + "/" + bool_to_str(m_enable_motion_zoom_largest),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Minimap (o/0): " + bool_to_str(m_enableMinimap) + "/" + bool_to_str(m_enableMinimapFullscreen),
+    cv::putText(m_main_display, "Minimap (o/0): " + bool_to_str(m_enable_minimap) + "/" + bool_to_str(m_enable_minimap_fullscreen),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_display, "Motion Detected: " + std::to_string(m_motion_detected) + " " + std::to_string(m_motion_detected_min_ms),
@@ -239,10 +258,10 @@ void MotionDetector::draw_info()
     cv::putText(m_main_display, "Channel (num): " + std::to_string(m_current_channel),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Fullscreen (f): " + bool_to_str(m_enableFullscreenChannel),
+    cv::putText(m_main_display, "Fullscreen (f): " + bool_to_str(m_enable_fullscreen_channel),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Tour (t): " + bool_to_str(m_enableTour),
+    cv::putText(m_main_display, "Tour (t): " + bool_to_str(m_enable_tour),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_display, "Reset (r)",
@@ -399,29 +418,29 @@ void MotionDetector::handle_keys()
     // clang-format off
     int key = cv::waitKey(1);
     if (key == 'q') { stop(); }
-    else if (key == 'm') { m_enableMotion = !m_enableMotion; }
-    else if (key == 'l') { m_enableMotionZoomLargest = !m_enableMotionZoomLargest; }
-    else if (key == 'n') { m_displayMode = DISPLAY_MODE_SINGLE; }
-    else if (key == 'a') { m_displayMode = DISPLAY_MODE_ALL; }
-    else if (key == 's') { m_displayMode = DISPLAY_MODE_SORT; }
-    else if (key == 'x') { m_displayMode = DISPLAY_MODE_TOP; }
-    else if (key == 'k') { m_displayMode = DISPLAY_MODE_KING; }
-    else if (key == 'i') { m_enableInfo = !m_enableInfo; }
-    else if (key == 'o') { m_enableMinimap = !m_enableMinimap; }
-    else if (key == 'f') { m_enableFullscreenChannel = !m_enableFullscreenChannel; }
-    else if (key == 't') { m_enableTour = !m_enableTour; }
+    else if (key == 'm') { m_enable_motion = !m_enable_motion; }
+    else if (key == 'l') { m_enable_motion_zoom_largest = !m_enable_motion_zoom_largest; }
+    else if (key == 'n') { m_display_mode = DISPLAY_MODE_SINGLE; }
+    else if (key == 'a') { m_display_mode = DISPLAY_MODE_ALL; }
+    else if (key == 's') { m_display_mode = DISPLAY_MODE_SORT; }
+    else if (key == 'x') { m_display_mode = DISPLAY_MODE_TOP; }
+    else if (key == 'k') { m_display_mode = DISPLAY_MODE_KING; }
+    else if (key == 'i') { m_enable_info = !m_enable_info; }
+    else if (key == 'o') { m_enable_minimap = !m_enable_minimap; }
+    else if (key == 'f') { m_enable_fullscreen_channel = !m_enable_fullscreen_channel; }
+    else if (key == 't') { m_enable_tour = !m_enable_tour; }
     else if (key == 'r') {
         m_current_channel = 1;
         m_king_chain.update({1, 2, 3, 4, 5, 6});
         m_motion_detected = false;
-        m_enableInfo = ENABLE_INFO;
-        m_enableMotion = ENABLE_MOTION;
-        m_enableMinimap = ENABLE_MINIMAP;
-        m_enableFullscreenChannel = ENABLE_FULLSCREEN_CHANNEL;
-        m_enableTour = ENABLE_TOUR;
+        m_enable_info = ENABLE_INFO;
+        m_enable_motion = ENABLE_MOTION;
+        m_enable_minimap = ENABLE_MINIMAP;
+        m_enable_fullscreen_channel = ENABLE_FULLSCREEN_CHANNEL;
+        m_enable_tour = ENABLE_TOUR;
     }
     else if (key == '0') {
-        m_enableMinimapFullscreen = !m_enableMinimapFullscreen;
+        m_enable_minimap_fullscreen = !m_enable_minimap_fullscreen;
     }
     else if (key == 81 || key == 65361) { // Left arrow (81 on Windows, 65361 on Linux)
         int new_ch = m_current_channel + 1;
@@ -463,7 +482,7 @@ void MotionDetector::detect_motion()
 #endif
 
         m_motion_detected = false;
-        if (m_enableMotion) {
+        if (m_enable_motion) {
             cv::Mat frame0_get = m_readers[0]->get_latest_frame();
             if (!frame0_get.empty() && frame0_get.size() == cv::Size(W_0, H_0)) {
                 m_frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
@@ -528,27 +547,27 @@ void MotionDetector::draw_loop()
             auto draw_start = std::chrono::high_resolution_clock::now();
 #endif
 
-            if (m_enableTour) { do_tour_logic(); }
+            if (m_enable_tour) { do_tour_logic(); }
 
             cv::Mat get;
-            if (m_enableMinimapFullscreen) {
+            if (m_enable_minimap_fullscreen) {
                 get = m_frame0_dbuff.get();
             }
-            else if (m_enableFullscreenChannel ||
-                     (m_displayMode == DISPLAY_MODE_SINGLE) ||
-                     (m_enableMotion && m_enableMotionZoomLargest && m_motion_detected_min_ms)) {
+            else if (m_enable_fullscreen_channel ||
+                     (m_display_mode == DISPLAY_MODE_SINGLE) ||
+                     (m_enable_motion && m_enable_motion_zoom_largest && m_motion_detected_min_ms)) {
                 get = m_readers[m_current_channel]->get_latest_frame();
             }
-            else if (m_displayMode == DISPLAY_MODE_SORT) {
+            else if (m_display_mode == DISPLAY_MODE_SORT) {
                 get = paint_main_mat_sort();
             }
-            else if (m_displayMode == DISPLAY_MODE_KING) {
+            else if (m_display_mode == DISPLAY_MODE_KING) {
                 get = paint_main_mat_king();
             }
-            else if (m_displayMode == DISPLAY_MODE_TOP) {
+            else if (m_display_mode == DISPLAY_MODE_TOP) {
                 get = paint_main_mat_top();
             }
-            else if (m_displayMode == DISPLAY_MODE_ALL) {
+            else if (m_display_mode == DISPLAY_MODE_ALL) {
                 get = paint_main_mat_all();
             }
 
@@ -561,8 +580,8 @@ void MotionDetector::draw_loop()
                 }
             }
 
-            if (m_enableMinimap) { draw_minimap(); }
-            if (m_enableInfo) { draw_info(); }
+            if (m_enable_minimap) { draw_minimap(); }
+            if (m_enable_info) { draw_info(); }
 
             cv::imshow("Motion", m_main_display);
 

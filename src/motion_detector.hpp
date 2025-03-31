@@ -16,11 +16,20 @@ class MotionDetector {
     MotionDetector(const std::string& ip,
                    const std::string& username,
                    const std::string& password,
+                   int width,
+                   int height,
+                   bool fullscreen,
+                   int display_mode,
                    int area,
                    int rarea,
-                   int w,
-                   int h,
-                   bool fullscreen);
+                   int current_channel,
+                   int enable_motion,
+                   int enable_motion_zoom_largest,
+                   int enable_tour,
+                   int enable_info,
+                   int enable_minimap,
+                   int enable_minimap_fullscreen,
+                   int enable_fullscreen_channel);
 
     void draw_loop();
     void stop();
@@ -45,13 +54,23 @@ class MotionDetector {
     std::string bool_to_str(bool b);
     void handle_keys();
 
+    std::atomic<bool> m_running{false};
+
     // set from params
-    int m_motion_min_area;
-    int m_motion_min_rect_area;
     int m_display_width;
     int m_display_height;
     bool m_fullscreen;
-    std::atomic<bool> m_running{false};
+    int m_display_mode;
+    int m_motion_min_area;
+    int m_motion_min_rect_area;
+    std::atomic<int> m_current_channel;
+    std::atomic<bool> m_enable_motion;
+    std::atomic<bool> m_enable_motion_zoom_largest;
+    std::atomic<bool> m_enable_tour;
+    std::atomic<bool> m_enable_info;
+    std::atomic<bool> m_enable_minimap;
+    std::atomic<bool> m_enable_minimap_fullscreen;
+    std::atomic<bool> m_enable_fullscreen_channel;
 
     // init
     std::thread m_thread_detect_motion;
@@ -60,26 +79,11 @@ class MotionDetector {
     cv::Ptr<cv::BackgroundSubtractorKNN> m_fgbg; // 69% KNN
     // cv::Ptr<cv::bgsegm::BackgroundSubtractorCNT> m_fgbg; // 62% CNT
 
-    // defaults
-    std::atomic<bool> m_enableMotion{ENABLE_MOTION};
-    std::atomic<int> m_current_channel{1};
-    std::atomic<int> m_motion_ch{1};
-    std::atomic<int> m_motion_ch_frames{0};
-
-    bool m_enableInfo{ENABLE_INFO};
-    int m_displayMode{DISPLAY_MODE};
-    bool m_enableMinimap{ENABLE_MINIMAP};
-    bool m_enableMinimapFullscreen{ENABLE_MINIMAP_FULLSCREEN};
-    bool m_enableFullscreenChannel{ENABLE_FULLSCREEN_CHANNEL};
-    bool m_enableMotionZoomLargest{ENABLE_MOTION_ZOOM_LARGEST};
-    bool m_enableTour{ENABLE_TOUR};
-
     cv::Mat m_frame0;
     DoubleBufferMat m_frame0_dbuff;
     cv::Mat m_canv3x3;
     cv::Mat m_canv3x2;
     cv::Mat m_main_display;
-
 
     // motion detecting / min frames
     std::atomic<bool> m_motion_detected{false};
