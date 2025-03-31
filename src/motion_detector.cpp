@@ -585,7 +585,7 @@ void MotionDetector::draw_loop()
 #endif
 
 #ifdef SLEEP_MS_DRAW_DETECTED
-            if (m_motion_detected_min_frames) {
+            if (m_motion_detected_min_ms) {
                 m_draw_sleep_ms = SLEEP_MS_DRAW_DETECTED;
             }
 #endif
