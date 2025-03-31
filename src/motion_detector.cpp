@@ -590,7 +590,7 @@ void MotionDetector::draw_loop()
 #ifndef SLEEP_MS_DRAW
             // Calculate sleep time based on measured FPS
             double fps = m_readers[1]->get_fps();                       // get fps from any 1-6 ch they all have the same fps
-            double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 30.0; // Default to 30 FPS if zero
+            double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 15.0; // Default to 15 FPS if zero
             auto draw_time = std::chrono::high_resolution_clock::now() - draw_start;
 
             auto sleep_time = std::chrono::duration<double>(frame_time) - draw_time;
