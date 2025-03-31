@@ -94,6 +94,13 @@ std::string FrameReader::construct_rtsp_url(const std::string& ip, const std::st
            "&subtype=" + std::to_string(subtype);
 }
 
+void FrameReader::get_latest_frame_no_sleep() {
+    m_no_sleep = true;
+}
+void FrameReader::get_latest_frame_sleep() {
+    m_no_sleep = false;
+}
+
 void FrameReader::connect_and_read()
 {
     set_thread_affinity(m_channel % std::thread::hardware_concurrency());
@@ -237,6 +244,8 @@ void FrameReader::connect_and_read()
 
 
 #ifdef SLEEP_MS_FRAME
+        if (m_no_sleep) { continue; }
+
         std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_MS_FRAME));
 
         // Attempt to skip buffered frames
