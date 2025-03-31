@@ -95,5 +95,4 @@
 #define W_HD 1920
 #define H_HD 1080
 
-
-#define SLEEP_MS_FRAME 10
+//#define SLEEP_MS_FRAME 300

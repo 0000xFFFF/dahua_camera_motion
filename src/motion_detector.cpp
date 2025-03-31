@@ -55,8 +55,6 @@ MotionDetector::MotionDetector(const std::string& ip,
 
 {
 
-    change_channel(current_channel);
-
     // m_fgbg = cv::createBackgroundSubtractorMOG2(20, 32, true);
     m_fgbg = cv::createBackgroundSubtractorKNN(20, 400.0, true);
     // m_fgbg = cv::bgsegm::createBackgroundSubtractorCNT(true, 15, true);
@@ -68,10 +66,24 @@ MotionDetector::MotionDetector(const std::string& ip,
     }
 
     m_thread_detect_motion = std::thread([this]() { detect_motion(); });
+
+    change_channel(current_channel);
 }
 
 void MotionDetector::change_channel(int ch)
 {
+
+#ifdef SLEEP_MS_FRAME
+    for (int i = 1; i <= 6; i++) {
+        if (ch == i) {
+            m_readers[i]->disable_sleep();
+        }
+        else {
+            m_readers[i]->enable_sleep();
+        }
+    }
+#endif
+
     move_to_front(ch);
     m_current_channel = ch;
 }
@@ -196,7 +208,6 @@ void MotionDetector::detect_largest_motion_area_set_channel()
             float rel_y = m_motion_region.y / static_cast<float>(CROP_HEIGHT);
             int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
             if (m_current_channel != new_channel) {
-                m_readers[new_channel]->disable_sleep();
                 change_channel(new_channel);
             }
             m_motion_detect_linger_start = now;
@@ -212,13 +223,8 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         auto linger_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_motion_detect_linger_start).count();
         if (linger_elapsed >= MOTION_DETECT_LINGER_MS) {
             m_motion_detect_linger = false;
-            for (int i = 1; i <= 6; i++) {
-                m_readers[i]->enable_sleep();
-            }
         }
     }
-
-    std::cout << m_motion_detected << " " << m_motion_detected_min_ms << " " << m_motion_detect_linger << std::endl;
 
     if (m_enable_minimap || m_enable_minimap_fullscreen)
         m_frame0_dbuff.update(m_frame0);
