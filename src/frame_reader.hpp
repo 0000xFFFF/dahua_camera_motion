@@ -1,4 +1,4 @@
-#include "ring_buffer.hpp"
+#include "buffers.hpp"
 #include <atomic>
 #include <mutex>
 #include <opencv2/opencv.hpp>

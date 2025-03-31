@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "frame_reader.hpp"
-#include "ring_buffer.hpp"
+#include "buffers.hpp"
 
 class MotionDetector {
 
