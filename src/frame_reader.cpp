@@ -61,12 +61,13 @@ void FrameReader::put_placeholder()
                 text_color,
                 font_thickness);
 
-    m_frame_buffer.update(placeholder);
+    m_frame_buffer.push(placeholder);
 }
 
 cv::Mat FrameReader::get_latest_frame()
 {
-    return m_frame_buffer.get();
+    auto frame = m_frame_buffer.pop();
+    return frame ? *frame : cv::Mat();
 }
 
 void FrameReader::disable_sleep()
@@ -191,14 +192,7 @@ void FrameReader::connect_and_read()
     int64_t last_pts = AV_NOPTS_VALUE;
 
 
-#define SLEEP_MS_FRAME 100
 
-#ifdef SLEEP_MS_FRAME
-#undef SLEEP_MS_DRAW
-#define SLEEP_MS_DRAW SLEEP_MS_FRAME
-#undef SLEEP_MS_MOTION
-#define SLEEP_MS_MOTION SLEEP_MS_FRAME
-#endif
 
 #ifdef SLEEP_MS_FRAME
     double estimated_fps = 15.0;
@@ -235,7 +229,7 @@ void FrameReader::connect_and_read()
                 int linesize[1] = {3 * codecCtx->width};
                 sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, data, linesize);
 
-                m_frame_buffer.update(image.clone());
+                m_frame_buffer.push(image.clone());
 
                 i++;
                 if (i % 30 == 0) {
@@ -262,7 +256,7 @@ void FrameReader::connect_and_read()
         }
 
 #ifdef SLEEP_MS_FRAME
-        if (!m_no_sleep) {
+        if (m_channel != 0 && !m_no_sleep) {
             std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_MS_FRAME));
 
             // Attempt to skip buffered frames

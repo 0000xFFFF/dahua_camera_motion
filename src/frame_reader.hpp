@@ -35,7 +35,7 @@ class FrameReader {
 
     std::atomic<bool> m_no_sleep{false};
 
-    DoubleBufferMat m_frame_buffer;
+    LockFreeRingBuffer<cv::Mat, 2> m_frame_buffer;
     cv::VideoCapture m_cap;
     std::atomic<bool> m_running{true};
     std::mutex m_mtx;

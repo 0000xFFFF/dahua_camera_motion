@@ -94,3 +94,13 @@
 #define H_0 576
 #define W_HD 1920
 #define H_HD 1080
+
+
+#define SLEEP_MS_FRAME 100
+
+#ifdef SLEEP_MS_FRAME
+#undef SLEEP_MS_DRAW
+#define SLEEP_MS_DRAW SLEEP_MS_FRAME
+#undef SLEEP_MS_MOTION
+#define SLEEP_MS_MOTION SLEEP_MS_FRAME
+#endif

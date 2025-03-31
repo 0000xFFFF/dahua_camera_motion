@@ -159,7 +159,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
 
     if (m_enable_minimap || m_enable_minimap_fullscreen) cv::drawContours(m_frame0, contours, -1, cv::Scalar(255, 0, 0), 1);
     for (const auto& contour : contours) {
-        if (m_enable_minimap || m_enable_minimap_fullscreen) cv::rectangle(m_frame0, cv::boundingRect(contour), cv::Scalar(255, 0, 0), 1);
+        //if (m_enable_minimap || m_enable_minimap_fullscreen) cv::rectangle(m_frame0, cv::boundingRect(contour), cv::Scalar(255, 0, 0), 1);
         if (cv::contourArea(contour) >= m_motion_min_area) {
             cv::Rect rect = cv::boundingRect(contour);
             double area = rect.width * rect.height;
@@ -499,7 +499,7 @@ void MotionDetector::detect_motion()
             }
         }
         else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
 
 #ifndef SLEEP_MS_MOTION
