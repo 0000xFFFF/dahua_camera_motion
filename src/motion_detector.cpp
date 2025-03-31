@@ -485,8 +485,6 @@ void MotionDetector::detect_motion()
     int i = 0;
 #endif
 
-    D_CPU(CpuCyclesTimer cpuTimer);
-
 #ifdef SLEEP_MS_FRAME
     m_readers[0]->disable_sleep();
 #endif
@@ -506,9 +504,7 @@ void MotionDetector::detect_motion()
             cv::Mat frame0_get = m_readers[0]->get_latest_frame();
             if (!frame0_get.empty() && frame0_get.size() == cv::Size(W_0, H_0)) {
                 m_frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
-                D_CPU(cpuTimer.start());
                 detect_largest_motion_area_set_channel();
-                D_CPU(cpuTimer.stop());
             }
         }
         else {
