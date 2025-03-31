@@ -16,7 +16,6 @@ class FrameReader {
     void disable_sleep();
     void enable_sleep();
     double get_fps();
-    double get_sleep_for_draw();
     void stop();
 
   private:
@@ -31,9 +30,8 @@ class FrameReader {
     std::string m_password;
     int m_channel;
     std::atomic<double> captured_fps{30.0};
-    std::atomic<long long int> m_sleep_for_draw_ms{0};
 
-    std::atomic<bool> m_no_sleep{false};
+    std::atomic<bool> m_sleep{true};
 
     LockFreeRingBuffer<cv::Mat, 2> m_frame_buffer;
     cv::VideoCapture m_cap;

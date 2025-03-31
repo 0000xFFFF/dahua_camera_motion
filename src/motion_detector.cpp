@@ -156,15 +156,19 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     // Find largest motion area
     cv::Rect m_motion_region;
     double max_area = 0;
+    m_motion_detected = false;
 
-    if (m_enable_minimap || m_enable_minimap_fullscreen) cv::drawContours(m_frame0, contours, -1, cv::Scalar(255, 0, 0), 1);
+    if (m_enable_minimap || m_enable_minimap_fullscreen)
+        cv::drawContours(m_frame0, contours, -1, cv::Scalar(255, 0, 0), 1);
+
     for (const auto& contour : contours) {
-        //if (m_enable_minimap || m_enable_minimap_fullscreen) cv::rectangle(m_frame0, cv::boundingRect(contour), cv::Scalar(255, 0, 0), 1);
         if (cv::contourArea(contour) >= m_motion_min_area) {
             cv::Rect rect = cv::boundingRect(contour);
             double area = rect.width * rect.height;
             if (area >= m_motion_min_rect_area) {
-                if (m_enable_minimap || m_enable_minimap_fullscreen) cv::rectangle(m_frame0, rect, cv::Scalar(0, 255, 0), 1);
+                if (m_enable_minimap || m_enable_minimap_fullscreen)
+                    cv::rectangle(m_frame0, rect, cv::Scalar(0, 255, 0), 1);
+
                 if (area > max_area) {
                     max_area = area;
                     m_motion_region = rect;
@@ -174,52 +178,50 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         }
     }
 
-    // Update current channel based on motion position
+    auto now = std::chrono::high_resolution_clock::now();
     if (m_motion_detected) {
+
+        if (m_enable_minimap || m_enable_minimap_fullscreen)
+            cv::rectangle(m_frame0, m_motion_region, cv::Scalar(0, 0, 255), 2);
+
         if (!m_motion_detect_start_set) {
-            m_motion_detect_start = std::chrono::high_resolution_clock::now();
+            m_motion_detect_start = now;
             m_motion_detect_start_set = true;
         }
 
-        if (m_enable_minimap || m_enable_minimap_fullscreen) cv::rectangle(m_frame0, m_motion_region, cv::Scalar(0, 0, 255), 2);
-        float rel_x = m_motion_region.x / static_cast<float>(CROP_WIDTH);
-        float rel_y = m_motion_region.y / static_cast<float>(CROP_HEIGHT);
-        int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
-
-        if (m_motion_detected_min_ms && m_current_channel != new_channel) {
-            change_channel(new_channel);
+        auto motion_duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_motion_detect_start).count();
+        m_motion_detected_min_ms = motion_duration >= MOTION_DETECT_MIN_MS;
+        if (m_motion_detected_min_ms) {
+            float rel_x = m_motion_region.x / static_cast<float>(CROP_WIDTH);
+            float rel_y = m_motion_region.y / static_cast<float>(CROP_HEIGHT);
+            int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
+            if (m_current_channel != new_channel) {
+                m_readers[new_channel]->disable_sleep();
+                change_channel(new_channel);
+            }
+            m_motion_detect_linger_start = now;
+            m_motion_detect_linger = true;
         }
     }
     else {
         m_motion_detect_start_set = false;
-    }
-
-    auto motion_detect_current_time = std::chrono::high_resolution_clock::now();
-    auto motion_detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(motion_detect_current_time - m_motion_detect_linger_start).count();
-    m_motion_detected_min_ms = m_motion_detect_linger || (m_motion_detect_start_set && motion_detect_elapsed >= MOTION_DETECT_MIN_MS);
-
-    if (m_motion_detected_min_ms) {
-        m_motion_detect_linger_start = std::chrono::high_resolution_clock::now();
-        m_motion_detect_linger = true;
-
-        m_disabled_sleep_for_channel = m_current_channel;
-        m_readers[m_current_channel]->disable_sleep();
-    }
-    else {
-        if (m_disabled_sleep_for_channel != -1) {
-            m_readers[m_disabled_sleep_for_channel]->enable_sleep();
-        }
+        m_motion_detected_min_ms = false;
     }
 
     if (m_motion_detect_linger) {
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_motion_detect_linger_start).count();
-        if (elapsed >= MOTION_DETECT_LINGER_MS) {
+        auto linger_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_motion_detect_linger_start).count();
+        if (linger_elapsed >= MOTION_DETECT_LINGER_MS) {
             m_motion_detect_linger = false;
+            for (int i = 1; i <= 6; i++) {
+                m_readers[i]->enable_sleep();
+            }
         }
     }
 
-    if (m_enable_minimap || m_enable_minimap_fullscreen) m_frame0_dbuff.update(m_frame0);
+    std::cout << m_motion_detected << " " << m_motion_detected_min_ms << " " << m_motion_detect_linger << std::endl;
+
+    if (m_enable_minimap || m_enable_minimap_fullscreen)
+        m_frame0_dbuff.update(m_frame0);
 }
 
 void MotionDetector::draw_minimap()
@@ -479,10 +481,16 @@ void MotionDetector::detect_motion()
 
     D_CPU(CpuCyclesTimer cpuTimer);
 
+    m_readers[0]->disable_sleep();
+
     while (m_running) {
 
 #ifdef DEBUG_FPS
         i++;
+#endif
+
+#ifndef SLEEP_MS_MOTION
+        auto motion_start = std::chrono::high_resolution_clock::now();
 #endif
 
         m_motion_detected = false;
@@ -500,7 +508,13 @@ void MotionDetector::detect_motion()
         }
 
 #ifndef SLEEP_MS_MOTION
-        m_motion_sleep_ms = m_readers[0]->get_sleep_for_draw();
+        // Calculate sleep time based on measured FPS
+        double fps = m_readers[0]->get_fps();                       // get fps from any 1-6 ch they all have the same fps
+        double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 30.0; // Default to 30 FPS if zero
+        auto draw_time = std::chrono::high_resolution_clock::now() - motion_start;
+
+        auto sleep_time = std::chrono::duration<double>(frame_time) - draw_time;
+        m_motion_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
 #endif
 
 #ifdef DEBUG_FPS
@@ -554,7 +568,7 @@ void MotionDetector::draw_loop()
             }
             else if (m_enable_fullscreen_channel ||
                      (m_display_mode == DISPLAY_MODE_SINGLE) ||
-                     (m_enable_motion && m_enable_motion_zoom_largest && m_motion_detected_min_ms)) {
+                     (m_enable_motion && m_enable_motion_zoom_largest && (m_motion_detected_min_ms || m_motion_detect_linger))) {
                 get = m_readers[m_current_channel]->get_latest_frame();
             }
             else if (m_display_mode == DISPLAY_MODE_SORT) {
@@ -587,7 +601,13 @@ void MotionDetector::draw_loop()
             handle_keys();
 
 #ifndef SLEEP_MS_DRAW
-            m_draw_sleep_ms = m_readers[1]->get_sleep_for_draw();
+            // Calculate sleep time based on measured FPS
+            double fps = m_readers[m_current_channel]->get_fps();
+            double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 30.0; // Default to 30 FPS if zero
+            auto draw_time = std::chrono::high_resolution_clock::now() - draw_start;
+
+            auto sleep_time = std::chrono::duration<double>(frame_time) - draw_time;
+            m_draw_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
 #endif
 
 #ifdef DEBUG_FPS
@@ -596,11 +616,6 @@ void MotionDetector::draw_loop()
             }
 #endif
 
-#ifdef SLEEP_MS_DRAW_DETECTED
-            if (m_motion_detected_min_ms) {
-                m_draw_sleep_ms = SLEEP_MS_DRAW_DETECTED;
-            }
-#endif
             std::this_thread::sleep_for(std::chrono::milliseconds(m_draw_sleep_ms));
         }
     }

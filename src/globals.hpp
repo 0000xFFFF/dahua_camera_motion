@@ -29,7 +29,7 @@
 #endif
 
 #ifndef MOTION_DETECT_MIN_MS
-#define MOTION_DETECT_MIN_MS 100
+#define MOTION_DETECT_MIN_MS 1000
 #endif
 
 #ifndef MOTION_DETECT_LINGER_MS
@@ -96,11 +96,4 @@
 #define H_HD 1080
 
 
-#define SLEEP_MS_FRAME 100
-
-#ifdef SLEEP_MS_FRAME
-#undef SLEEP_MS_DRAW
-#define SLEEP_MS_DRAW SLEEP_MS_FRAME
-#undef SLEEP_MS_MOTION
-#define SLEEP_MS_MOTION SLEEP_MS_FRAME
-#endif
+#define SLEEP_MS_FRAME 10

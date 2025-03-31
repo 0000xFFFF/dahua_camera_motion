@@ -99,8 +99,6 @@ class MotionDetector {
     long long int m_draw_sleep_ms{0};
     long long int m_motion_sleep_ms{0};
 
-    int m_disabled_sleep_for_channel{-1};
-
     // tour
     std::atomic<int> m_tour_current_channel{1};
     std::chrono::high_resolution_clock::time_point m_tour_start;

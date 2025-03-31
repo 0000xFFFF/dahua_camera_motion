@@ -70,23 +70,19 @@ cv::Mat FrameReader::get_latest_frame()
     return frame ? *frame : cv::Mat();
 }
 
-void FrameReader::disable_sleep()
-{
-    m_no_sleep = true;
-}
 void FrameReader::enable_sleep()
 {
-    m_no_sleep = false;
+    m_sleep = true;
+}
+
+void FrameReader::disable_sleep()
+{
+    m_sleep = false;
 }
 
 double FrameReader::get_fps()
 {
     return captured_fps.load();
-}
-
-double FrameReader::get_sleep_for_draw()
-{
-    return m_sleep_for_draw_ms;
 }
 
 void FrameReader::stop()
@@ -191,9 +187,6 @@ void FrameReader::connect_and_read()
     auto start_time = std::chrono::high_resolution_clock::now();
     int64_t last_pts = AV_NOPTS_VALUE;
 
-
-
-
 #ifdef SLEEP_MS_FRAME
     double estimated_fps = 15.0;
     double time_per_frame_ms = 1000.0 / estimated_fps; // Calculate time per frame (milliseconds)
@@ -203,8 +196,6 @@ void FrameReader::connect_and_read()
 
     // Read Frames
     while (m_running) {
-
-        auto read_frame_start_time = std::chrono::high_resolution_clock::now();
 
         if (av_read_frame(formatCtx, &packet) < 0) {
             continue;
@@ -256,7 +247,7 @@ void FrameReader::connect_and_read()
         }
 
 #ifdef SLEEP_MS_FRAME
-        if (m_channel != 0 && !m_no_sleep) {
+        if (m_sleep) {
             std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_MS_FRAME));
 
             // Attempt to skip buffered frames
@@ -275,10 +266,6 @@ void FrameReader::connect_and_read()
             }
         }
 #endif
-
-        auto read_frame_end_time = std::chrono::high_resolution_clock::now();
-        auto read_frame_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(read_frame_end_time - read_frame_start_time).count();
-        m_sleep_for_draw_ms = read_frame_elapsed;
     }
 
     // Cleanup
