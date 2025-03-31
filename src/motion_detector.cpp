@@ -198,9 +198,20 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     auto motion_detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(motion_detect_current_time - m_motion_detect_linger_start).count();
     m_motion_detected_min_ms = m_motion_detect_linger || (m_motion_detect_start_set && motion_detect_elapsed >= MOTION_DETECT_MIN_MS);
 
-    if (m_motion_detected_min_ms && !m_motion_detect_linger) {
-        m_motion_detect_linger_start = std::chrono::high_resolution_clock::now();
-        m_motion_detect_linger = true;
+    if (m_motion_detected_min_ms) {
+
+        if (!m_motion_detect_linger) {
+            m_motion_detect_linger_start = std::chrono::high_resolution_clock::now();
+            m_motion_detect_linger = true;
+        }
+
+        m_disabled_sleep_for_channel = m_current_channel;
+        m_readers[m_current_channel]->disable_sleep();
+    }
+    else {
+        if (m_disabled_sleep_for_channel != -1) {
+            m_readers[m_disabled_sleep_for_channel]->enable_sleep();
+        }
     }
 
     if (m_motion_detect_linger) {
@@ -477,10 +488,6 @@ void MotionDetector::detect_motion()
         i++;
 #endif
 
-#ifndef SLEEP_MS_MOTION
-        auto motion_start = std::chrono::high_resolution_clock::now();
-#endif
-
         m_motion_detected = false;
         if (m_enable_motion) {
             cv::Mat frame0_get = m_readers[0]->get_latest_frame();
@@ -496,12 +503,7 @@ void MotionDetector::detect_motion()
         }
 
 #ifndef SLEEP_MS_MOTION
-        // Calculate sleep time based on measured FPS
-        double fps = m_readers[0]->get_fps();                        // get fps from any 1-6 ch they all have the same fps
-        double detect_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 30.0; // Default to 30 FPS if zero
-        auto motion_time = std::chrono::high_resolution_clock::now() - motion_start;
-        auto sleep_time = std::chrono::duration<double>(detect_time) - motion_time;
-        m_motion_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
+        m_motion_sleep_ms = m_readers[0]->get_sleep_for_draw();
 #endif
 
 #ifdef DEBUG_FPS
@@ -588,13 +590,7 @@ void MotionDetector::draw_loop()
             handle_keys();
 
 #ifndef SLEEP_MS_DRAW
-            // Calculate sleep time based on measured FPS
-            double fps = m_readers[1]->get_fps();                       // get fps from any 1-6 ch they all have the same fps
-            double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 15.0; // Default to 15 FPS if zero
-            auto draw_time = std::chrono::high_resolution_clock::now() - draw_start;
-
-            auto sleep_time = std::chrono::duration<double>(frame_time) - draw_time;
-            m_draw_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
+            m_draw_sleep_ms = m_readers[1]->get_sleep_for_draw();
 #endif
 
 #ifdef DEBUG_FPS

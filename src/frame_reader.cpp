@@ -69,9 +69,23 @@ cv::Mat FrameReader::get_latest_frame()
     return m_frame_buffer.get();
 }
 
+void FrameReader::disable_sleep()
+{
+    m_no_sleep = true;
+}
+void FrameReader::enable_sleep()
+{
+    m_no_sleep = false;
+}
+
 double FrameReader::get_fps()
 {
     return captured_fps.load();
+}
+
+double FrameReader::get_sleep_for_draw()
+{
+    return m_sleep_for_draw_ms;
 }
 
 void FrameReader::stop()
@@ -93,15 +107,6 @@ std::string FrameReader::construct_rtsp_url(const std::string& ip, const std::st
     return "rtsp://" + username + ":" + password + "@" + ip +
            ":554/cam/realmonitor?channel=" + std::to_string(m_channel) +
            "&subtype=" + std::to_string(subtype);
-}
-
-void FrameReader::get_latest_frame_no_sleep()
-{
-    m_no_sleep = true;
-}
-void FrameReader::get_latest_frame_sleep()
-{
-    m_no_sleep = false;
 }
 
 void FrameReader::connect_and_read()
@@ -185,7 +190,15 @@ void FrameReader::connect_and_read()
     auto start_time = std::chrono::high_resolution_clock::now();
     int64_t last_pts = AV_NOPTS_VALUE;
 
-    // #define SLEEP_MS_FRAME 10
+
+#define SLEEP_MS_FRAME 100
+
+#ifdef SLEEP_MS_FRAME
+#undef SLEEP_MS_DRAW
+#define SLEEP_MS_DRAW SLEEP_MS_FRAME
+#undef SLEEP_MS_MOTION
+#define SLEEP_MS_MOTION SLEEP_MS_FRAME
+#endif
 
 #ifdef SLEEP_MS_FRAME
     double estimated_fps = 15.0;
@@ -196,6 +209,9 @@ void FrameReader::connect_and_read()
 
     // Read Frames
     while (m_running) {
+
+        auto read_frame_start_time = std::chrono::high_resolution_clock::now();
+
         if (av_read_frame(formatCtx, &packet) < 0) {
             continue;
         }
@@ -246,25 +262,29 @@ void FrameReader::connect_and_read()
         }
 
 #ifdef SLEEP_MS_FRAME
-        if (m_no_sleep) { continue; }
+        if (!m_no_sleep) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_MS_FRAME));
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_MS_FRAME));
-
-        // Attempt to skip buffered frames
-        AVPacket skip_packet;
-        while (av_read_frame(formatCtx, &skip_packet) >= 0 && skip_packet.stream_index == videoStreamIndex) {
-            avcodec_send_packet(codecCtx, &skip_packet);
-            av_packet_unref(&skip_packet);
-            AVFrame* skip_frame = av_frame_alloc();
-            if (avcodec_receive_frame(codecCtx, skip_frame) == 0) {
-                if (skip_frame->pts > last_pts + pts_tolerance) {
+            // Attempt to skip buffered frames
+            AVPacket skip_packet;
+            while (av_read_frame(formatCtx, &skip_packet) >= 0 && skip_packet.stream_index == videoStreamIndex) {
+                avcodec_send_packet(codecCtx, &skip_packet);
+                av_packet_unref(&skip_packet);
+                AVFrame* skip_frame = av_frame_alloc();
+                if (avcodec_receive_frame(codecCtx, skip_frame) == 0) {
+                    if (skip_frame->pts > last_pts + pts_tolerance) {
+                        av_frame_free(&skip_frame);
+                        break;
+                    }
                     av_frame_free(&skip_frame);
-                    break;
                 }
-                av_frame_free(&skip_frame);
             }
         }
 #endif
+
+        auto read_frame_end_time = std::chrono::high_resolution_clock::now();
+        auto read_frame_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(read_frame_end_time - read_frame_start_time).count();
+        m_sleep_for_draw_ms = read_frame_elapsed;
     }
 
     // Cleanup
