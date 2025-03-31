@@ -515,11 +515,11 @@ void MotionDetector::detect_motion()
 
 #ifndef SLEEP_MS_MOTION
         // Calculate sleep time based on measured FPS
-        double fps = m_readers[0]->get_fps();                       // get fps from any 1-6 ch they all have the same fps
-        double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 30.0; // Default to 30 FPS if zero
-        auto draw_time = std::chrono::high_resolution_clock::now() - motion_start;
+        double fps = m_readers[0]->get_fps();
+        double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 20.0; // Default to 20 FPS if zero
+        auto detect_time = std::chrono::high_resolution_clock::now() - motion_start;
 
-        auto sleep_time = std::chrono::duration<double>(frame_time) - draw_time;
+        auto sleep_time = std::chrono::duration<double>(frame_time) - detect_time;
         m_motion_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
 #endif
 
