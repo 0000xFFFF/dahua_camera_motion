@@ -114,4 +114,5 @@ class MotionDetector {
 
     DoubleBufferVec m_king_chain{{1, 2, 3, 4, 5, 6}};
     void move_to_front(int value);
+    std::atomic<int> m_layout_changed{false};
 };

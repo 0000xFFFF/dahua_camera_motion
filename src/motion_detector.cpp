@@ -88,7 +88,7 @@ void MotionDetector::change_channel(int ch)
         }
     }
 #endif
-
+    m_layout_changed = true;
     move_to_front(ch);
     m_current_channel = ch;
 }
@@ -321,13 +321,14 @@ void MotionDetector::draw_info_line()
 
 cv::Mat MotionDetector::paint_main_mat_all()
 {
+    bool layout_changed = m_layout_changed;
     size_t w = m_display_width / 3;
     size_t h = m_display_height / 2;
 
     cv::parallel_for_(cv::Range(0, 6), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; i++) {
             int ch = i + 1;
-            cv::Mat mat = m_readers[ch]->get_latest_frame();
+            cv::Mat mat = m_readers[ch]->get_latest_frame(layout_changed);
             if (mat.empty()) { continue; }
 
             int row = i / 3;
@@ -341,11 +342,14 @@ cv::Mat MotionDetector::paint_main_mat_all()
         }
     });
 
+    m_layout_changed = false;
     return m_canv3x2;
 }
 
 cv::Mat MotionDetector::paint_main_mat_sort() // need to fix this
 {
+    bool layout_changed = m_layout_changed;
+
     size_t w = m_display_width / 3;
     size_t h = m_display_height / 2;
 
@@ -354,7 +358,7 @@ cv::Mat MotionDetector::paint_main_mat_sort() // need to fix this
     cv::parallel_for_(cv::Range(0, 6), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; i++) {
             int ch = vec[i];
-            cv::Mat mat = m_readers[ch]->get_latest_frame();
+            cv::Mat mat = m_readers[ch]->get_latest_frame(layout_changed);
             if (mat.empty()) { continue; }
 
             int row = i / 3;
@@ -369,6 +373,7 @@ cv::Mat MotionDetector::paint_main_mat_sort() // need to fix this
         }
     });
 
+    m_layout_changed = false;
     return m_canv3x2;
 }
 
@@ -403,6 +408,8 @@ void MotionDetector::draw_motion_region(cv::Mat canv, size_t posX, size_t posY, 
 
 cv::Mat MotionDetector::paint_main_mat_king()
 {
+    bool layout_changed = m_layout_changed;
+
     size_t w = m_display_width / 3;
     size_t h = m_display_height / 3;
 
@@ -410,7 +417,7 @@ cv::Mat MotionDetector::paint_main_mat_king()
 
     cv::parallel_for_(cv::Range(0, 6), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; i++) {
-            cv::Mat mat = m_readers[vec[i]]->get_latest_frame();
+            cv::Mat mat = m_readers[vec[i]]->get_latest_frame(layout_changed);
             if (mat.empty()) { continue; }
 
 #if KING_LAYOUT == KING_LAYOUT_REL
@@ -452,11 +459,14 @@ cv::Mat MotionDetector::paint_main_mat_king()
         }
     });
 
+    m_layout_changed = false;
     return m_canv3x3;
 }
 
 cv::Mat MotionDetector::paint_main_mat_top()
 {
+    bool layout_changed = m_layout_changed;
+
     size_t w = m_display_width / 3;
     size_t h = m_display_height / 3;
 
@@ -475,7 +485,7 @@ cv::Mat MotionDetector::paint_main_mat_top()
             cv::Rect roi;
 
             if (i == 0) {
-                mat = m_readers[m_current_channel]->get_latest_frame();
+                mat = m_readers[m_current_channel]->get_latest_frame(layout_changed);
                 if (mat.empty()) { continue; }
 
                 size_t w0 = w * 2;
@@ -486,7 +496,7 @@ cv::Mat MotionDetector::paint_main_mat_top()
             else {
                 // Other slots are from active_channels (excluding m_current_channel)
                 int channel = active_channels[i - 1]; // Skip 0th slot
-                mat = m_readers[channel]->get_latest_frame();
+                mat = m_readers[channel]->get_latest_frame(layout_changed);
                 if (mat.empty()) { continue; }
 
                 // Layout for circular arrangement
@@ -503,6 +513,7 @@ cv::Mat MotionDetector::paint_main_mat_top()
         }
     });
 
+    m_layout_changed = false;
     return m_canv3x3;
 }
 
@@ -578,7 +589,7 @@ void MotionDetector::detect_motion()
 
         m_motion_detected = false;
         if (m_enable_motion) {
-            cv::Mat frame0_get = m_readers[0]->get_latest_frame();
+            cv::Mat frame0_get = m_readers[0]->get_latest_frame(false);
             if (!frame0_get.empty() && frame0_get.size() == cv::Size(W_0, H_0)) {
                 m_frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
                 detect_largest_motion_area_set_channel();
@@ -650,7 +661,7 @@ void MotionDetector::draw_loop()
             else if (m_enable_fullscreen_channel ||
                      (m_display_mode == DISPLAY_MODE_SINGLE) ||
                      (m_enable_motion && m_enable_motion_zoom_largest && (m_motion_detected_min_ms || m_motion_detect_linger))) {
-                get = m_readers[m_current_channel]->get_latest_frame();
+                get = m_readers[m_current_channel]->get_latest_frame(m_layout_changed);
                 draw_motion_region(get, 0, 0, get.size().width, get.size().height);
             }
             else if (m_display_mode == DISPLAY_MODE_SORT) {

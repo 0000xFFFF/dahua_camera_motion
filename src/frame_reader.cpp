@@ -64,8 +64,9 @@ void FrameReader::put_placeholder()
     m_frame_buffer.push(placeholder);
 }
 
-cv::Mat FrameReader::get_latest_frame()
+cv::Mat FrameReader::get_latest_frame(bool no_empty_frame)
 {
+    if (no_empty_frame) { return m_frame_dbuffer.get(); }
     auto frame = m_frame_buffer.pop();
     return frame ? *frame : cv::Mat();
 }
@@ -223,6 +224,7 @@ void FrameReader::connect_and_read()
                 sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, data, linesize);
 
                 m_frame_buffer.push(image.clone());
+                m_frame_dbuffer.update(image);
 
                 i++;
                 if (i % 30 == 0) {
