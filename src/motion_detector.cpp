@@ -651,6 +651,7 @@ void MotionDetector::draw_loop()
                      (m_display_mode == DISPLAY_MODE_SINGLE) ||
                      (m_enable_motion && m_enable_motion_zoom_largest && (m_motion_detected_min_ms || m_motion_detect_linger))) {
                 get = m_readers[m_current_channel]->get_latest_frame();
+                draw_motion_region(get, 0, 0, get.size().width, get.size().height);
             }
             else if (m_display_mode == DISPLAY_MODE_SORT) {
                 get = paint_main_mat_sort();
