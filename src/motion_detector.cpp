@@ -295,21 +295,27 @@ void MotionDetector::draw_info()
 void MotionDetector::draw_info_line()
 {
     if (m_motion_detected_min_ms) {
-        cv::line(m_main_display, cv::Point(m_main_display.size().width - 1, 0), cv::Point(m_main_display.size().width - 1, m_main_display.size().height), cv::Scalar(0, 0, 255), 1, cv::LINE_8);
+        cv::rectangle(m_main_display, cv::Rect(0, 0, m_main_display.size().width - 1, m_main_display.size().height - 1), cv::Scalar(0, 0, 255), 1, cv::LINE_8);
     }
     else if (m_motion_detect_linger) {
-        cv::line(m_main_display, cv::Point(m_main_display.size().width - 1, 0), cv::Point(m_main_display.size().width - 1, m_main_display.size().height), cv::Scalar(0, 255, 255), 1, cv::LINE_8);
+        cv::rectangle(m_main_display, cv::Rect(0, 0, m_main_display.size().width - 1, m_main_display.size().height - 1), cv::Scalar(0, 255, 255), 1, cv::LINE_8);
     }
     else if (m_enable_tour) {
         auto currentTime = std::chrono::high_resolution_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_tour_start).count();
         float p = (float)elapsed / TOUR_MS;
         if (p > 100) { p = 100; }
-        cv::line(m_main_display, cv::Point(m_main_display.size().width - 1, 0), cv::Point(m_main_display.size().width - 1, m_main_display.size().height), cv::Scalar(0, 0, 0), 1, cv::LINE_8);
-        cv::line(m_main_display, cv::Point(m_main_display.size().width - 1, 0), cv::Point(m_main_display.size().width - 1, p * m_main_display.size().height), cv::Scalar(0, 165, 255), 1, cv::LINE_8);
+        cv::rectangle(m_main_display, cv::Rect(0, 0, m_main_display.size().width - 1, m_main_display.size().height - 1), cv::Scalar(0, 0, 0), 1, cv::LINE_8);
+
+        int w = m_main_display.size().width - 1;
+        int h = m_main_display.size().height - 1;
+        cv::line(m_main_display, cv::Point(0, 0), cv::Point(p * w, 0), cv::Scalar(0, 165, 255), 1, cv::LINE_8);
+        cv::line(m_main_display, cv::Point(w, 0), cv::Point(w, p * h), cv::Scalar(0, 165, 255), 1, cv::LINE_8);
+        cv::line(m_main_display, cv::Point(w, h), cv::Point(w - p * w, h), cv::Scalar(0, 165, 255), 1, cv::LINE_8);
+        cv::line(m_main_display, cv::Point(0, h), cv::Point(0, h - p * h), cv::Scalar(0, 165, 255), 1, cv::LINE_8);
     }
     else {
-        cv::line(m_main_display, cv::Point(m_main_display.size().width - 1, 0), cv::Point(m_main_display.size().width - 1, m_main_display.size().height), cv::Scalar(0, 0, 0), 1, cv::LINE_8);
+        cv::rectangle(m_main_display, cv::Rect(0, 0, m_main_display.size().width - 1, m_main_display.size().height - 1), cv::Scalar(0, 0, 0), 1, cv::LINE_8);
     }
 }
 
