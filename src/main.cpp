@@ -22,6 +22,7 @@ int main(int argc, char* argv[])
     // Add signal handling
     std::signal(SIGINT, [](int) {
         motionDetector->stop();
+        motionDetector.release();
         std::cout << "exit" << std::endl;
         std::exit(0);
     });
