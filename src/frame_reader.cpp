@@ -114,7 +114,7 @@ void FrameReader::connect_and_read()
 {
     set_thread_affinity(m_channel % std::thread::hardware_concurrency());
 
-    D(std::cout << "start capture: " << m_channel << std::endl);
+    std::cout << "start capture: " << m_channel << std::endl;
     std::string rtsp_url = construct_rtsp_url(m_ip, m_username, m_password);
 
     avformat_network_init();
@@ -184,7 +184,7 @@ void FrameReader::connect_and_read()
 
     cv::Mat image(codecCtx->height, codecCtx->width, CV_8UC3);
 
-    D(std::cout << "connected: " << m_channel << std::endl);
+    std::cout << "connected: " << m_channel << std::endl;
 
     int i = 0;
     int framesDecoded = 0;
