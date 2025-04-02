@@ -60,7 +60,7 @@ class MotionDetector {
     std::string bool_to_str(bool b);
     void handle_keys();
 
-    std::atomic<bool> m_running{false};
+    std::atomic<bool> m_running{true};
 
     // set from params
     int m_display_width;

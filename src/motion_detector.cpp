@@ -576,7 +576,7 @@ void MotionDetector::detect_motion()
     m_readers[0]->disable_sleep();
 #endif
 
-    std::cout << "starting motion detection" << std::endl;
+    //std::cout << "starting motion detection" << std::endl;
 
     while (m_running) {
 
@@ -622,8 +622,6 @@ void MotionDetector::detect_motion()
 
 void MotionDetector::draw_loop()
 {
-    m_running = true;
-
     if (m_fullscreen) {
         cv::namedWindow("Motion", cv::WINDOW_NORMAL);
         cv::setWindowProperty("Motion", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
