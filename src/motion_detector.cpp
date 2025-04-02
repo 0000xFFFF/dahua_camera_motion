@@ -305,8 +305,6 @@ void MotionDetector::draw_info_line()
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_tour_start).count();
         float p = (float)elapsed / TOUR_MS;
         if (p > 100) { p = 100; }
-        std::cout << p << std::endl;
-
         cv::line(m_main_display, cv::Point(m_main_display.size().width - 1, 0), cv::Point(m_main_display.size().width - 1, m_main_display.size().height), cv::Scalar(0, 0, 0), 1, cv::LINE_8);
         cv::line(m_main_display, cv::Point(m_main_display.size().width - 1, 0), cv::Point(m_main_display.size().width - 1, p * m_main_display.size().height), cv::Scalar(0, 165, 255), 1, cv::LINE_8);
     }
