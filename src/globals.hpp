@@ -8,6 +8,10 @@
 #define ENABLE_INFO 0
 #endif
 
+#ifndef ENABLE_INFO_LINE
+#define ENABLE_INFO_LINE 1
+#endif
+
 #ifndef ENABLE_MINIMAP
 #define ENABLE_MINIMAP 0
 #endif

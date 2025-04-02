@@ -6,29 +6,31 @@
 #include <string>
 #include <vector>
 
-#include "frame_reader.hpp"
 #include "buffers.hpp"
+#include "frame_reader.hpp"
 
 class MotionDetector {
 
   public:
-    MotionDetector(const std::string& ip,
-                   const std::string& username,
-                   const std::string& password,
-                   int width,
-                   int height,
-                   bool fullscreen,
-                   int display_mode,
-                   int area,
-                   int rarea,
-                   int current_channel,
-                   int enable_motion,
-                   int enable_motion_zoom_largest,
-                   int enable_tour,
-                   int enable_info,
-                   int enable_minimap,
-                   int enable_minimap_fullscreen,
-                   int enable_fullscreen_channel);
+    MotionDetector(
+        const std::string& ip,
+        const std::string& username,
+        const std::string& password,
+        int width,
+        int height,
+        bool fullscreen,
+        int display_mode,
+        int area,
+        int rarea,
+        int current_channel,
+        int enable_motion,
+        int enable_motion_zoom_largest,
+        int enable_tour,
+        int enable_info,
+        int enable_info_line,
+        int enable_minimap,
+        int enable_minimap_fullscreen,
+        int enable_fullscreen_channel);
 
     void draw_loop();
     void stop();
@@ -45,6 +47,7 @@ class MotionDetector {
     // drawing
     void draw_minimap();
     void draw_info();
+    void draw_info_line();
     cv::Mat paint_main_mat_all();
     cv::Mat paint_main_mat_sort();
     cv::Mat paint_main_mat_multi();
@@ -67,6 +70,7 @@ class MotionDetector {
     std::atomic<bool> m_enable_motion_zoom_largest;
     std::atomic<bool> m_enable_tour;
     std::atomic<bool> m_enable_info;
+    std::atomic<bool> m_enable_info_line;
     std::atomic<bool> m_enable_minimap;
     std::atomic<bool> m_enable_minimap_fullscreen;
     std::atomic<bool> m_enable_fullscreen_channel;

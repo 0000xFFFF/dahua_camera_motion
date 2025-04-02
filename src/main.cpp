@@ -81,7 +81,6 @@ int main(int argc, char* argv[])
         .default_value(ENABLE_MOTION_ZOOM_LARGEST)
         .scan<'i', int>();
 
-
     program.add_argument("-ch", "--current_channel")
         .help("which channel to start with")
         .metavar("1-6")
@@ -99,9 +98,14 @@ int main(int argc, char* argv[])
         .default_value(ENABLE_TOUR)
         .scan<'i', int>();
     program.add_argument("-ei", "--enable_info")
-        .help("enable info")
+        .help("enable drawing info")
         .metavar("0/1")
         .default_value(ENABLE_INFO)
+        .scan<'i', int>();
+    program.add_argument("-eil", "--enable_info_line")
+        .help("enable drawing line info (motion, linger, tour, ...)")
+        .metavar("0/1")
+        .default_value(ENABLE_INFO_LINE)
         .scan<'i', int>();
     program.add_argument("-emm", "--enable_minimap")
         .help("enable minimap")
@@ -149,10 +153,10 @@ int main(int argc, char* argv[])
                 program.get<int>("enable_motion_zoom_largest"),
                 program.get<int>("enable_tour"),
                 program.get<int>("enable_info"),
+                program.get<int>("enable_info_line"),
                 program.get<int>("enable_minimap"),
                 program.get<int>("enable_minimap_fullscreen"),
-                program.get<int>("enable_fullscreen_channel")
-                );
+                program.get<int>("enable_fullscreen_channel"));
 
             motionDetector.draw_loop();
         }

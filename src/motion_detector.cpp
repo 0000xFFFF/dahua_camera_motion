@@ -2,6 +2,7 @@
 #include "debug.hpp"
 #include "globals.hpp"
 #include "opencv2/core.hpp"
+#include <any>
 #include <exception>
 #include <iostream>
 #include <opencv2/bgsegm.hpp>
@@ -31,6 +32,7 @@ MotionDetector::MotionDetector(const std::string& ip,
                                int enable_motion_zoom_largest,
                                int enable_tour,
                                int enable_info,
+                               int enable_info_line,
                                int enable_minimap,
                                int enable_minimap_fullscreen,
                                int enable_fullscreen_channel)
@@ -46,6 +48,7 @@ MotionDetector::MotionDetector(const std::string& ip,
       m_enable_motion_zoom_largest(enable_motion_zoom_largest),
       m_enable_tour(enable_tour),
       m_enable_info(enable_info),
+      m_enable_info_line(enable_info_line),
       m_enable_minimap(enable_minimap),
       m_enable_minimap_fullscreen(enable_minimap_fullscreen),
       m_enable_fullscreen_channel(enable_fullscreen_channel),
@@ -283,6 +286,30 @@ void MotionDetector::draw_info()
     cv::putText(m_main_display, "Reset (r)",
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
+}
+
+void MotionDetector::draw_info_line()
+{
+    if (m_motion_detected_min_ms) {
+        cv::line(m_main_display, cv::Point(m_main_display.size().width - 1, 0), cv::Point(m_main_display.size().width - 1, m_main_display.size().height), cv::Scalar(0, 0, 255), 1, cv::LINE_8);
+    }
+    else if (m_motion_detect_linger) {
+        cv::line(m_main_display, cv::Point(m_main_display.size().width - 1, 0), cv::Point(m_main_display.size().width - 1, m_main_display.size().height), cv::Scalar(0, 255, 255), 1, cv::LINE_8);
+    }
+    else if (m_enable_tour) {
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_tour_start).count();
+        float p = (float)elapsed / TOUR_MS;
+        if (p > 100) { p = 100; }
+        std::cout << p << std::endl;
+
+        cv::line(m_main_display, cv::Point(m_main_display.size().width - 1, 0), cv::Point(m_main_display.size().width - 1, m_main_display.size().height), cv::Scalar(0, 0, 0), 1, cv::LINE_8);
+        cv::line(m_main_display, cv::Point(m_main_display.size().width - 1, 0), cv::Point(m_main_display.size().width - 1, p * m_main_display.size().height), cv::Scalar(0, 165, 255), 1, cv::LINE_8);
+    }
+    else {
+        cv::line(m_main_display, cv::Point(m_main_display.size().width - 1, 0), cv::Point(m_main_display.size().width - 1, m_main_display.size().height), cv::Scalar(0, 0, 0), 1, cv::LINE_8);
+    }
+
 }
 
 cv::Mat MotionDetector::paint_main_mat_all()
@@ -599,6 +626,7 @@ void MotionDetector::draw_loop()
 
             if (m_enable_minimap) { draw_minimap(); }
             if (m_enable_info) { draw_info(); }
+            if (m_enable_info_line) { draw_info_line(); }
 
             cv::imshow("Motion", m_main_display);
 
