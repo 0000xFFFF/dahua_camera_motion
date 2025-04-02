@@ -184,7 +184,7 @@ void FrameReader::connect_and_read()
 
     cv::Mat image(codecCtx->height, codecCtx->width, CV_8UC3);
 
-    std::cout << "connected: " << m_channel << std::endl;
+    std::cout << "connected: " << m_channel << " -- " << codecCtx->width << "x" << codecCtx->height << std::endl;
 
     int i = 0;
     int framesDecoded = 0;
