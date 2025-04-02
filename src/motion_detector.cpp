@@ -2,7 +2,6 @@
 #include "debug.hpp"
 #include "globals.hpp"
 #include "opencv2/core.hpp"
-#include <any>
 #include <exception>
 #include <iostream>
 #include <opencv2/bgsegm.hpp>
