@@ -322,7 +322,8 @@ cv::Mat MotionDetector::paint_main_mat_all()
 
     cv::parallel_for_(cv::Range(0, 6), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; i++) {
-            cv::Mat mat = m_readers[i + 1]->get_latest_frame();
+            int ch = i + 1;
+            cv::Mat mat = m_readers[ch]->get_latest_frame();
             if (mat.empty()) { continue; }
 
             int row = i / 3;
@@ -330,7 +331,9 @@ cv::Mat MotionDetector::paint_main_mat_all()
             int x = col * w;
             int y = row * h;
             cv::resize(mat, m_canv3x2(cv::Rect(x, y, w, h)), cv::Size(w, h));
-            draw_motion_region(m_canv3x2, x, y, w, h);
+            if (ch == m_current_channel) {
+                draw_motion_region(m_canv3x2, x, y, w, h);
+            }
         }
     });
 
@@ -346,7 +349,8 @@ cv::Mat MotionDetector::paint_main_mat_sort() // need to fix this
 
     cv::parallel_for_(cv::Range(0, 6), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; i++) {
-            cv::Mat mat = m_readers[vec[i]]->get_latest_frame();
+            int ch = vec[i];
+            cv::Mat mat = m_readers[ch]->get_latest_frame();
             if (mat.empty()) { continue; }
 
             int row = i / 3;
@@ -355,21 +359,24 @@ cv::Mat MotionDetector::paint_main_mat_sort() // need to fix this
             int y = row * h;
             cv::Rect roi(x, y, w, h);
             cv::resize(mat, m_canv3x2(cv::Rect(x, y, w, h)), cv::Size(w, h));
-            draw_motion_region(m_canv3x2, x, y, w, h);
+            if (ch == m_current_channel) {
+                draw_motion_region(m_canv3x2, x, y, w, h);
+            }
         }
     });
 
     return m_canv3x2;
 }
 
-void MotionDetector::draw_motion_region(cv::Mat& canv, size_t posX, size_t posY, size_t width, size_t height)
+void MotionDetector::draw_motion_region(cv::Mat canv, size_t posX, size_t posY, size_t width, size_t height)
 {
     if (!m_enable_info_rect || !m_motion_detected_min_ms) { return; }
     auto opt_region = m_motion_region.pop();
     if (opt_region) {
+        int ch = m_current_channel;
         cv::Rect region = *opt_region;
-        int row = (m_current_channel - 1) / 3;
-        int col = (m_current_channel - 1) % 3;
+        int row = (ch - 1) / 3;
+        int col = (ch - 1) % 3;
 
         constexpr int mini_ch_w = CROP_WIDTH / 3;
         constexpr int mini_ch_h = CROP_HEIGHT / 2;
@@ -404,40 +411,38 @@ cv::Mat MotionDetector::paint_main_mat_king()
 
 #if KING_LAYOUT == KING_LAYOUT_REL
             switch (i) {
-                    // clang-format off
-            case 0:  {
-                size_t w0 = w * 2;
-                size_t h0 = h * 2;
-                cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
-                draw_motion_region(m_canv3x3, 0, 0, w0, h0);
-                break;
-            }
-            case 1: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 0 * h, w, h)),         cv::Size(w, h));         break;
-            case 2: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 1 * h, w, h)),         cv::Size(w, h));         break;
-            case 3: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
-            case 4: cv::resize(mat, m_canv3x3(cv::Rect(1 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
-            case 5: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
-                    // clang-format on
+                case 0:
+                    {
+                        size_t w0 = w * 2;
+                        size_t h0 = h * 2;
+                        cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
+                        draw_motion_region(m_canv3x3(cv::Rect(0 * w, 0 * h, w0, h0)), 0, 0, w0, h0);
+                        break;
+                    }
+                case 1: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 0 * h, w, h)), cv::Size(w, h)); break;
+                case 2: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 1 * h, w, h)), cv::Size(w, h)); break;
+                case 3: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 2 * h, w, h)), cv::Size(w, h)); break;
+                case 4: cv::resize(mat, m_canv3x3(cv::Rect(1 * w, 2 * h, w, h)), cv::Size(w, h)); break;
+                case 5: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 2 * h, w, h)), cv::Size(w, h)); break;
             }
 #endif
 
 #if KING_LAYOUT == KING_LAYOUT_CIRC
             // CIRCLE LAYOUR
             switch (i) {
-                    // clang-format off
-            case 0:  {
-                size_t w0 = w * 2;
-                size_t h0 = h * 2;
-                cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
-                draw_motion_region(m_canv3x3, 0, 0, w0, h0);
-                break;
-            }
-            case 1: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 0 * h, w, h)),         cv::Size(w, h));         break;
-            case 2: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 1 * h, w, h)),         cv::Size(w, h));         break;
-            case 3: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
-            case 4: cv::resize(mat, m_canv3x3(cv::Rect(1 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
-            case 5: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
-                    // clang-format on
+                case 0:
+                    {
+                        size_t w0 = w * 2;
+                        size_t h0 = h * 2;
+                        cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
+                        draw_motion_region(m_canv3x3, 0, 0, w0, h0);
+                        break;
+                    }
+                case 1: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 0 * h, w, h)), cv::Size(w, h)); break;
+                case 2: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 1 * h, w, h)), cv::Size(w, h)); break;
+                case 3: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 2 * h, w, h)), cv::Size(w, h)); break;
+                case 4: cv::resize(mat, m_canv3x3(cv::Rect(1 * w, 2 * h, w, h)), cv::Size(w, h)); break;
+                case 5: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 2 * h, w, h)), cv::Size(w, h)); break;
             }
 #endif
         }
