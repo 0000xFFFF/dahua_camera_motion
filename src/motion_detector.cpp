@@ -591,7 +591,6 @@ void MotionDetector::detect_motion()
         m_motion_detected = false;
         if (m_enable_motion) {
             cv::Mat frame0_get = m_readers[0]->get_latest_frame(false);
-            std::cout << frame0_get.size() << std::endl;
             if (!frame0_get.empty() && frame0_get.size().width == W_0 && frame0_get.size().height == H_0) {
                 m_frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
                 detect_largest_motion_area_set_channel();
