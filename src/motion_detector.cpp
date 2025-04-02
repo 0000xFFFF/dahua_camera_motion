@@ -577,6 +577,7 @@ void MotionDetector::detect_motion()
     m_readers[0]->disable_sleep();
 #endif
 
+    std::cout << "starting motion detection" << std::endl;
     while (m_running) {
 
 #ifdef DEBUG_FPS
