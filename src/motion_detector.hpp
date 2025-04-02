@@ -1,6 +1,8 @@
 #pragma once
 
 #include <atomic>
+#include <mutex>
+#include <condition_variable>
 #include <opencv2/bgsegm.hpp>
 #include <opencv2/opencv.hpp>
 #include <string>
@@ -115,4 +117,11 @@ class MotionDetector {
     DoubleBufferVec m_king_chain{{1, 2, 3, 4, 5, 6}};
     void move_to_front(int value);
     std::atomic<int> m_layout_changed{false};
+
+    std::mutex m_mtx_draw;
+    std::condition_variable m_cv_draw;
+
+    std::mutex m_mtx_motion;
+    std::condition_variable m_cv_motion;
+
 };

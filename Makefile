@@ -1,6 +1,6 @@
 GCC = clang++
 FILES = src/*.cpp
-ARGS = -O0
+ARGS = 
 DEBUG_ARGS = -D DEBUG -g -fno-omit-frame-pointer
 RELEASE_ARGS = -Wall -Wextra -s -march=native
 LIBS = `pkg-config --cflags --libs opencv4` -lavformat -lavcodec -lavutil -lswscale -lavdevice
@@ -120,6 +120,8 @@ krzo:
 kro:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_KING -D KING_LAYOUT=KING_LAYOUT_REL -D SLEEP_MS_FRAME=100 -D SLEEP_MS_DRAW=100 -D SLEEP_MS_MOTION=100 $(LIBS) $(FILES) -o $(EXEC)
 
+krod:
+	$(GCC) $(ARGS) $(DEBUG_ARGS) -D DISPLAY_MODE=DISPLAY_MODE_KING -D KING_LAYOUT=KING_LAYOUT_REL -D SLEEP_MS_FRAME=100 -D SLEEP_MS_DRAW=100 -D SLEEP_MS_MOTION=100 $(LIBS) $(FILES) -o $(EXEC)
 
 release:
 	$(GCC) $(ARGS) $(RELEASE_ARGS) $(LIBS) $(FILES) -o $(EXEC)

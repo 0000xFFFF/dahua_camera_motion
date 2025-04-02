@@ -93,6 +93,11 @@ void FrameReader::stop()
 {
     D(std::cout << "[" << m_channel << "] reader stop" << std::endl);
     m_running = false;
+
+#ifdef SLEEP_MS_FRAME
+    m_cv.notify_one();
+#endif
+
     if (m_thread.joinable()) {
         D(std::cout << "[" << m_channel << "] reader join" << std::endl);
         m_thread.join();
@@ -257,6 +262,8 @@ void FrameReader::connect_and_read()
                 std::unique_lock<std::mutex> lock(m_mtx);
                 m_cv.wait_for(lock, std::chrono::milliseconds(SLEEP_MS_FRAME), [&] { return !m_sleep; });
             }
+
+            if (!m_running) { break; }
 
             // Attempt to skip buffered frames
             AVPacket skip_packet;

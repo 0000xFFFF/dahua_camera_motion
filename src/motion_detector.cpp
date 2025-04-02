@@ -614,7 +614,10 @@ void MotionDetector::detect_motion()
         }
 #endif
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(m_motion_sleep_ms));
+        {
+            std::unique_lock<std::mutex> lock(m_mtx_motion);
+            m_cv_motion.wait_for(lock, std::chrono::milliseconds(m_motion_sleep_ms), [&] { return !m_running; });
+        }
     }
 }
 
@@ -709,7 +712,10 @@ void MotionDetector::draw_loop()
             }
 #endif
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(m_draw_sleep_ms));
+            {
+                std::unique_lock<std::mutex> lock(m_mtx_draw);
+                m_cv_draw.wait_for(lock, std::chrono::milliseconds(m_draw_sleep_ms), [&] { return !m_running; });
+            }
         }
     }
     catch (const std::exception& e) {
@@ -721,9 +727,13 @@ void MotionDetector::stop()
 {
     std::cout << "\n\nQuitting..." << std::endl;
     m_running = false;
+    m_cv_draw.notify_one();
+    m_cv_motion.notify_one();
     if (m_thread_detect_motion.joinable()) { m_thread_detect_motion.join(); }
     for (auto& reader : m_readers) { reader->stop(); }
+    D(std::cout << "destroy all win" << std::endl);
     cv::destroyAllWindows();
+    D(std::cout << "destroy all win done" << std::endl);
 }
 
 std::string MotionDetector::bool_to_str(bool b)
