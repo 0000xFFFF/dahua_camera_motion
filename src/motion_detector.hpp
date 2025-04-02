@@ -28,6 +28,7 @@ class MotionDetector {
         int enable_tour,
         int enable_info,
         int enable_info_line,
+        int enable_info_rect,
         int enable_minimap,
         int enable_minimap_fullscreen,
         int enable_fullscreen_channel);
@@ -48,6 +49,7 @@ class MotionDetector {
     void draw_minimap();
     void draw_info();
     void draw_info_line();
+    void draw_motion_region(cv::Mat& canv, size_t posX, size_t posY, size_t width, size_t height);
     cv::Mat paint_main_mat_all();
     cv::Mat paint_main_mat_sort();
     cv::Mat paint_main_mat_multi();
@@ -71,6 +73,7 @@ class MotionDetector {
     std::atomic<bool> m_enable_tour;
     std::atomic<bool> m_enable_info;
     std::atomic<bool> m_enable_info_line;
+    std::atomic<bool> m_enable_info_rect;
     std::atomic<bool> m_enable_minimap;
     std::atomic<bool> m_enable_minimap_fullscreen;
     std::atomic<bool> m_enable_fullscreen_channel;
@@ -89,6 +92,7 @@ class MotionDetector {
     cv::Mat m_main_display;
 
     // motion detecting / min frames
+    LockFreeRingBuffer<cv::Rect, 2> m_motion_region;
     std::atomic<bool> m_motion_detected{false};
     std::atomic<bool> m_motion_detected_min_ms{false};
     std::chrono::high_resolution_clock::time_point m_motion_detect_start;

@@ -12,6 +12,10 @@
 #define ENABLE_INFO_LINE 1
 #endif
 
+#ifndef ENABLE_INFO_RECT
+#define ENABLE_INFO_RECT 1
+#endif
+
 #ifndef ENABLE_MINIMAP
 #define ENABLE_MINIMAP 0
 #endif

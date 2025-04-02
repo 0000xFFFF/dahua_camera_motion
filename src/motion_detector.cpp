@@ -33,6 +33,7 @@ MotionDetector::MotionDetector(const std::string& ip,
                                int enable_tour,
                                int enable_info,
                                int enable_info_line,
+                               int enable_info_rect,
                                int enable_minimap,
                                int enable_minimap_fullscreen,
                                int enable_fullscreen_channel)
@@ -49,6 +50,7 @@ MotionDetector::MotionDetector(const std::string& ip,
       m_enable_tour(enable_tour),
       m_enable_info(enable_info),
       m_enable_info_line(enable_info_line),
+      m_enable_info_rect(enable_info_rect),
       m_enable_minimap(enable_minimap),
       m_enable_minimap_fullscreen(enable_minimap_fullscreen),
       m_enable_fullscreen_channel(enable_fullscreen_channel),
@@ -169,7 +171,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
 
     // Find largest motion area
-    cv::Rect m_motion_region;
+    cv::Rect motion_region;
     double max_area = 0;
     m_motion_detected = false;
 
@@ -186,7 +188,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
 
                 if (area > max_area) {
                     max_area = area;
-                    m_motion_region = rect;
+                    motion_region = rect;
                     m_motion_detected = true;
                 }
             }
@@ -197,7 +199,9 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     if (m_motion_detected) {
 
         if (m_enable_minimap || m_enable_minimap_fullscreen)
-            cv::rectangle(m_frame0, m_motion_region, cv::Scalar(0, 0, 255), 2);
+            cv::rectangle(m_frame0, motion_region, cv::Scalar(0, 0, 255), 2);
+
+        m_motion_region.push(motion_region);
 
         if (!m_motion_detect_start_set) {
             m_motion_detect_start = now;
@@ -207,8 +211,8 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         auto motion_duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_motion_detect_start).count();
         m_motion_detected_min_ms = motion_duration >= MOTION_DETECT_MIN_MS;
         if (m_motion_detected_min_ms) {
-            float rel_x = m_motion_region.x / static_cast<float>(CROP_WIDTH);
-            float rel_y = m_motion_region.y / static_cast<float>(CROP_HEIGHT);
+            float rel_x = motion_region.x / static_cast<float>(CROP_WIDTH);
+            float rel_y = motion_region.y / static_cast<float>(CROP_HEIGHT);
             int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
             if (m_current_channel != new_channel) {
                 change_channel(new_channel);
@@ -309,7 +313,6 @@ void MotionDetector::draw_info_line()
     else {
         cv::line(m_main_display, cv::Point(m_main_display.size().width - 1, 0), cv::Point(m_main_display.size().width - 1, m_main_display.size().height), cv::Scalar(0, 0, 0), 1, cv::LINE_8);
     }
-
 }
 
 cv::Mat MotionDetector::paint_main_mat_all()
@@ -322,14 +325,12 @@ cv::Mat MotionDetector::paint_main_mat_all()
             cv::Mat mat = m_readers[i + 1]->get_latest_frame();
             if (mat.empty()) { continue; }
 
-            cv::Mat resized_mat;
-            cv::resize(mat, resized_mat, cv::Size(w, h));
-
             int row = i / 3;
             int col = i % 3;
-            cv::Rect roi(col * w, row * h, w, h);
-
-            resized_mat.copyTo(m_canv3x2(roi));
+            int x = col * w;
+            int y = row * h;
+            cv::resize(mat, m_canv3x2(cv::Rect(x, y, w, h)), cv::Size(w, h));
+            draw_motion_region(m_canv3x2, x, y, w, h);
         }
     });
 
@@ -348,18 +349,45 @@ cv::Mat MotionDetector::paint_main_mat_sort() // need to fix this
             cv::Mat mat = m_readers[vec[i]]->get_latest_frame();
             if (mat.empty()) { continue; }
 
-            cv::Mat resized_mat;
-            cv::resize(mat, resized_mat, cv::Size(w, h));
-
             int row = i / 3;
             int col = i % 3;
-            cv::Rect roi(col * w, row * h, w, h);
-
-            resized_mat.copyTo(m_canv3x2(roi));
+            int x = col * w;
+            int y = row * h;
+            cv::Rect roi(x, y, w, h);
+            cv::resize(mat, m_canv3x2(cv::Rect(x, y, w, h)), cv::Size(w, h));
+            draw_motion_region(m_canv3x2, x, y, w, h);
         }
     });
 
     return m_canv3x2;
+}
+
+void MotionDetector::draw_motion_region(cv::Mat& canv, size_t posX, size_t posY, size_t width, size_t height)
+{
+    if (!m_enable_info_rect || !m_motion_detected_min_ms) { return; }
+    auto opt_region = m_motion_region.pop();
+    if (opt_region) {
+        cv::Rect region = *opt_region;
+        int row = (m_current_channel - 1) / 3;
+        int col = (m_current_channel - 1) % 3;
+
+        constexpr int mini_ch_w = CROP_WIDTH / 3;
+        constexpr int mini_ch_h = CROP_HEIGHT / 2;
+
+        float scaleX = static_cast<float>(width) / mini_ch_w;
+        float scaleY = static_cast<float>(height) / mini_ch_h;
+
+        int offsetX = col * mini_ch_w;
+        int offsetY = row * mini_ch_h;
+
+        cv::Rect new_motion_region(
+            (region.x - offsetX) * scaleX + posX,
+            (region.y - offsetY) * scaleY + posY,
+            region.width * scaleX,
+            region.height * scaleY);
+
+        cv::rectangle(canv, new_motion_region, cv::Scalar(0, 0, 255), 2);
+    }
 }
 
 cv::Mat MotionDetector::paint_main_mat_king()
@@ -377,7 +405,13 @@ cv::Mat MotionDetector::paint_main_mat_king()
 #if KING_LAYOUT == KING_LAYOUT_REL
             switch (i) {
                     // clang-format off
-            case 0: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w * 2, h * 2)), cv::Size(w * 2, h * 2)); break;
+            case 0:  {
+                size_t w0 = w * 2;
+                size_t h0 = h * 2;
+                cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
+                draw_motion_region(m_canv3x3, 0, 0, w0, h0);
+                break;
+            }
             case 1: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 0 * h, w, h)),         cv::Size(w, h));         break;
             case 2: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 1 * h, w, h)),         cv::Size(w, h));         break;
             case 3: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
@@ -391,7 +425,13 @@ cv::Mat MotionDetector::paint_main_mat_king()
             // CIRCLE LAYOUR
             switch (i) {
                     // clang-format off
-            case 0: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w * 2, h * 2)), cv::Size(w * 2, h * 2)); break;
+            case 0:  {
+                size_t w0 = w * 2;
+                size_t h0 = h * 2;
+                cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
+                draw_motion_region(m_canv3x3, 0, 0, w0, h0);
+                break;
+            }
             case 1: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 0 * h, w, h)),         cv::Size(w, h));         break;
             case 2: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 1 * h, w, h)),         cv::Size(w, h));         break;
             case 3: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 2 * h, w, h)),         cv::Size(w, h));         break;
@@ -426,12 +466,13 @@ cv::Mat MotionDetector::paint_main_mat_top()
             cv::Rect roi;
 
             if (i == 0) {
-                // First slot (biggest image) is m_current_channel
                 mat = m_readers[m_current_channel]->get_latest_frame();
                 if (mat.empty()) { continue; }
 
-                roi = cv::Rect(0 * w, 0 * h, w * 2, h * 2);
-                cv::resize(mat, m_canv3x3(roi), cv::Size(w * 2, h * 2));
+                size_t w0 = w * 2;
+                size_t h0 = h * 2;
+                cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
+                draw_motion_region(m_canv3x3, 0, 0, w0, h0);
             }
             else {
                 // Other slots are from active_channels (excluding m_current_channel)

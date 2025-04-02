@@ -107,6 +107,11 @@ int main(int argc, char* argv[])
         .metavar("0/1")
         .default_value(ENABLE_INFO_LINE)
         .scan<'i', int>();
+    program.add_argument("-eir", "--enable_info_rect")
+        .help("enable drawing motion rectangle")
+        .metavar("0/1")
+        .default_value(ENABLE_INFO_RECT)
+        .scan<'i', int>();
     program.add_argument("-emm", "--enable_minimap")
         .help("enable minimap")
         .metavar("0/1")
@@ -154,6 +159,7 @@ int main(int argc, char* argv[])
                 program.get<int>("enable_tour"),
                 program.get<int>("enable_info"),
                 program.get<int>("enable_info_line"),
+                program.get<int>("enable_info_rect"),
                 program.get<int>("enable_minimap"),
                 program.get<int>("enable_minimap_fullscreen"),
                 program.get<int>("enable_fullscreen_channel"));
