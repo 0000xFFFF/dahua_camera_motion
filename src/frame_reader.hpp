@@ -35,7 +35,7 @@ class FrameReader {
     std::string m_username;
     std::string m_password;
     int m_channel;
-    std::atomic<double> captured_fps{30.0};
+    std::atomic<double> captured_fps{15.0};
 
 #ifdef SLEEP_MS_FRAME
     std::atomic<bool> m_sleep{true};
