@@ -719,6 +719,7 @@ void MotionDetector::draw_loop()
 
 void MotionDetector::stop()
 {
+    std::cout << "quitting..." << std::endl;
     m_running = false;
     if (m_thread_detect_motion.joinable()) { m_thread_detect_motion.join(); }
     for (auto& reader : m_readers) { reader->stop(); }

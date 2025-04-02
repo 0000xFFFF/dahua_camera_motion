@@ -15,12 +15,13 @@
 #include "debug.hpp"
 #endif
 
+std::unique_ptr<MotionDetector> motionDetector;
+
 int main(int argc, char* argv[])
 {
-
     // Add signal handling
     std::signal(SIGINT, [](int) {
-        cv::destroyAllWindows();
+        motionDetector->stop();
         std::exit(0);
     });
 
@@ -143,7 +144,7 @@ int main(int argc, char* argv[])
         }
 
         {
-            MotionDetector motionDetector(
+            motionDetector = std::make_unique<MotionDetector>(
                 program.get<std::string>("ip"),
                 program.get<std::string>("username"),
                 program.get<std::string>("password"),
@@ -164,7 +165,7 @@ int main(int argc, char* argv[])
                 program.get<int>("enable_minimap_fullscreen"),
                 program.get<int>("enable_fullscreen_channel"));
 
-            motionDetector.draw_loop();
+            motionDetector->draw_loop();
         }
     }
     catch (const std::exception& e) {
