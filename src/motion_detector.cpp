@@ -578,6 +578,7 @@ void MotionDetector::detect_motion()
 #endif
 
     std::cout << "starting motion detection" << std::endl;
+
     while (m_running) {
 
 #ifdef DEBUG_FPS
