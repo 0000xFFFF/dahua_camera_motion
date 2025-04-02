@@ -1,9 +1,13 @@
 #include "buffers.hpp"
 #include <atomic>
-#include <mutex>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <thread>
+
+#ifdef SLEEP_MS_FRAME
+#include <mutex>
+#include <condition_variable>
+#endif
 
 class FrameReader {
   public:
@@ -35,11 +39,12 @@ class FrameReader {
 
 #ifdef SLEEP_MS_FRAME
     std::atomic<bool> m_sleep{true};
+    std::mutex m_mtx;
+    std::condition_variable m_cv;
 #endif
 
     LockFreeRingBuffer<cv::Mat, 2> m_frame_buffer;
     DoubleBufferMat m_frame_dbuffer;
     cv::VideoCapture m_cap;
     std::atomic<bool> m_running{true};
-    std::mutex m_mtx;
 };

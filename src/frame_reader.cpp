@@ -80,6 +80,7 @@ void FrameReader::enable_sleep()
 void FrameReader::disable_sleep()
 {
     m_sleep = false;
+    m_cv.notify_one();
 }
 #endif
 
@@ -252,7 +253,10 @@ void FrameReader::connect_and_read()
 
 #ifdef SLEEP_MS_FRAME
         if (m_sleep) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_MS_FRAME));
+            {
+                std::unique_lock<std::mutex> lock(m_mtx);
+                m_cv.wait_for(lock, std::chrono::milliseconds(SLEEP_MS_FRAME), [&] { return !m_sleep; });
+            }
 
             // Attempt to skip buffered frames
             AVPacket skip_packet;
