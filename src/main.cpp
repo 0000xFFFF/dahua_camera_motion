@@ -45,11 +45,11 @@ int main(int argc, char* argv[])
 
     program.add_argument("-ww", "--width")
         .help("Window width")
-        .default_value(1920)
+        .default_value(DEFAULT_WIDTH)
         .scan<'i', int>();
     program.add_argument("-wh", "--height")
         .help("Window height")
-        .default_value(1080)
+        .default_value(DEFAULT_HEIGHT)
         .scan<'i', int>();
     program.add_argument("-fs", "--fullscreen")
         .help("Start in fullscreen mode")
@@ -131,6 +131,15 @@ int main(int argc, char* argv[])
         .default_value(ENABLE_FULLSCREEN_CHANNEL)
         .scan<'i', int>();
 
+    program.add_argument("-eic", "--enable_ignore_contours")
+        .help("enable ignoring contours/areas (specify with -ic)")
+        .metavar("0/1")
+        .default_value(ENABLE_IGNORE_CONTOURS)
+        .scan<'i', int>();
+    program.add_argument("-ic", "--ignore_contours")
+        .help("specify ignore contours/areas (e.g.: <x>x<y>,...;<x>x<y>,...)")
+        .default_value(IGNORE_CONTOURS);
+
     try {
         program.parse_args(argc, argv);
 
@@ -165,7 +174,9 @@ int main(int argc, char* argv[])
                 program.get<int>("enable_info_rect"),
                 program.get<int>("enable_minimap"),
                 program.get<int>("enable_minimap_fullscreen"),
-                program.get<int>("enable_fullscreen_channel"));
+                program.get<int>("enable_fullscreen_channel"),
+                program.get<int>("enable_ignore_contours"),
+                program.get<std::string>("ignore_contours"));
 
             motionDetector->draw_loop();
         }

@@ -1,5 +1,18 @@
 #pragma once
 
+
+#ifdef DEBUG
+
+#ifndef ENABLE_INFO
+#define ENABLE_INFO 1
+#endif
+
+#ifndef ENABLE_MINIMAP
+#define ENABLE_MINIMAP 1
+#endif
+
+#endif
+
 #ifndef CURRENT_CHANNEL
 #define CURRENT_CHANNEL 1
 #endif
@@ -48,6 +61,13 @@
 #define ENABLE_MOTION_ZOOM_LARGEST 0
 #endif
 
+#ifndef ENABLE_IGNORE_CONTOURS
+#define ENABLE_IGNORE_CONTOURS 0
+#endif
+
+#ifndef IGNORE_CONTOURS
+#define IGNORE_CONTOURS ""
+#endif
 
 #ifndef USE_CUDA
 #define USE_CUDA 0
@@ -90,17 +110,23 @@
 #define TOUR_MS 3000
 #endif
 
-#ifdef DEBUG
-#undef ENABLE_INFO
-#define ENABLE_INFO 1
-#undef ENABLE_MINIMAP
-#define ENABLE_MINIMAP 1
-#endif
 
 #define USE_SUBTYPE1 false
 #define W_0 704
 #define H_0 576
 #define W_HD 1920
 #define H_HD 1080
+
+#ifndef DEFAULT_WIDTH
+#define DEFAULT_WIDTH W_HD
+#endif
+
+#ifndef DEFAULT_HEIGHT
+#define DEFAULT_HEIGHT H_HD
+#endif
+
+#ifndef DEFAULT_WINDOW_NAME
+#define DEFAULT_WINDOW_NAME "Motion"
+#endif
 
 //#define SLEEP_MS_FRAME 300

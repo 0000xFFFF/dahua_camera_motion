@@ -17,6 +17,47 @@
 #define CROP_WIDTH 704
 #define CROP_HEIGHT 384
 
+// e.g. "100x200,150x250,...;300x400,350x450,...";
+std::vector<std::vector<cv::Point>> parse_ignore_contours(const std::string& input)
+{
+    std::vector<std::vector<cv::Point>> contours;
+    std::stringstream ss(input);
+    std::string contourStr;
+
+    while (std::getline(ss, contourStr, ';')) { // Split contours by ";"
+        std::vector<cv::Point> contour;
+        std::stringstream pointStream(contourStr);
+        std::string pointStr;
+
+        while (std::getline(pointStream, pointStr, ',')) { // Split points by ","
+            size_t xPos = pointStr.find('x');              // Find 'x' separator
+
+            if (xPos != std::string::npos) {
+                int x = std::stoi(pointStr.substr(0, xPos));
+                int y = std::stoi(pointStr.substr(xPos + 1));
+                contour.push_back(cv::Point(x, y));
+            }
+        }
+
+        if (!contour.empty()) {
+            contours.push_back(contour);
+        }
+    }
+
+    return contours;
+}
+
+void print_ignore_contours(const std::vector<std::vector<cv::Point>>& contours)
+{
+    for (size_t i = 0; i < contours.size(); i++) {
+        std::cout << "Contour " << i + 1 << ": ";
+        for (const auto& point : contours[i]) {
+            std::cout << "[" << point.x << "," << point.y << "] ";
+        }
+        std::cout << std::endl;
+    }
+}
+
 MotionDetector::MotionDetector(const std::string& ip,
                                const std::string& username,
                                const std::string& password,
@@ -35,7 +76,9 @@ MotionDetector::MotionDetector(const std::string& ip,
                                int enable_info_rect,
                                int enable_minimap,
                                int enable_minimap_fullscreen,
-                               int enable_fullscreen_channel)
+                               int enable_fullscreen_channel,
+                               int enable_ignore_contours,
+                               const std::string& ignore_contours)
     :
 
       m_display_width(width),
@@ -53,11 +96,14 @@ MotionDetector::MotionDetector(const std::string& ip,
       m_enable_minimap(enable_minimap),
       m_enable_minimap_fullscreen(enable_minimap_fullscreen),
       m_enable_fullscreen_channel(enable_fullscreen_channel),
+      m_enable_ignore_contours(enable_ignore_contours),
       m_canv3x3(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_canv3x2(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_main_display(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0)))
 
 {
+
+    std::cout << "canv size: " << width << "x" << height << std::endl;
 
     // m_fgbg = cv::createBackgroundSubtractorMOG2(20, 32, true);
     m_fgbg = cv::createBackgroundSubtractorKNN(20, 400.0, true);
@@ -70,6 +116,10 @@ MotionDetector::MotionDetector(const std::string& ip,
     }
 
     m_thread_detect_motion = std::thread([this]() { detect_motion(); });
+
+    m_ignore_contours = parse_ignore_contours(ignore_contours);
+
+    print_ignore_contours(m_ignore_contours);
 
     change_channel(current_channel);
 }
@@ -138,6 +188,11 @@ void MotionDetector::do_tour_logic()
 
 std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
 {
+    if (m_enable_ignore_contours) {
+        // blackout the ignored area
+        cv::fillPoly(m_frame0, m_ignore_contours, cv::Scalar(0));
+    }
+
     cv::Mat fgmask;
     m_fgbg->apply(m_frame0, fgmask);
 
@@ -576,7 +631,7 @@ void MotionDetector::detect_motion()
     m_readers[0]->disable_sleep();
 #endif
 
-    //std::cout << "starting motion detection" << std::endl;
+    // std::cout << "starting motion detection" << std::endl;
 
     while (m_running) {
 
@@ -620,12 +675,27 @@ void MotionDetector::detect_motion()
     }
 }
 
+#ifdef DEBUG
+void onMouse(int event, int x, int y, int flags, void* userdata)
+{
+    UNUSED(flags);
+    UNUSED(userdata);
+    if (event == cv::EVENT_LBUTTONDOWN) { // Left mouse button click
+        std::cout << "Mouse clicked at: (" << x << ", " << y << ")" << std::endl;
+    }
+}
+#endif
+
 void MotionDetector::draw_loop()
 {
+    cv::namedWindow(DEFAULT_WINDOW_NAME);
+
     if (m_fullscreen) {
-        cv::namedWindow("Motion", cv::WINDOW_NORMAL);
-        cv::setWindowProperty("Motion", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
+        cv::namedWindow(DEFAULT_WINDOW_NAME, cv::WINDOW_NORMAL);
+        cv::setWindowProperty(DEFAULT_WINDOW_NAME, cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
     }
+
+    D(cv::setMouseCallback(DEFAULT_WINDOW_NAME, onMouse, nullptr));
 
 #ifdef SLEEP_MS_DRAW
     m_draw_sleep_ms = SLEEP_MS_DRAW;
@@ -689,7 +759,7 @@ void MotionDetector::draw_loop()
             if (m_enable_info) { draw_info(); }
             if (m_enable_info_line) { draw_info_line(); }
 
-            cv::imshow("Motion", m_main_display);
+            cv::imshow(DEFAULT_WINDOW_NAME, m_main_display);
 
             handle_keys();
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <atomic>
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
 #include <opencv2/bgsegm.hpp>
 #include <opencv2/opencv.hpp>
 #include <string>
@@ -14,26 +14,27 @@
 class MotionDetector {
 
   public:
-    MotionDetector(
-        const std::string& ip,
-        const std::string& username,
-        const std::string& password,
-        int width,
-        int height,
-        bool fullscreen,
-        int display_mode,
-        int area,
-        int rarea,
-        int current_channel,
-        int enable_motion,
-        int enable_motion_zoom_largest,
-        int enable_tour,
-        int enable_info,
-        int enable_info_line,
-        int enable_info_rect,
-        int enable_minimap,
-        int enable_minimap_fullscreen,
-        int enable_fullscreen_channel);
+    MotionDetector(const std::string& ip,
+                   const std::string& username,
+                   const std::string& password,
+                   int width,
+                   int height,
+                   bool fullscreen,
+                   int display_mode,
+                   int area,
+                   int rarea,
+                   int current_channel,
+                   int enable_motion,
+                   int enable_motion_zoom_largest,
+                   int enable_tour,
+                   int enable_info,
+                   int enable_info_line,
+                   int enable_info_rect,
+                   int enable_minimap,
+                   int enable_minimap_fullscreen,
+                   int enable_fullscreen_channel,
+                   int enable_ignore_contours,
+                   const std::string& ignore_contours);
 
     void draw_loop();
     void stop();
@@ -79,6 +80,8 @@ class MotionDetector {
     std::atomic<bool> m_enable_minimap;
     std::atomic<bool> m_enable_minimap_fullscreen;
     std::atomic<bool> m_enable_fullscreen_channel;
+    std::atomic<bool> m_enable_ignore_contours;
+    std::vector<std::vector<cv::Point>> m_ignore_contours;
 
     // init
     std::thread m_thread_detect_motion;
@@ -123,5 +126,4 @@ class MotionDetector {
 
     std::mutex m_mtx_motion;
     std::condition_variable m_cv_motion;
-
 };
