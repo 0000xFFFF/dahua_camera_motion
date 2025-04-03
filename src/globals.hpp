@@ -50,7 +50,7 @@
 #endif
 
 #ifndef MOTION_DETECT_MIN_MS
-#define MOTION_DETECT_MIN_MS 0
+#define MOTION_DETECT_MIN_MS 1000
 #endif
 
 #ifndef MOTION_DETECT_LINGER_MS
