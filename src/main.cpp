@@ -139,6 +139,9 @@ int main(int argc, char* argv[])
     program.add_argument("-ic", "--ignore_contours")
         .help("specify ignore contours/areas (e.g.: <x>x<y>,...;<x>x<y>,...)")
         .default_value(IGNORE_CONTOURS);
+    program.add_argument("-icf", "--ignore_contours_filename")
+        .help("specify ignore contours/areas inside file (seperated by new line) (e.g.: <x>x<y>,...\\n<x>x<y>,...)")
+        .default_value(IGNORE_CONTOURS_FILENAME);
 
     try {
         program.parse_args(argc, argv);
@@ -176,7 +179,9 @@ int main(int argc, char* argv[])
                 program.get<int>("enable_minimap_fullscreen"),
                 program.get<int>("enable_fullscreen_channel"),
                 program.get<int>("enable_ignore_contours"),
-                program.get<std::string>("ignore_contours"));
+                program.get<std::string>("ignore_contours"),
+                program.get<std::string>("ignore_contours_filename")
+                    );
 
             motionDetector->draw_loop();
         }

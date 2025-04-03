@@ -1,16 +1,16 @@
 #pragma once
 
+#ifndef DEBUG
+#define DEBUG
+#endif
 
 #ifdef DEBUG
-
 #ifndef ENABLE_INFO
 #define ENABLE_INFO 1
 #endif
-
 #ifndef ENABLE_MINIMAP
 #define ENABLE_MINIMAP 1
 #endif
-
 #endif
 
 #ifndef CURRENT_CHANNEL
@@ -69,6 +69,10 @@
 #define IGNORE_CONTOURS ""
 #endif
 
+#ifndef IGNORE_CONTOURS_FILENAME
+#define IGNORE_CONTOURS_FILENAME ""
+#endif
+
 #ifndef USE_CUDA
 #define USE_CUDA 0
 #endif
@@ -117,12 +121,21 @@
 #define W_HD 1920
 #define H_HD 1080
 
+#define MINIMAP_WIDTH 300
+#define MINIMAP_HEIGHT 160
+#define CROP_WIDTH 704
+#define CROP_HEIGHT 384
+
 #ifndef DEFAULT_WIDTH
 #define DEFAULT_WIDTH W_HD
 #endif
 
 #ifndef DEFAULT_HEIGHT
 #define DEFAULT_HEIGHT H_HD
+#endif
+
+#ifndef NO_RESIZE
+#define NO_RESIZE 0
 #endif
 
 #ifndef DEFAULT_WINDOW_NAME

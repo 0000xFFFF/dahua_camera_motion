@@ -1,5 +1,6 @@
 #pragma once
-
+#include "debug.hpp"
+#include "globals.hpp"
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -10,6 +11,7 @@
 
 #include "buffers.hpp"
 #include "frame_reader.hpp"
+#include "opencv2/highgui.hpp"
 
 class MotionDetector {
 
@@ -34,10 +36,48 @@ class MotionDetector {
                    int enable_minimap_fullscreen,
                    int enable_fullscreen_channel,
                    int enable_ignore_contours,
-                   const std::string& ignore_contours);
+                   const std::string& ignore_contours,
+                   const std::string& ignore_contours_file_name);
 
     void draw_loop();
     void stop();
+
+#ifdef DEBUG
+    static void on_mouse(int event, int x, int y, int flags, void* userdata)
+    {
+        UNUSED(flags);
+
+        auto* self = static_cast<MotionDetector*>(userdata); // Convert userdata back to MotionDetector*
+        if (!self) return;
+
+        if (event == cv::EVENT_LBUTTONDOWN) {
+            std::cout << "Mouse clicked at: (" << x << ", " << y << ")" << std::endl;
+            self->m_ignore_contour.push_back(cv::Point(x, y));
+            cv::circle(self->m_frame0, cv::Point(x, y), 3, cv::Scalar(0, 0, 255), -1);
+            // cv::imshow("test", self->m_frame0.clone());
+        }
+        else if (event == cv::EVENT_MBUTTONDOWN) {
+            std::cout << "Middle-click detected at: (" << x << ", " << y << ")" << std::endl;
+            self->m_ignore_contours.push_back(self->m_ignore_contour);
+            self->m_ignore_contour.clear();
+            self->print_ignore_contours();
+        }
+        else if (event == cv::EVENT_RBUTTONDOWN) {
+            std::cout << "Clear all" << std::endl;
+            self->m_ignore_contours.clear();
+            self->m_ignore_contour.clear();
+        }
+    }
+#endif
+
+    std::vector<std::vector<cv::Point>> m_ignore_contours;
+    std::vector<cv::Point> m_ignore_contour;
+
+    cv::Mat m_frame0;
+
+    void parse_ignore_contours(const std::string& input);
+    void parse_ignore_contours_file(const std::string& filename);
+    void print_ignore_contours();
 
   private:
     // detecting
@@ -81,7 +121,6 @@ class MotionDetector {
     std::atomic<bool> m_enable_minimap_fullscreen;
     std::atomic<bool> m_enable_fullscreen_channel;
     std::atomic<bool> m_enable_ignore_contours;
-    std::vector<std::vector<cv::Point>> m_ignore_contours;
 
     // init
     std::thread m_thread_detect_motion;
@@ -90,7 +129,7 @@ class MotionDetector {
     cv::Ptr<cv::BackgroundSubtractorKNN> m_fgbg; // 69% KNN
     // cv::Ptr<cv::bgsegm::BackgroundSubtractorCNT> m_fgbg; // 62% CNT
 
-    cv::Mat m_frame0;
+    // cv::Mat m_frame0;
     DoubleBufferMat m_frame0_dbuff;
     cv::Mat m_canv3x3;
     cv::Mat m_canv3x2;

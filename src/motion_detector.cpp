@@ -1,8 +1,6 @@
 #include "motion_detector.hpp"
 #include "debug.hpp"
 #include "globals.hpp"
-#include "opencv2/core.hpp"
-#include <exception>
 #include <iostream>
 #include <opencv2/bgsegm.hpp>
 #include <opencv2/opencv.hpp>
@@ -12,13 +10,8 @@
 
 #include <vector>
 
-#define MINIMAP_WIDTH 300
-#define MINIMAP_HEIGHT 160
-#define CROP_WIDTH 704
-#define CROP_HEIGHT 384
-
 // e.g. "100x200,150x250,...;300x400,350x450,...";
-std::vector<std::vector<cv::Point>> parse_ignore_contours(const std::string& input)
+void MotionDetector::parse_ignore_contours(const std::string& input)
 {
     std::vector<std::vector<cv::Point>> contours;
     std::stringstream ss(input);
@@ -44,18 +37,55 @@ std::vector<std::vector<cv::Point>> parse_ignore_contours(const std::string& inp
         }
     }
 
-    return contours;
+    m_ignore_contours = contours;
 }
 
-void print_ignore_contours(const std::vector<std::vector<cv::Point>>& contours)
+void MotionDetector::parse_ignore_contours_file(const std::string& filename)
 {
-    for (size_t i = 0; i < contours.size(); i++) {
-        std::cout << "Contour " << i + 1 << ": ";
-        for (const auto& point : contours[i]) {
-            std::cout << "[" << point.x << "," << point.y << "] ";
-        }
-        std::cout << std::endl;
+    std::vector<std::vector<cv::Point>> contours;
+    std::ifstream file(filename);
+    std::string contourStr;
+
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file " << filename << std::endl;
+        return;
     }
+
+    while (std::getline(file, contourStr)) { // Read contours line by line
+        std::vector<cv::Point> contour;
+        std::stringstream pointStream(contourStr);
+        std::string pointStr;
+
+        while (std::getline(pointStream, pointStr, ',')) { // Split points by ","
+            size_t xPos = pointStr.find('x');              // Find 'x' separator
+
+            if (xPos != std::string::npos) {
+                int x = std::stoi(pointStr.substr(0, xPos));
+                int y = std::stoi(pointStr.substr(xPos + 1));
+                contour.push_back(cv::Point(x, y));
+            }
+        }
+
+        if (!contour.empty()) {
+            contours.push_back(contour);
+        }
+    }
+
+    file.close();
+    m_ignore_contours = contours;
+}
+
+void MotionDetector::print_ignore_contours()
+{
+    std::cout << "-ic \"";
+    for (size_t i = 0; i < m_ignore_contours.size(); i++) {
+        for (size_t x = 0; x < m_ignore_contours[i].size(); x++) {
+            std::cout << m_ignore_contours[i][x].x << "x" << m_ignore_contours[i][x].y;
+            if (x != m_ignore_contours[i].size() - 1) { std::cout << ","; }
+        }
+        if (i != m_ignore_contours.size() - 1) { std::cout << ";"; }
+    }
+    std::cout << "\"" << std::endl;
 }
 
 MotionDetector::MotionDetector(const std::string& ip,
@@ -78,7 +108,9 @@ MotionDetector::MotionDetector(const std::string& ip,
                                int enable_minimap_fullscreen,
                                int enable_fullscreen_channel,
                                int enable_ignore_contours,
-                               const std::string& ignore_contours)
+                               const std::string& ignore_contours,
+                               const std::string& ignore_contours_filename
+                               )
     :
 
       m_display_width(width),
@@ -117,9 +149,10 @@ MotionDetector::MotionDetector(const std::string& ip,
 
     m_thread_detect_motion = std::thread([this]() { detect_motion(); });
 
-    m_ignore_contours = parse_ignore_contours(ignore_contours);
+    if (!ignore_contours.empty()) parse_ignore_contours(ignore_contours);
+    if (!ignore_contours_filename.empty()) parse_ignore_contours_file(ignore_contours_filename);
 
-    print_ignore_contours(m_ignore_contours);
+    print_ignore_contours();
 
     change_channel(current_channel);
 }
@@ -188,7 +221,16 @@ void MotionDetector::do_tour_logic()
 
 std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
 {
-    if (m_enable_ignore_contours) {
+    if (m_enable_ignore_contours && !m_ignore_contours.empty()) {
+
+        // erase empty 
+        for (size_t i = 0; i < m_ignore_contours.size(); ++i) {
+            if (m_ignore_contours[i].empty()) {
+                m_ignore_contours.erase(m_ignore_contours.begin() + i);
+                --i;
+            }
+        }
+
         // blackout the ignored area
         cv::fillPoly(m_frame0, m_ignore_contours, cv::Scalar(0));
     }
@@ -675,27 +717,20 @@ void MotionDetector::detect_motion()
     }
 }
 
-#ifdef DEBUG
-void onMouse(int event, int x, int y, int flags, void* userdata)
-{
-    UNUSED(flags);
-    UNUSED(userdata);
-    if (event == cv::EVENT_LBUTTONDOWN) { // Left mouse button click
-        std::cout << "Mouse clicked at: (" << x << ", " << y << ")" << std::endl;
-    }
-}
-#endif
-
 void MotionDetector::draw_loop()
 {
+
+#ifdef DEBUG
+    cv::namedWindow(DEFAULT_WINDOW_NAME, cv::WINDOW_AUTOSIZE);
+    cv::setMouseCallback(DEFAULT_WINDOW_NAME, on_mouse, this);
+#else
     cv::namedWindow(DEFAULT_WINDOW_NAME);
+#endif
 
     if (m_fullscreen) {
         cv::namedWindow(DEFAULT_WINDOW_NAME, cv::WINDOW_NORMAL);
         cv::setWindowProperty(DEFAULT_WINDOW_NAME, cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
     }
-
-    D(cv::setMouseCallback(DEFAULT_WINDOW_NAME, onMouse, nullptr));
 
 #ifdef SLEEP_MS_DRAW
     m_draw_sleep_ms = SLEEP_MS_DRAW;
@@ -747,7 +782,7 @@ void MotionDetector::draw_loop()
             }
 
             if (!get.empty()) {
-                if (get.size() != cv::Size(m_display_width, m_display_height)) {
+                if (!NO_RESIZE && get.size() != cv::Size(m_display_width, m_display_height)) {
                     cv::resize(get, m_main_display, cv::Size(m_display_width, m_display_height));
                 }
                 else {
@@ -760,6 +795,9 @@ void MotionDetector::draw_loop()
             if (m_enable_info_line) { draw_info_line(); }
 
             cv::imshow(DEFAULT_WINDOW_NAME, m_main_display);
+
+            if (m_display_width == 0) { m_display_width = m_main_display.size().width; }
+            if (m_display_height == 0) { m_display_height = m_main_display.size().height; }
 
             handle_keys();
 
