@@ -53,7 +53,7 @@ class MotionDetector {
         if (event == cv::EVENT_LBUTTONDOWN) {
             std::cout << "Mouse clicked at: (" << x << ", " << y << ")" << std::endl;
             self->m_ignore_contour.push_back(cv::Point(x, y));
-            cv::circle(self->m_frame0, cv::Point(x, y), 3, cv::Scalar(0, 0, 255), -1);
+            // cv::circle(self->m_frame0, cv::Point(x, y), 3, cv::Scalar(0, 0, 255), -1);
             // cv::imshow("test", self->m_frame0.clone());
         }
         else if (event == cv::EVENT_MBUTTONDOWN) {
@@ -72,8 +72,6 @@ class MotionDetector {
 
     std::vector<std::vector<cv::Point>> m_ignore_contours;
     std::vector<cv::Point> m_ignore_contour;
-
-    cv::Mat m_frame0;
 
     void parse_ignore_contours(const std::string& input);
     void parse_ignore_contours_file(const std::string& filename);
@@ -129,7 +127,7 @@ class MotionDetector {
     cv::Ptr<cv::BackgroundSubtractorKNN> m_fgbg; // 69% KNN
     // cv::Ptr<cv::bgsegm::BackgroundSubtractorCNT> m_fgbg; // 62% CNT
 
-    // cv::Mat m_frame0;
+    cv::Mat m_frame0;
     DoubleBufferMat m_frame0_dbuff;
     cv::Mat m_canv3x3;
     cv::Mat m_canv3x2;
