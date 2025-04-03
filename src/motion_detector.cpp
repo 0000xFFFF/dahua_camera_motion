@@ -97,6 +97,7 @@ MotionDetector::MotionDetector(const std::string& ip,
                                int display_mode,
                                int area,
                                int rarea,
+                               int motion_detect_min_ms,
                                int current_channel,
                                int enable_motion,
                                int enable_motion_zoom_largest,
@@ -118,6 +119,7 @@ MotionDetector::MotionDetector(const std::string& ip,
       m_display_mode(display_mode),
       m_motion_min_area(area),
       m_motion_min_rect_area(rarea),
+      m_motion_detect_min_ms(motion_detect_min_ms),
       m_enable_motion(enable_motion),
       m_enable_motion_zoom_largest(enable_motion_zoom_largest),
       m_enable_tour(enable_tour),
@@ -304,7 +306,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         }
 
         auto motion_duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_motion_detect_start).count();
-        m_motion_detected_min_ms = motion_duration >= MOTION_DETECT_MIN_MS;
+        m_motion_detected_min_ms = motion_duration >= m_motion_detect_min_ms;
         if (m_motion_detected_min_ms) {
             float rel_x = motion_region.x / static_cast<float>(CROP_WIDTH);
             float rel_y = motion_region.y / static_cast<float>(CROP_HEIGHT);

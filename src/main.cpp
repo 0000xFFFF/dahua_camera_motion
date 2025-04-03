@@ -78,6 +78,10 @@ int main(int argc, char* argv[])
         .help("Min contour's bounding rectangle area for detection")
         .default_value(MOTION_DETECT_RECT_AREA)
         .scan<'i', int>();
+    program.add_argument("-ms", "--motion_detect_min_ms")
+        .help("min milliseconds of detected motion to switch channel")
+        .default_value(MOTION_DETECT_MIN_MS)
+        .scan<'i', int>();
     program.add_argument("-emzl", "--enable_motion_zoom_largest")
         .help("enable motion zoom largest")
         .metavar("0/1")
@@ -168,6 +172,7 @@ int main(int argc, char* argv[])
                 program.get<int>("display_mode"),
                 program.get<int>("area"),
                 program.get<int>("rarea"),
+                program.get<int>("motion_detect_min_ms"),
                 program.get<int>("current_channel"),
                 program.get<int>("enable_motion"),
                 program.get<int>("enable_motion_zoom_largest"),

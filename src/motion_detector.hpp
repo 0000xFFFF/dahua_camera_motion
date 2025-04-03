@@ -25,6 +25,7 @@ class MotionDetector {
                    int display_mode,
                    int area,
                    int rarea,
+                   int motion_detect_min_ms,
                    int current_channel,
                    int enable_motion,
                    int enable_motion_zoom_largest,
@@ -108,6 +109,7 @@ class MotionDetector {
     int m_display_mode;
     int m_motion_min_area;
     int m_motion_min_rect_area;
+    int m_motion_detect_min_ms;
     std::atomic<int> m_current_channel;
     std::atomic<bool> m_enable_motion;
     std::atomic<bool> m_enable_motion_zoom_largest;
