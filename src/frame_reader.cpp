@@ -37,7 +37,7 @@ void FrameReader::put_placeholder()
 {
 
     cv::Mat placeholder(cv::Size(1000, 1000), CV_8UC3);
-    cv::copyMakeBorder(placeholder, placeholder, 2, 2, 2, 2, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
+    cv::rectangle(placeholder, cv::Rect(0, 0, placeholder.size().width, placeholder.size().height), cv::Scalar(255, 255, 255), 1);
 
     const cv::Scalar text_color(255, 255, 255);
     const double font_scale = 10;
@@ -71,7 +71,6 @@ cv::Mat FrameReader::get_latest_frame(bool no_empty_frame)
     return frame ? *frame : cv::Mat();
 }
 
-#ifdef SLEEP_MS_FRAME
 void FrameReader::enable_sleep()
 {
     m_sleep = true;
@@ -82,7 +81,6 @@ void FrameReader::disable_sleep()
     m_sleep = false;
     m_cv.notify_one();
 }
-#endif
 
 double FrameReader::get_fps()
 {
@@ -93,10 +91,7 @@ void FrameReader::stop()
 {
     D(std::cout << "[" << m_channel << "] reader stop" << std::endl);
     m_running = false;
-
-#ifdef SLEEP_MS_FRAME
     m_cv.notify_one();
-#endif
 
     if (m_thread.joinable()) {
         D(std::cout << "[" << m_channel << "] reader join" << std::endl);
@@ -151,7 +146,17 @@ void FrameReader::connect_and_read()
         if (!connected) {
             if (formatCtx) avformat_close_input(&formatCtx);
             std::cerr << "Failed to connect or find video stream for channel " + std::to_string(m_channel) << std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(CONN_RETRY_MS));
+
+            {
+                std::unique_lock<std::mutex> lock(m_mtx);
+                m_cv.wait_for(lock, std::chrono::milliseconds(CONN_RETRY_MS), [&] { return !m_running; });
+            }
+        }
+
+        if (!m_running) {
+            D(std::cout << "Exiting readFrames() thread for channel " << m_channel << std::endl);
+            avformat_close_input(&formatCtx);
+            return;
         }
     }
 

@@ -22,7 +22,7 @@
 #endif
 
 #ifndef ENABLE_INFO_LINE
-#define ENABLE_INFO_LINE 1
+#define ENABLE_INFO_LINE 0
 #endif
 
 #ifndef ENABLE_INFO_RECT
