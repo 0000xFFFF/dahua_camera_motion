@@ -619,18 +619,27 @@ void MotionDetector::handle_keys()
     // clang-format off
     int key = cv::waitKey(1);
     if (key == 'q') { stop(); }
-    else if (key == 'm') { m_enable_motion = !m_enable_motion; }
-    else if (key == 'l') { m_enable_motion_zoom_largest = !m_enable_motion_zoom_largest; }
+    else if (key == 'm' || key == '*') {
+        m_enable_motion = !m_enable_motion;
+        if (!m_enable_motion) {
+            m_motion_detected = false;
+            m_motion_detected_min_ms = false;
+            m_motion_detect_linger = false;
+        }
+    }
+    else if (key == 'l' || key == '/') { m_enable_motion_zoom_largest = !m_enable_motion_zoom_largest; }
     else if (key == 'n') { m_display_mode = DISPLAY_MODE_SINGLE; }
     else if (key == 'a') { m_display_mode = DISPLAY_MODE_ALL; }
     else if (key == 's') { m_display_mode = DISPLAY_MODE_SORT; }
     else if (key == 'x') { m_display_mode = DISPLAY_MODE_TOP; }
     else if (key == 'k') { m_display_mode = DISPLAY_MODE_KING; }
-    else if (key == 'i') { m_enable_info = !m_enable_info; }
-    else if (key == 'o') { m_enable_minimap = !m_enable_minimap; }
-    else if (key == 'f') { m_enable_fullscreen_channel = !m_enable_fullscreen_channel; }
-    else if (key == 't') { m_enable_tour = !m_enable_tour; }
-    else if (key == 'r') {
+    else if (key == KEY_LINUX_ARROW_UP || key == KEY_WIN_ARROW_UP) { m_display_mode++; if (m_display_mode > 4) { m_display_mode = 4; } }
+    else if (key == KEY_LINUX_ARROW_DOWN || key == KEY_WIN_ARROW_DOWN) { m_display_mode--; if (m_display_mode < 0) { m_display_mode = 0; } }
+    else if (key == 'i' || key == KEY_LINUX_PAGE_UP || key == KEY_WIN_PAGE_UP) { m_enable_info = !m_enable_info; }
+    else if (key == 'o' || key == KEY_LINUX_PAGE_DOWN || key == KEY_LINUX_PAGE_DOWN) { m_enable_minimap = !m_enable_minimap; }
+    else if (key == 'f' || key == '+') { m_enable_fullscreen_channel = !m_enable_fullscreen_channel; }
+    else if (key == 't' || key == '.') { m_enable_tour = !m_enable_tour; }
+    else if (key == 'r' || key == KEY_BACKSPACE) {
         m_current_channel = 1;
         m_king_chain.update({1, 2, 3, 4, 5, 6});
         m_motion_detected = false;
@@ -643,11 +652,11 @@ void MotionDetector::handle_keys()
     else if (key == '0') {
         m_enable_minimap_fullscreen = !m_enable_minimap_fullscreen;
     }
-    else if (key == 81 || key == 65361) { // Left arrow (81 on Windows, 65361 on Linux)
+    else if (key == KEY_LINUX_ARROW_LEFT || key == KEY_WIN_ARROW_LEFT) {
         int new_ch = m_current_channel + 1;
         if (new_ch > 6) new_ch = 1;
         change_channel(new_ch);
-    } else if (key == 83 || key == 65363) { // Right arrow (83 on Windows, 65363 on Linux)
+    } else if (key == KEY_LINUX_ARROW_RIGHT || key == KEY_WIN_ARROW_LEFT) { 
         int new_ch = m_current_channel - 1;
         if (new_ch < 1) new_ch = 6;
         change_channel(new_ch);

@@ -106,7 +106,7 @@ class MotionDetector {
     int m_display_width;
     int m_display_height;
     bool m_fullscreen;
-    int m_display_mode;
+    std::atomic<int> m_display_mode;
     int m_motion_min_area;
     int m_motion_min_rect_area;
     int m_motion_detect_min_ms;

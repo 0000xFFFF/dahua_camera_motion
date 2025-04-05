@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef DEBUG
-//#define DEBUG
+// #define DEBUG
 #endif
 
 #ifdef DEBUG
@@ -78,12 +78,12 @@
 #endif
 
 #define DISPLAY_MODE_SINGLE 0
-#define DISPLAY_MODE_ALL 1
-#define DISPLAY_MODE_SORT 2
-#define DISPLAY_MODE_KING 3
-#define DISPLAY_MODE_TOP 4
+#define DISPLAY_MODE_ALL    1
+#define DISPLAY_MODE_SORT   2
+#define DISPLAY_MODE_KING   3
+#define DISPLAY_MODE_TOP    4
 
-#define KING_LAYOUT_REL 1
+#define KING_LAYOUT_REL  1
 #define KING_LAYOUT_CIRC 2
 
 #ifndef KING_LAYOUT
@@ -119,15 +119,15 @@
 #endif
 
 #define USE_SUBTYPE1 false
-#define W_0 704
-#define H_0 576
-#define W_HD 1920
-#define H_HD 1080
+#define W_0          704
+#define H_0          576
+#define W_HD         1920
+#define H_HD         1080
 
-#define MINIMAP_WIDTH 300
+#define MINIMAP_WIDTH  300
 #define MINIMAP_HEIGHT 160
-#define CROP_WIDTH 704
-#define CROP_HEIGHT 384
+#define CROP_WIDTH     704
+#define CROP_HEIGHT    384
 
 #ifndef DEFAULT_WIDTH
 #define DEFAULT_WIDTH W_HD
@@ -145,4 +145,28 @@
 #define DEFAULT_WINDOW_NAME "Motion"
 #endif
 
-//#define SLEEP_MS_FRAME 300
+// #define SLEEP_MS_FRAME 300
+
+#define KEY_BACKSPACE 8
+#define KEY_ENTER     13
+#define KEY_ESCAPE    27
+
+#define KEY_WIN_ARROW_UP    2490368
+#define KEY_WIN_ARROW_DOWN  2621440
+#define KEY_WIN_ARROW_LEFT  2424832
+#define KEY_WIN_ARROW_RIGHT 2555904
+#define KEY_WIN_PAGE_UP     2162688
+#define KEY_WIN_PAGE_DOWN   2228224
+#define KEY_WIN_HOME        2359296
+#define KEY_WIN_END         2293760
+
+#define KEY_LINUX_ARROW_LEFT  81  // ←
+#define KEY_LINUX_ARROW_RIGHT 83  // →
+#define KEY_LINUX_ARROW_UP    82  // ↑
+#define KEY_LINUX_ARROW_DOWN  84  // ↓
+#define KEY_LINUX_PAGE_UP     104 // Depends on layout
+#define KEY_LINUX_PAGE_DOWN   109
+#define KEY_LINUX_HOME        106
+#define KEY_LINUX_END         107
+
+#define CAP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
