@@ -62,6 +62,7 @@ void FrameReader::put_placeholder()
                 font_thickness);
 
     m_frame_buffer.push(placeholder);
+    m_frame_dbuffer.update(placeholder);
 }
 
 cv::Mat FrameReader::get_latest_frame(bool no_empty_frame)
