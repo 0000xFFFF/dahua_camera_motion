@@ -37,7 +37,7 @@ void FrameReader::put_placeholder()
 {
 
     cv::Mat placeholder(cv::Size(1000, 1000), CV_8UC3);
-    cv::rectangle(placeholder, cv::Rect(0, 0, placeholder.size().width, placeholder.size().height), cv::Scalar(255, 255, 255), 1);
+    cv::rectangle(placeholder, cv::Rect(0, 0, placeholder.size().width, placeholder.size().height), cv::Scalar(255, 255, 255), 3);
 
     const cv::Scalar text_color(255, 255, 255);
     const double font_scale = 10;
