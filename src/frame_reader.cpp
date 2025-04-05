@@ -117,7 +117,7 @@ std::string FrameReader::construct_rtsp_url(const std::string& ip, const std::st
 
 void FrameReader::connect_and_read()
 {
-    set_thread_affinity(m_channel % std::thread::hardware_concurrency());
+    bool connected = false;
 
     std::cout << "start capture: " << m_channel << std::endl;
     std::string rtsp_url = construct_rtsp_url(m_ip, m_username, m_password);
@@ -125,20 +125,34 @@ void FrameReader::connect_and_read()
     avformat_network_init();
     AVFormatContext* formatCtx = avformat_alloc_context();
 
-    // RTSP Options (Less Aggressive)
-    AVDictionary* options = NULL;
-    av_dict_set(&options, "rtsp_transport", "tcp", 0);
-    av_dict_set(&options, "buffer_size", "1024000", 0);
-    av_dict_set(&options, "max_delay", "500000", 0);
+    set_thread_affinity(m_channel % std::thread::hardware_concurrency());
 
-    // Open RTSP stream
-    if (avformat_open_input(&formatCtx, rtsp_url.c_str(), NULL, &options) != 0) {
-        throw std::runtime_error("Failed to open RTSP stream for channel " + std::to_string(m_channel));
-    }
+    while (!connected) {
 
-    if (avformat_find_stream_info(formatCtx, NULL) < 0) {
-        avformat_close_input(&formatCtx);
-        throw std::runtime_error("Failed to retrieve stream info for channel " + std::to_string(m_channel));
+        // RTSP Options (Less Aggressive)
+        AVDictionary* options = NULL;
+        av_dict_set(&options, "rtsp_transport", "tcp", 0);
+        av_dict_set(&options, "buffer_size", "1024000", 0);
+        av_dict_set(&options, "max_delay", "500000", 0);
+
+        // Try to open RTSP stream
+        if (avformat_open_input(&formatCtx, rtsp_url.c_str(), NULL, &options) == 0) {
+            if (avformat_find_stream_info(formatCtx, NULL) >= 0) {
+                // Check for video stream
+                for (unsigned int i = 0; i < formatCtx->nb_streams; i++) {
+                    if (formatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+                        connected = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!connected) {
+            if (formatCtx) avformat_close_input(&formatCtx);
+            std::cerr << "Failed to connect or find video stream for channel " + std::to_string(m_channel) << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(CONN_RETRY_MS));
+        }
     }
 
     // Find video stream

@@ -114,6 +114,9 @@
 #define TOUR_MS 3000
 #endif
 
+#ifndef CONN_RETRY_MS
+#define CONN_RETRY_MS 10000
+#endif
 
 #define USE_SUBTYPE1 false
 #define W_0 704
