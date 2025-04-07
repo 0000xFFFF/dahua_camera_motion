@@ -37,7 +37,7 @@ void MotionDetector::parse_ignore_contours(const std::string& input)
         }
     }
 
-    m_ignore_contours = contours;
+    m_ignore_contours.update(contours);
 }
 
 void MotionDetector::parse_ignore_contours_file(const std::string& filename)
@@ -72,18 +72,19 @@ void MotionDetector::parse_ignore_contours_file(const std::string& filename)
     }
 
     file.close();
-    m_ignore_contours = contours;
+    m_ignore_contours.update(contours);
 }
 
 void MotionDetector::print_ignore_contours()
 {
+    auto ignore_contours = m_ignore_contours.get();
     std::cout << "-ic \"";
-    for (size_t i = 0; i < m_ignore_contours.size(); i++) {
-        for (size_t x = 0; x < m_ignore_contours[i].size(); x++) {
-            std::cout << m_ignore_contours[i][x].x << "x" << m_ignore_contours[i][x].y;
-            if (x != m_ignore_contours[i].size() - 1) { std::cout << ","; }
+    for (size_t i = 0; i < ignore_contours.size(); i++) {
+        for (size_t x = 0; x < ignore_contours[i].size(); x++) {
+            std::cout << ignore_contours[i][x].x << "x" << ignore_contours[i][x].y;
+            if (x != ignore_contours[i].size() - 1) { std::cout << ","; }
         }
-        if (i != m_ignore_contours.size() - 1) { std::cout << ";"; }
+        if (i != ignore_contours.size() - 1) { std::cout << ";"; }
     }
     std::cout << "\"" << std::endl;
 }
@@ -222,18 +223,26 @@ void MotionDetector::do_tour_logic()
 
 std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
 {
-    if (m_enable_ignore_contours && !m_ignore_contours.empty()) {
+    auto ics = m_ignore_contours.get();
 
-        // erase empty
-        for (size_t i = 0; i < m_ignore_contours.size(); ++i) {
-            if (m_ignore_contours[i].empty()) {
-                m_ignore_contours.erase(m_ignore_contours.begin() + i);
-                --i;
+    if (m_enable_ignore_contours) {
+
+        auto ic = m_ignore_contour.get();
+        std::vector<std::vector<cv::Point>> outline = {ic};
+        cv::polylines(m_frame0, outline, false, cv::Scalar(0));
+
+        if (!ics.empty()) {
+            // erase empty
+            for (size_t i = 0; i < ics.size(); ++i) {
+                if (ics[i].empty()) {
+                    ics.erase(ics.begin() + i);
+                    --i;
+                }
             }
-        }
 
-        // blackout the ignored area
-        cv::fillPoly(m_frame0, m_ignore_contours, cv::Scalar(0));
+            // blackout the ignored area
+            cv::fillPoly(m_frame0, ics, cv::Scalar(0));
+        }
     }
 
     cv::Mat fgmask;
@@ -665,17 +674,21 @@ void MotionDetector::handle_keys()
         change_channel(key - '0');
     }
     else if (key == 'c') {
-        m_ignore_contour.push_back(m_mouse_pos.get());
+        auto ic = m_ignore_contour.get();
+        ic.push_back(m_mouse_pos.get());
+        m_ignore_contour.update(ic);
     }
     else if (key == 'v') {
-        m_ignore_contours.push_back(m_ignore_contour);
-        m_ignore_contour.clear();
+        auto ics = m_ignore_contours.get();
+        ics.push_back(m_ignore_contour.get());
+        m_ignore_contours.update(ics);
+        m_ignore_contour.update({});
         print_ignore_contours();
     }
     else if (key == 'b') {
         std::cout << "Clear all" << std::endl;
-        m_ignore_contours.clear();
-        m_ignore_contour.clear();
+        m_ignore_contours.update({});
+        m_ignore_contour.update({});
     }
     // clang-format on
 }
@@ -739,7 +752,6 @@ void MotionDetector::detect_motion()
     }
 }
 
-
 void on_mouse(int event, int x, int y, int flags, void* userdata)
 {
     UNUSED(flags);
@@ -755,6 +767,13 @@ void MotionDetector::draw_loop()
     cv::namedWindow(DEFAULT_WINDOW_NAME);
     // cv::namedWindow(DEFAULT_WINDOW_NAME, cv::WINDOW_AUTOSIZE);
     cv::setMouseCallback(DEFAULT_WINDOW_NAME, on_mouse, this);
+
+#ifdef MAKE_IGNORE
+    std::cout << "to create ignore area use keys:\n"
+              << "   c - create vertex\n"
+              << "   v - join contour\n"
+              << "   b - clear all" << std::endl;
+#endif
 
     if (m_fullscreen) {
         cv::namedWindow(DEFAULT_WINDOW_NAME, cv::WINDOW_NORMAL);

@@ -135,7 +135,6 @@ class MotionDetector {
     std::condition_variable m_cv_motion;
 
     // ignore area
-    std::vector<std::vector<cv::Point>> m_ignore_contours;
-    std::vector<cv::Point> m_ignore_contour;
-
+    DoubleBuffer<std::vector<std::vector<cv::Point>>> m_ignore_contours;
+    DoubleBuffer<std::vector<cv::Point>> m_ignore_contour;
 };
