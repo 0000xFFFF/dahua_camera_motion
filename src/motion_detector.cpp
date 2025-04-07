@@ -675,15 +675,21 @@ void MotionDetector::handle_keys()
     }
     else if (key == 'c') {
         auto ic = m_ignore_contour.get();
-        ic.push_back(m_mouse_pos.get());
-        m_ignore_contour.update(ic);
+        auto mp = m_mouse_pos.get();
+        if (mp != cv::Point()) {
+            ic.push_back(mp);
+            m_ignore_contour.update(ic);
+        }
     }
     else if (key == 'v') {
-        auto ics = m_ignore_contours.get();
-        ics.push_back(m_ignore_contour.get());
-        m_ignore_contours.update(ics);
-        m_ignore_contour.update({});
-        print_ignore_contours();
+        auto ic = m_ignore_contour.get();
+        if (!ic.empty()) {
+            auto ics = m_ignore_contours.get();
+            ics.push_back(ic);
+            m_ignore_contours.update(ics);
+            m_ignore_contour.update({});
+            print_ignore_contours();
+        }
     }
     else if (key == 'b') {
         std::cout << "Clear all" << std::endl;
