@@ -1,6 +1,4 @@
 #pragma once
-#include "debug.hpp"
-#include "globals.hpp"
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -11,7 +9,6 @@
 
 #include "buffers.hpp"
 #include "frame_reader.hpp"
-#include "opencv2/highgui.hpp"
 
 class MotionDetector {
 
@@ -42,41 +39,7 @@ class MotionDetector {
 
     void draw_loop();
     void stop();
-
-#ifdef DEBUG
-    static void on_mouse(int event, int x, int y, int flags, void* userdata)
-    {
-        UNUSED(flags);
-
-        auto* self = static_cast<MotionDetector*>(userdata); // Convert userdata back to MotionDetector*
-        if (!self) return;
-
-        if (event == cv::EVENT_LBUTTONDOWN) {
-            std::cout << "Mouse clicked at: (" << x << ", " << y << ")" << std::endl;
-            self->m_ignore_contour.push_back(cv::Point(x, y));
-            // cv::circle(self->m_frame0, cv::Point(x, y), 3, cv::Scalar(0, 0, 255), -1);
-            // cv::imshow("test", self->m_frame0.clone());
-        }
-        else if (event == cv::EVENT_MBUTTONDOWN) {
-            std::cout << "Middle-click detected at: (" << x << ", " << y << ")" << std::endl;
-            self->m_ignore_contours.push_back(self->m_ignore_contour);
-            self->m_ignore_contour.clear();
-            self->print_ignore_contours();
-        }
-        else if (event == cv::EVENT_RBUTTONDOWN) {
-            std::cout << "Clear all" << std::endl;
-            self->m_ignore_contours.clear();
-            self->m_ignore_contour.clear();
-        }
-    }
-#endif
-
-    std::vector<std::vector<cv::Point>> m_ignore_contours;
-    std::vector<cv::Point> m_ignore_contour;
-
-    void parse_ignore_contours(const std::string& input);
-    void parse_ignore_contours_file(const std::string& filename);
-    void print_ignore_contours();
+    DoubleBuffer<cv::Point> m_mouse_pos;
 
   private:
     // detecting
@@ -99,6 +62,11 @@ class MotionDetector {
     cv::Mat paint_main_mat_top();
     std::string bool_to_str(bool b);
     void handle_keys();
+
+    // make ignore area
+    void parse_ignore_contours(const std::string& input);
+    void parse_ignore_contours_file(const std::string& filename);
+    void print_ignore_contours();
 
     std::atomic<bool> m_running{true};
 
@@ -165,4 +133,9 @@ class MotionDetector {
 
     std::mutex m_mtx_motion;
     std::condition_variable m_cv_motion;
+
+    // ignore area
+    std::vector<std::vector<cv::Point>> m_ignore_contours;
+    std::vector<cv::Point> m_ignore_contour;
+
 };

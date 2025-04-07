@@ -661,9 +661,21 @@ void MotionDetector::handle_keys()
         if (new_ch < 1) new_ch = 6;
         change_channel(new_ch);
     }
-
     else if (key >= '1' && key <= '6') {
         change_channel(key - '0');
+    }
+    else if (key == 'c') {
+        m_ignore_contour.push_back(m_mouse_pos.get());
+    }
+    else if (key == 'v') {
+        m_ignore_contours.push_back(m_ignore_contour);
+        m_ignore_contour.clear();
+        print_ignore_contours();
+    }
+    else if (key == 'b') {
+        std::cout << "Clear all" << std::endl;
+        m_ignore_contours.clear();
+        m_ignore_contour.clear();
     }
     // clang-format on
 }
@@ -727,15 +739,22 @@ void MotionDetector::detect_motion()
     }
 }
 
+
+void on_mouse(int event, int x, int y, int flags, void* userdata)
+{
+    UNUSED(flags);
+    if (event == cv::EVENT_MOUSEMOVE) {
+        MotionDetector* detector = static_cast<MotionDetector*>(userdata);
+        detector->m_mouse_pos.update(cv::Point(x, y));
+    }
+}
+
 void MotionDetector::draw_loop()
 {
 
-#ifdef DEBUG
-    cv::namedWindow(DEFAULT_WINDOW_NAME, cv::WINDOW_AUTOSIZE);
-    cv::setMouseCallback(DEFAULT_WINDOW_NAME, on_mouse, this);
-#else
     cv::namedWindow(DEFAULT_WINDOW_NAME);
-#endif
+    // cv::namedWindow(DEFAULT_WINDOW_NAME, cv::WINDOW_AUTOSIZE);
+    cv::setMouseCallback(DEFAULT_WINDOW_NAME, on_mouse, this);
 
     if (m_fullscreen) {
         cv::namedWindow(DEFAULT_WINDOW_NAME, cv::WINDOW_NORMAL);

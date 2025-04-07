@@ -94,3 +94,38 @@ class DoubleBufferVec {
         return buffers[readIndex]; // Return a copy
     }
 };
+
+template <typename T>
+class DoubleBuffer {
+  private:
+    std::array<T, 2> buffers;
+    std::atomic<int> activeBuffer{0}; // read buffer
+
+  public:
+    DoubleBuffer() = default;
+
+    explicit DoubleBuffer(const T& initialData)
+    {
+        buffers[0] = cloneData(initialData);
+        buffers[1] = cloneData(initialData);
+    }
+
+    void update(const T& data)
+    {
+        int writeIndex = 1 - activeBuffer.load(std::memory_order_acquire);
+        buffers[writeIndex] = cloneData(data);
+        activeBuffer.store(writeIndex, std::memory_order_release);
+    }
+
+    T get() const
+    {
+        int readIndex = activeBuffer.load(std::memory_order_acquire);
+        return cloneData(buffers[readIndex]);
+    }
+
+  private:
+    T cloneData(const T& data) const
+    {
+        return T(data);
+    }
+};
