@@ -224,10 +224,9 @@ void MotionDetector::do_tour_logic()
 
 std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
 {
-    auto ics = m_ignore_contours.get();
 
     if (m_enable_ignore_contours) {
-
+        auto ics = m_ignore_contours.get();
         auto ic = m_ignore_contour.get();
         std::vector<std::vector<cv::Point>> outline = {ic};
         cv::polylines(m_frame0, outline, false, cv::Scalar(0));
