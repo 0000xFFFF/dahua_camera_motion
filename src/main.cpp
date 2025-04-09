@@ -10,10 +10,10 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 
+#include "debug.hpp"
 #include "globals.hpp"
 #include "motion_detector.hpp"
-#include "utils.h"
-#include "debug.hpp"
+#include "utils.hpp"
 
 #ifdef DEBUG_CPU
 #include "debug.hpp"
@@ -154,12 +154,27 @@ int main(int argc, char* argv[])
         .help("specify ignore contours/areas inside file (seperated by new line) (e.g.: <x>x<y>,...\\n<x>x<y>,...)")
         .default_value(IGNORE_CONTOURS_FILENAME);
 
+    program.add_argument("-eap", "--enable_alarm_pixels")
+        .help("enable alarm pixels (specify with -ap)")
+        .metavar("0/1")
+        .default_value(ENABLE_ALARM_PIXELS)
+        .scan<'i', int>();
+    program.add_argument("-ap", "--alarm_pixels")
+        .help("specify alarm pixels (e.g.: <x>x<y>;<x>x<y>;...)")
+        .default_value(ALARM_PIXELS);
+    program.add_argument("-apf", "--alarm_pixels_file")
+        .help("specify alarm pixels inside file (seperated by new line) (e.g.: <x>x<y>\\n<x>x<y>...)")
+        .default_value(ALARM_PIXELS_FILE);
+
     // init sdl for playing sounds
     if (SDL_Init(SDL_INIT_AUDIO) < 0) return 1;
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) return 1;
 
     g_sfx_8bit_clicky = Mix_LoadWAV(g_sfxp_8bit_clicky);
-    if (!g_sfx_8bit_clicky) { std::cout << "can't load sfx: " << g_sfxp_8bit_clicky << std::endl; return 1; }
+    if (!g_sfx_8bit_clicky) {
+        std::cout << "can't load sfx: " << g_sfxp_8bit_clicky << std::endl;
+        return 1;
+    }
 
     try {
         program.parse_args(argc, argv);
@@ -198,8 +213,11 @@ int main(int argc, char* argv[])
                 program.get<int>("enable_minimap_fullscreen"),
                 program.get<int>("enable_fullscreen_channel"),
                 program.get<int>("enable_ignore_contours"),
+                program.get<int>("enable_alarm_pixels"),
                 program.get<std::string>("ignore_contours"),
-                program.get<std::string>("ignore_contours_filename"));
+                program.get<std::string>("ignore_contours_filename"),
+                program.get<std::string>("alarm_pixels"),
+                program.get<std::string>("alarm_pixels_file"));
 
             motionDetector->draw_loop();
         }
@@ -214,7 +232,6 @@ int main(int argc, char* argv[])
     Mix_FreeChunk(g_sfx_8bit_clicky);
     Mix_CloseAudio();
     SDL_Quit();
-
 
     DPL("main return 0");
     return 0;

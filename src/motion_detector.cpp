@@ -1,6 +1,7 @@
 #include "motion_detector.hpp"
 #include "debug.hpp"
 #include "globals.hpp"
+#include "utils.hpp"
 #include <SDL2/SDL_mixer.h>
 #include <iostream>
 #include <opencv2/bgsegm.hpp>
@@ -10,6 +11,8 @@
 #include <unistd.h>
 
 #include <vector>
+
+extern Mix_Chunk* g_sfx_8bit_clicky;
 
 // e.g. "100x200,150x250,...;300x400,350x450,...";
 void MotionDetector::parse_ignore_contours(const std::string& input)
@@ -90,6 +93,61 @@ void MotionDetector::print_ignore_contours()
     std::cout << "\"" << std::endl;
 }
 
+void MotionDetector::parse_alarm_pixels(const std::string& input)
+{
+    std::vector<cv::Point> pixels;
+    std::stringstream ss(input);
+    std::string pointStr;
+
+    while (std::getline(ss, pointStr, ';')) {
+        size_t xPos = pointStr.find('x');
+
+        if (xPos != std::string::npos) {
+            int x = std::stoi(pointStr.substr(0, xPos));
+            int y = std::stoi(pointStr.substr(xPos + 1));
+            pixels.push_back(cv::Point(x, y));
+        }
+    }
+
+    m_alarm_pixels.update(pixels);
+}
+
+void MotionDetector::parse_alarm_pixels_file(const std::string& filename)
+{
+    std::vector<cv::Point> pixels;
+    std::ifstream file(filename);
+    std::string pointStr;
+
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file " << filename << std::endl;
+        return;
+    }
+
+    while (std::getline(file, pointStr)) {
+        size_t xPos = pointStr.find('x');
+        if (xPos != std::string::npos) {
+            int x = std::stoi(pointStr.substr(0, xPos));
+            int y = std::stoi(pointStr.substr(xPos + 1));
+            pixels.push_back(cv::Point(x, y));
+        }
+    }
+
+    file.close();
+
+    m_alarm_pixels.update(pixels);
+}
+
+void MotionDetector::print_alarm_pixels()
+{
+    auto aps = m_alarm_pixels.get();
+    std::cout << "-ap \"";
+    for (size_t i = 0; i < aps.size(); i++) {
+        std::cout << aps[i].x << "x" << aps[i].y;
+        if (i != aps.size() - 1) { std::cout << ","; }
+    }
+    std::cout << "\"" << std::endl;
+}
+
 MotionDetector::MotionDetector(const std::string& ip,
                                const std::string& username,
                                const std::string& password,
@@ -111,8 +169,11 @@ MotionDetector::MotionDetector(const std::string& ip,
                                int enable_minimap_fullscreen,
                                int enable_fullscreen_channel,
                                int enable_ignore_contours,
+                               int enable_alarm_pixels,
                                const std::string& ignore_contours,
-                               const std::string& ignore_contours_filename)
+                               const std::string& ignore_contours_filename,
+                               const std::string& alarm_pixels,
+                               const std::string& alarm_pixels_file)
     :
 
       m_display_width(width),
@@ -132,6 +193,7 @@ MotionDetector::MotionDetector(const std::string& ip,
       m_enable_minimap_fullscreen(enable_minimap_fullscreen),
       m_enable_fullscreen_channel(enable_fullscreen_channel),
       m_enable_ignore_contours(enable_ignore_contours),
+      m_enable_alarm_pixels(enable_alarm_pixels),
       m_canv3x3(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_canv3x2(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_main_display(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0)))
@@ -154,8 +216,11 @@ MotionDetector::MotionDetector(const std::string& ip,
 
     if (!ignore_contours.empty()) parse_ignore_contours(ignore_contours);
     if (!ignore_contours_filename.empty()) parse_ignore_contours_file(ignore_contours_filename);
-
     print_ignore_contours();
+
+    if (!alarm_pixels.empty()) parse_alarm_pixels(alarm_pixels);
+    if (!alarm_pixels_file.empty()) parse_alarm_pixels_file(alarm_pixels_file);
+    print_alarm_pixels();
 
     change_channel(current_channel);
 }
@@ -222,9 +287,25 @@ void MotionDetector::do_tour_logic()
     }
 }
 
-std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
+void MotionDetector::move_to_front(int ch)
 {
+    auto vec = m_king_chain.get();
+    std::vector<int> new_vec(vec.size());
 
+    int x = 0;
+    new_vec[x++] = ch;
+    for (size_t i = 0; i < vec.size(); i++) {
+        int value = vec[i];
+        if (value != ch) {
+            new_vec[x++] = value;
+        }
+    }
+    m_king_chain.update(new_vec);
+}
+
+void MotionDetector::detect_largest_motion_area_set_channel()
+{
+    // ignore area by blacking it out
     if (m_enable_ignore_contours) {
         auto ics = m_ignore_contours.get();
         auto ic = m_ignore_contour.get();
@@ -245,6 +326,7 @@ std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
         }
     }
 
+    // finding motion contours
     cv::Mat fgmask;
     m_fgbg->apply(m_frame0, fgmask);
 
@@ -253,28 +335,6 @@ std::vector<std::vector<cv::Point>> MotionDetector::find_contours_frame0()
 
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-    return contours;
-}
-
-void MotionDetector::move_to_front(int ch)
-{
-    auto vec = m_king_chain.get();
-    std::vector<int> new_vec(vec.size());
-
-    int x = 0;
-    new_vec[x++] = ch;
-    for (size_t i = 0; i < vec.size(); i++) {
-        int value = vec[i];
-        if (value != ch) {
-            new_vec[x++] = value;
-        }
-    }
-    m_king_chain.update(new_vec);
-}
-
-void MotionDetector::detect_largest_motion_area_set_channel()
-{
-    std::vector<std::vector<cv::Point>> contours = find_contours_frame0();
 
     // Find largest motion area
     cv::Rect motion_region;
@@ -339,6 +399,23 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         }
     }
 
+    constexpr int mini_ch_w = CROP_WIDTH / 3;
+    constexpr int mini_ch_h = CROP_HEIGHT / 2;
+
+    // drawing alarm pixels
+    if (m_enable_alarm_pixels && motion_region.size().width < mini_ch_w && motion_region.size().height < mini_ch_h) {
+        auto ap = m_alarm_pixels.get();
+        if (!ap.empty()) {
+            for (size_t i = 0; i < ap.size(); i++) {
+                auto p = ap[i];
+                m_frame0.at<cv::Vec3b>(p.y, p.x) = cv::Vec3b(0, 0, 255); // BGR
+                if (motion_region.contains(p)) {
+                    play_unique_sound(g_sfx_8bit_clicky); // play sfx alarm if in detected area
+                }
+            }
+        }
+    }
+
     if (m_enable_minimap || m_enable_minimap_fullscreen)
         m_frame0_dbuff.update(m_frame0);
 }
@@ -372,7 +449,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_display, "Info (i): " + bool_to_str(m_enable_info),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Display Mode (n/a/s/k/x): " + std::to_string(m_display_mode),
+    cv::putText(m_main_display, "Display Mode (n/a/s/k/w): " + std::to_string(m_display_mode),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_display, "Motion (m/l): " + bool_to_str(m_enable_motion) + "/" + bool_to_str(m_enable_motion_zoom_largest),
@@ -623,8 +700,6 @@ cv::Mat MotionDetector::paint_main_mat_top()
     return m_canv3x3;
 }
 
-extern Mix_Chunk* g_sfx_8bit_clicky;
-
 void MotionDetector::handle_keys()
 {
     // clang-format off
@@ -642,7 +717,7 @@ void MotionDetector::handle_keys()
     else if (key == 'n') { m_display_mode = DISPLAY_MODE_SINGLE; }
     else if (key == 'a') { m_display_mode = DISPLAY_MODE_ALL; }
     else if (key == 's') { m_display_mode = DISPLAY_MODE_SORT; }
-    else if (key == 'x') { m_display_mode = DISPLAY_MODE_TOP; }
+    else if (key == 'j') { m_display_mode = DISPLAY_MODE_TOP; }
     else if (key == 'k') { m_display_mode = DISPLAY_MODE_KING; }
     else if (key == KEY_LINUX_ARROW_UP || key == KEY_WIN_ARROW_UP) { m_display_mode++; if (m_display_mode > 4) { m_display_mode = 4; } }
     else if (key == KEY_LINUX_ARROW_DOWN || key == KEY_WIN_ARROW_DOWN) { m_display_mode--; if (m_display_mode < 0) { m_display_mode = 0; } }
@@ -694,12 +769,22 @@ void MotionDetector::handle_keys()
         }
     }
     else if (key == 'b') {
-        std::cout << "Clear all" << std::endl;
+        std::cout << "cleared all ignore area/contours" << std::endl;
         m_ignore_contours.update({});
         m_ignore_contour.update({});
     }
-    else if (key == 'w') {
-        Mix_PlayChannel(-1, g_sfx_8bit_clicky, 0);
+    else if (key == 'z') {
+        std::cout << "cleared all alarm pixels" << std::endl;
+        m_alarm_pixels.update({});
+    }
+    else if (key == 'x') {
+        auto aps = m_alarm_pixels.get();
+        auto mp = m_mouse_pos.get();
+        if (mp != cv::Point()) {
+            aps.push_back(mp);
+            m_alarm_pixels.update(aps);
+        }
+        print_alarm_pixels();
     }
     // clang-format on
 }

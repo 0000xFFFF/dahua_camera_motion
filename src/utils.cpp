@@ -1,4 +1,5 @@
 #include "globals.hpp"
+#include <SDL2/SDL_mixer.h>
 #include <array>
 #include <iostream>
 #include <sched.h>
@@ -57,4 +58,17 @@ std::pair<int, int> detect_screen_size(const int& index)
         std::cerr << "Warning: Failed to detect screen size: " << e.what() << std::endl;
     }
     return {W_HD, H_HD}; // Default fallback
+}
+
+void play_unique_sound(Mix_Chunk* sound) {
+    // Search if the same chunk is already playing
+    int num_channels = Mix_AllocateChannels(-1);
+    for (int i = 0; i < num_channels; i++) {
+        if (Mix_GetChunk(i) == sound && Mix_Playing(i)) {
+            return; // already playing, skip
+        }
+    }
+
+    // Not playing yet, find a free channel and play
+    Mix_PlayChannel(-1, sound, 0);
 }

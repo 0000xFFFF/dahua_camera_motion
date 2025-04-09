@@ -34,8 +34,11 @@ class MotionDetector {
                    int enable_minimap_fullscreen,
                    int enable_fullscreen_channel,
                    int enable_ignore_contours,
+                   int enable_alarm_pixels,
                    const std::string& ignore_contours,
-                   const std::string& ignore_contours_file_name);
+                   const std::string& ignore_contours_filename,
+                   const std::string& alarm_pixels,
+                   const std::string& alarm_pixels_file);
 
     void draw_loop();
     void stop();
@@ -44,7 +47,6 @@ class MotionDetector {
   private:
     // detecting
     void detect_motion();
-    std::vector<std::vector<cv::Point>> find_contours_frame0();
     void detect_largest_motion_area_set_channel();
 
     void change_channel(int ch);
@@ -68,6 +70,10 @@ class MotionDetector {
     void parse_ignore_contours_file(const std::string& filename);
     void print_ignore_contours();
 
+    void parse_alarm_pixels(const std::string& input);
+    void parse_alarm_pixels_file(const std::string& filename);
+    void print_alarm_pixels();
+
     std::atomic<bool> m_running{true};
 
     // set from params
@@ -89,6 +95,7 @@ class MotionDetector {
     std::atomic<bool> m_enable_minimap_fullscreen;
     std::atomic<bool> m_enable_fullscreen_channel;
     std::atomic<bool> m_enable_ignore_contours;
+    std::atomic<bool> m_enable_alarm_pixels;
 
     // init
     std::thread m_thread_detect_motion;
@@ -137,4 +144,7 @@ class MotionDetector {
     // ignore area
     DoubleBuffer<std::vector<std::vector<cv::Point>>> m_ignore_contours;
     DoubleBuffer<std::vector<cv::Point>> m_ignore_contour;
+
+    // alarm pixels
+    DoubleBuffer<std::vector<cv::Point>> m_alarm_pixels;
 };
