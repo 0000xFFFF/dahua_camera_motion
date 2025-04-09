@@ -446,16 +446,16 @@ void MotionDetector::draw_info()
     const int font_thickness = 2;
     int i = 0;
 
-    cv::putText(m_main_display, "Info (i): " + bool_to_str(m_enable_info),
+    cv::putText(m_main_display, "Info (i/PAGE UP): " + bool_to_str(m_enable_info),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Display Mode (n/a/s/k/w): " + std::to_string(m_display_mode),
+    cv::putText(m_main_display, "Display Mode (up/down,n,a,s,k,w): " + std::to_string(m_display_mode),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Motion (m/l): " + bool_to_str(m_enable_motion) + "/" + bool_to_str(m_enable_motion_zoom_largest),
+    cv::putText(m_main_display, "Motion (m/* ; l//): " + bool_to_str(m_enable_motion) + " ; " + bool_to_str(m_enable_motion_zoom_largest),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Minimap (o/0): " + bool_to_str(m_enable_minimap) + "/" + bool_to_str(m_enable_minimap_fullscreen),
+    cv::putText(m_main_display, "Minimap (o/PAGE DOWN ; 0): " + bool_to_str(m_enable_minimap) + " ; " + bool_to_str(m_enable_minimap_fullscreen),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_display, "Motion Detected: " + std::to_string(m_motion_detected) + " " + std::to_string(m_motion_detected_min_ms),
@@ -464,13 +464,16 @@ void MotionDetector::draw_info()
     cv::putText(m_main_display, "Channel (num): " + std::to_string(m_current_channel),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Fullscreen (f): " + bool_to_str(m_enable_fullscreen_channel),
+    cv::putText(m_main_display, "Fullscreen (f/+): " + bool_to_str(m_enable_fullscreen_channel),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Tour (t): " + bool_to_str(m_enable_tour),
+    cv::putText(m_main_display, "Tour (t/.): " + bool_to_str(m_enable_tour),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Reset (r)",
+    cv::putText(m_main_display, "Alarm (d/ENTER): " + bool_to_str(m_enable_alarm_pixels),
+                cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
+                font_scale, text_color, font_thickness);
+    cv::putText(m_main_display, "Reset (r/BACKSPACE)",
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
 }
@@ -772,6 +775,9 @@ void MotionDetector::handle_keys()
         std::cout << "cleared all ignore area/contours" << std::endl;
         m_ignore_contours.update({});
         m_ignore_contour.update({});
+    }
+    else if (key == 'd' || key == KEY_ENTER) {
+        m_enable_alarm_pixels = !m_enable_alarm_pixels;
     }
     else if (key == 'z') {
         std::cout << "cleared all alarm pixels" << std::endl;
