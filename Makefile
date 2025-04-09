@@ -113,6 +113,10 @@ totop:
 #
 # ==[ install / uninstall
 #
+music:
+	xxd -i sfx/clicky-8-bit-sfx.wav > src/sfx.h
+
+
 install:
 	install -m 755 $(EXEC) $(BINDIR)
 
