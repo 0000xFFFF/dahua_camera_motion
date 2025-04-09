@@ -1,6 +1,7 @@
 #include "motion_detector.hpp"
 #include "debug.hpp"
 #include "globals.hpp"
+#include <SDL2/SDL_mixer.h>
 #include <iostream>
 #include <opencv2/bgsegm.hpp>
 #include <opencv2/opencv.hpp>
@@ -623,6 +624,8 @@ cv::Mat MotionDetector::paint_main_mat_top()
     return m_canv3x3;
 }
 
+extern Mix_Chunk* g_sfx_8bit_clicky;
+
 void MotionDetector::handle_keys()
 {
     // clang-format off
@@ -695,6 +698,9 @@ void MotionDetector::handle_keys()
         std::cout << "Clear all" << std::endl;
         m_ignore_contours.update({});
         m_ignore_contour.update({});
+    }
+    else if (key == 'w') {
+        Mix_PlayChannel(-1, g_sfx_8bit_clicky, 0);
     }
     // clang-format on
 }

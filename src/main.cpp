@@ -7,9 +7,13 @@
 #include <sched.h>
 #include <string>
 
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
+
 #include "globals.hpp"
 #include "motion_detector.hpp"
 #include "utils.h"
+#include "debug.hpp"
 
 #ifdef DEBUG_CPU
 #include "debug.hpp"
@@ -17,13 +21,16 @@
 
 std::unique_ptr<MotionDetector> motionDetector;
 
+char g_sfxp_8bit_clicky[] = "sfx/clicky-8-bit-sfx.wav";
+Mix_Chunk* g_sfx_8bit_clicky;
+
 int main(int argc, char* argv[])
 {
     // Add signal handling
     std::signal(SIGINT, [](int) {
         motionDetector->stop();
         motionDetector.release();
-        std::cout << "exit" << std::endl;
+        std::cout << "SIGINT" << std::endl;
         std::exit(0);
     });
 
@@ -147,6 +154,13 @@ int main(int argc, char* argv[])
         .help("specify ignore contours/areas inside file (seperated by new line) (e.g.: <x>x<y>,...\\n<x>x<y>,...)")
         .default_value(IGNORE_CONTOURS_FILENAME);
 
+    // init sdl for playing sounds
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) return 1;
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) return 1;
+
+    g_sfx_8bit_clicky = Mix_LoadWAV(g_sfxp_8bit_clicky);
+    if (!g_sfx_8bit_clicky) { std::cout << "can't load sfx: " << g_sfxp_8bit_clicky << std::endl; return 1; }
+
     try {
         program.parse_args(argc, argv);
 
@@ -185,8 +199,7 @@ int main(int argc, char* argv[])
                 program.get<int>("enable_fullscreen_channel"),
                 program.get<int>("enable_ignore_contours"),
                 program.get<std::string>("ignore_contours"),
-                program.get<std::string>("ignore_contours_filename")
-                    );
+                program.get<std::string>("ignore_contours_filename"));
 
             motionDetector->draw_loop();
         }
@@ -196,5 +209,13 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    Mix_PlayChannel(-1, g_sfx_8bit_clicky, 0);
+
+    Mix_FreeChunk(g_sfx_8bit_clicky);
+    Mix_CloseAudio();
+    SDL_Quit();
+
+
+    DPL("main return 0");
     return 0;
 }
