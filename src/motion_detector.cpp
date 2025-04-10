@@ -1,6 +1,7 @@
 #include "motion_detector.hpp"
 #include "debug.hpp"
 #include "globals.hpp"
+#include "opencv2/highgui.hpp"
 #include "utils.hpp"
 #include <SDL2/SDL_mixer.h>
 #include <iostream>
@@ -337,6 +338,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     // Find largest motion area
+    std::vector<cv::Point> max_contour;
     cv::Rect motion_region;
     double max_area = 0;
     m_motion_detected = false;
@@ -354,6 +356,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
 
                 if (area > max_area) {
                     max_area = area;
+                    max_contour = contour;
                     motion_region = rect;
                     m_motion_detected = true;
                 }
@@ -407,10 +410,13 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         auto ap = m_alarm_pixels.get();
         if (!ap.empty()) {
             for (size_t i = 0; i < ap.size(); i++) {
-                auto p = ap[i];
+                cv::Point p = ap[i];
                 m_frame0.at<cv::Vec3b>(p.y, p.x) = cv::Vec3b(0, 0, 255); // BGR
-                if (motion_region.contains(p)) {
-                    play_unique_sound(g_sfx_8bit_clicky); // play sfx alarm if in detected area
+
+                if (!max_contour.empty()) {
+                    if (cv::pointPolygonTest(max_contour, cv::Point2f(p.x, p.y), false) >= 0) {
+                        play_unique_sound(g_sfx_8bit_clicky); // play sfx alarm if in detected area
+                    }
                 }
             }
         }
@@ -860,6 +866,9 @@ void on_mouse(int event, int x, int y, int flags, void* userdata)
     if (event == cv::EVENT_MOUSEMOVE) {
         MotionDetector* detector = static_cast<MotionDetector*>(userdata);
         detector->m_mouse_pos.update(cv::Point(x, y));
+    }
+    else if (event == cv::EVENT_LBUTTONDOWN) {
+        std::cout << "click: " << x << "x" << y << std::endl;
     }
 }
 
