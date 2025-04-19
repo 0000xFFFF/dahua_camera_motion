@@ -179,10 +179,9 @@
 
 // milis
 // #define SLEEP_MS_MOTION 300
-// #define SLEEP_MS_DRAW 200           // idle
-// #define SLEEP_MS_DRAW_DETECTED 65   // motion detected
+// #define SLEEP_MS_DRAW 200
 // #define SLEEP_MS_ERROR 10
-// #define SLEEP_MS_FRAME 50  // frame reader sleep
+// #define SLEEP_MS_FRAME 50 // frame reader sleep
 
 #ifndef TOUR_MS
 #define TOUR_MS 3000
