@@ -424,6 +424,12 @@ void MotionDetector::detect_largest_motion_area_set_channel()
 
     if (m_enable_minimap || m_enable_minimap_fullscreen)
         m_frame0_dbuff.update(m_frame0);
+
+#ifdef SLEEP_MS_DRAW
+#ifdef SLEEP_MS_DRAW_DETECTED
+    m_draw_sleep_ms = (m_motion_detected || m_motion_detected_min_ms || m_motion_detect_linger) ? SLEEP_MS_DRAW_DETECTED : SLEEP_MS_DRAW;
+#endif
+#endif
 }
 
 void MotionDetector::draw_minimap()
@@ -902,10 +908,6 @@ void MotionDetector::draw_loop()
 #endif
 
         while (m_running) {
-
-#ifdef SLEEP_MS_DRAW_DETECTED
-            m_draw_sleep_ms = SLEEP_MS_DRAW;
-#endif
 
 #ifdef DEBUG_FPS
             i++;
