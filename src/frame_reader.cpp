@@ -280,7 +280,7 @@ void FrameReader::connect_and_read()
         if (m_sleep) {
             {
                 std::unique_lock<std::mutex> lock(m_mtx);
-                m_cv.wait_for(lock, std::chrono::milliseconds(SLEEP_MS_FRAME), [&] { return !m_sleep; });
+                m_cv.wait_for(lock, std::chrono::milliseconds(SLEEP_MS_FRAME), [&] { return !m_running || !m_sleep; });
             }
 
             if (!m_running) { break; }
