@@ -80,6 +80,13 @@ void MotionDetector::parse_ignore_contours_file(const std::string& filename)
     m_ignore_contours.update(contours);
 }
 
+void print_contour(const std::vector<cv::Point>& contour) {
+    for (size_t x = 0; x < contour.size(); x++) {
+        std::cout << contour[x].x << "x" << contour[x].y;
+        if (x != contour.size() - 1) { std::cout << ","; }
+    }
+}
+
 void MotionDetector::print_ignore_contours()
 {
     auto ignore_contours = m_ignore_contours.get();
@@ -769,6 +776,9 @@ void MotionDetector::handle_keys()
     }
     else if (key == 'v') {
         auto ic = m_ignore_contour.get();
+        std::cout << "contour: ";
+        print_contour(ic);
+        std::cout << std::endl;
         if (!ic.empty()) {
             auto ics = m_ignore_contours.get();
             ics.push_back(ic);
