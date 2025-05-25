@@ -36,7 +36,7 @@ class MotionDetector {
                    int enable_ignore_contours,
                    int enable_alarm_pixels,
                    const std::string& ignore_contours,
-                   const std::string& ignore_contours_filename,
+                   const std::string& ignore_contours_file,
                    const std::string& alarm_pixels,
                    const std::string& alarm_pixels_file);
 

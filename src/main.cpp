@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
     program.add_argument("-ic", "--ignore_contours")
         .help("specify ignore contours/areas (e.g.: <x>x<y>,...;<x>x<y>,...)")
         .default_value(IGNORE_CONTOURS);
-    program.add_argument("-icf", "--ignore_contours_filename")
+    program.add_argument("-icf", "--ignore_contours_file")
         .help("specify ignore contours/areas inside file (seperated by new line) (e.g.: <x>x<y>,...\\n<x>x<y>,...)")
         .default_value(IGNORE_CONTOURS_FILENAME);
 
@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
                 program.get<int>("enable_ignore_contours"),
                 program.get<int>("enable_alarm_pixels"),
                 program.get<std::string>("ignore_contours"),
-                program.get<std::string>("ignore_contours_filename"),
+                program.get<std::string>("ignore_contours_file"),
                 program.get<std::string>("alarm_pixels"),
                 program.get<std::string>("alarm_pixels_file"));
 

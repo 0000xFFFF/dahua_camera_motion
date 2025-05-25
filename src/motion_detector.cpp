@@ -172,7 +172,7 @@ MotionDetector::MotionDetector(const std::string& ip,
                                int enable_ignore_contours,
                                int enable_alarm_pixels,
                                const std::string& ignore_contours,
-                               const std::string& ignore_contours_filename,
+                               const std::string& ignore_contours_file,
                                const std::string& alarm_pixels,
                                const std::string& alarm_pixels_file)
     :
@@ -216,7 +216,7 @@ MotionDetector::MotionDetector(const std::string& ip,
     m_thread_detect_motion = std::thread([this]() { detect_motion(); });
 
     if (!ignore_contours.empty()) parse_ignore_contours(ignore_contours);
-    if (!ignore_contours_filename.empty()) parse_ignore_contours_file(ignore_contours_filename);
+    if (!ignore_contours_file.empty()) parse_ignore_contours_file(ignore_contours_file);
     print_ignore_contours();
 
     if (!alarm_pixels.empty()) parse_alarm_pixels(alarm_pixels);
