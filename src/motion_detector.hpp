@@ -10,6 +10,8 @@
 #include "buffers.hpp"
 #include "frame_reader.hpp"
 
+#include "globals.hpp"
+
 class MotionDetector {
 
   public:
@@ -38,7 +40,10 @@ class MotionDetector {
                    const std::string& ignore_contours,
                    const std::string& ignore_contours_file,
                    const std::string& alarm_pixels,
-                   const std::string& alarm_pixels_file);
+                   const std::string& alarm_pixels_file,
+                   int focus_channel,
+                   const std::string& focus_channel_area,
+                   int focus_channel_sound);
 
     void draw_loop();
     void stop();
@@ -74,6 +79,8 @@ class MotionDetector {
     void parse_alarm_pixels_file(const std::string& filename);
     void print_alarm_pixels();
 
+    std::tuple<long, long, long, long> parse_area(const std::string& input);
+
     std::atomic<bool> m_running{true};
 
     // set from params
@@ -96,6 +103,13 @@ class MotionDetector {
     std::atomic<bool> m_enable_fullscreen_channel;
     std::atomic<bool> m_enable_ignore_contours;
     std::atomic<bool> m_enable_alarm_pixels;
+    std::atomic<int> m_focus_channel{FOCUS_CHANNEL};
+    std::atomic<bool> m_focus_channel_area_set;
+    std::atomic<long> m_focus_channel_area_x;
+    std::atomic<long> m_focus_channel_area_y;
+    std::atomic<long> m_focus_channel_area_w;
+    std::atomic<long> m_focus_channel_area_h;
+    std::atomic<int> m_focus_channel_sound;
 
     // init
     std::thread m_thread_detect_motion;

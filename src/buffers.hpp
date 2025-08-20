@@ -28,11 +28,14 @@ class LockFreeRingBuffer {
 
     std::optional<T> pop()
     {
-        if (m_head == m_tail)
+        size_t current_tail = m_tail.load(std::memory_order_relaxed);
+        size_t current_head = m_head.load(std::memory_order_acquire);
+
+        if (current_head == current_tail)
             return std::nullopt; // Buffer empty
 
-        T item = std::move(m_buffer[m_tail]);
-        m_tail.store((m_tail + 1) % Size, std::memory_order_release);
+        T item = std::move(m_buffer[current_tail]);
+        m_tail.store((current_tail + 1) % Size, std::memory_order_release);
         return item;
     }
 };

@@ -207,4 +207,16 @@
 #define DEFAULT_WINDOW_NAME "Motion"
 #endif
 
+#ifndef FOCUS_CHANNEL
+#define FOCUS_CHANNEL -1
+#endif
+
+#ifndef FOCUS_CHANNEL_AREA
+#define FOCUS_CHANNEL_AREA ""
+#endif
+
+#ifndef FOCUS_CHANNEL_SOUND
+#define FOCUS_CHANNEL_SOUND 0
+#endif
+
 // #define SLEEP_MS_FRAME 300

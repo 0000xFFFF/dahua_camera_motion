@@ -11,12 +11,14 @@ class FrameReader {
     FrameReader(int channel,
                 const std::string& ip,
                 const std::string& username,
-                const std::string& password);
+                const std::string& password,
+                bool autostart);
 
     cv::Mat get_latest_frame(bool no_empty_frame);
     void disable_sleep();
     void enable_sleep();
     double get_fps();
+    void start();
     void stop();
 
   private:
