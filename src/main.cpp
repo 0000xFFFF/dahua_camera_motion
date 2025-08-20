@@ -185,7 +185,7 @@ int main(int argc, char* argv[])
         .default_value(ALARM_PIXELS_FILE);
 
     program.add_argument("-fc", "--focus_channel")
-        .help("special mode that focuses on single channel when detecting motion")
+        .help("special mode that focuses on single channel when detecting motion (don't load anything else")
         .default_value(FOCUS_CHANNEL)
         .scan<'i', int>();
     program.add_argument("-fca", "--focus_channel_area")
