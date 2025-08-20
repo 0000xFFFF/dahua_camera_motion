@@ -104,6 +104,7 @@ class MotionDetector {
     std::atomic<bool> m_enable_ignore_contours;
     std::atomic<bool> m_enable_alarm_pixels;
     std::atomic<int> m_focus_channel{FOCUS_CHANNEL};
+    std::atomic<bool> m_focus_channel_area_set;
     std::atomic<long> m_focus_channel_area_x;
     std::atomic<long> m_focus_channel_area_y;
     std::atomic<long> m_focus_channel_area_w;

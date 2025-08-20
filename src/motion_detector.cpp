@@ -17,15 +17,19 @@ extern Mix_Chunk* g_sfx_8bit_clicky;
 
 std::tuple<long, long, long, long> MotionDetector::parse_area(const std::string& input)
 {
-    size_t posX1 = input.find('X');
     size_t posSemicolon = input.find(';');
-    size_t posX2 = input.rfind('X');
+    std::string first = input.substr(0, posSemicolon);
+    std::string second = input.substr(posSemicolon + 1);
 
-    long x = std::stol(input.substr(0, posX1));
-    long y = std::stol(input.substr(posX1 + 1, posSemicolon - posX1 - 1));
-    long w = std::stol(input.substr(posSemicolon + 1, posX2 - posSemicolon - 1));
-    long h = std::stol(input.substr(posX2 + 1));
+    size_t posX1 = first.find('x');
+    size_t posX2 = second.find('x');
 
+    long x = std::stol(first.substr(0, posX1));
+    long y = std::stol(first.substr(posX1 + 1));
+    long w = std::stol(second.substr(0, posX2));
+    long h = std::stol(second.substr(posX2 + 1));
+
+    std::cout << x << " " << y << " " << w << " " << h << std::endl;
     return std::make_tuple(x, y, w, h);
 }
 
@@ -228,7 +232,8 @@ MotionDetector::MotionDetector(const std::string& ip,
       m_main_display(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0)))
 
 {
-    std::cout << "canv size: " << width << "x" << height << std::endl;
+
+    D(std::cout << "m_focus_channel_alarm: " << m_focus_channel_alarm.load() << std::endl);
 
     if (!ignore_contours.empty()) parse_ignore_contours(ignore_contours);
     if (!ignore_contours_file.empty()) parse_ignore_contours_file(ignore_contours_file);
@@ -263,12 +268,44 @@ MotionDetector::MotionDetector(const std::string& ip,
             m_focus_channel_area_y = y;
             m_focus_channel_area_w = w;
             m_focus_channel_area_h = h;
+            m_focus_channel_area_set = true;
+            D(std::cout << "focus channel area: "
+                        << m_focus_channel_area_x << "x"
+                        << m_focus_channel_area_y << ";"
+                        << m_focus_channel_area_w << "x"
+                        << m_focus_channel_area_h << std::endl;);
         }
 
         UNUSED(focus_channel_alarm);
     }
 
     m_thread_detect_motion = std::thread([this]() { detect_motion(); });
+
+    D(std::cout << "m_display_width: " << m_display_width << std::endl);
+    D(std::cout << "m_display_height: " << m_display_height << std::endl);
+    D(std::cout << "m_fullscreen: " << m_fullscreen << std::endl);
+    D(std::cout << "m_display_mode: " << m_display_mode.load() << std::endl);
+    D(std::cout << "m_motion_min_area: " << m_motion_min_area << std::endl);
+    D(std::cout << "m_motion_min_rect_area: " << m_motion_min_rect_area << std::endl);
+    D(std::cout << "m_motion_detect_min_ms: " << m_motion_detect_min_ms << std::endl);
+    D(std::cout << "m_current_channel: " << m_current_channel.load() << std::endl);
+    D(std::cout << "m_enable_motion: " << m_enable_motion.load() << std::endl);
+    D(std::cout << "m_enable_motion_zoom_largest: " << m_enable_motion_zoom_largest.load() << std::endl);
+    D(std::cout << "m_enable_tour: " << m_enable_tour.load() << std::endl);
+    D(std::cout << "m_enable_info: " << m_enable_info.load() << std::endl);
+    D(std::cout << "m_enable_info_line: " << m_enable_info_line.load() << std::endl);
+    D(std::cout << "m_enable_info_rect: " << m_enable_info_rect.load() << std::endl);
+    D(std::cout << "m_enable_minimap: " << m_enable_minimap.load() << std::endl);
+    D(std::cout << "m_enable_minimap_fullscreen: " << m_enable_minimap_fullscreen.load() << std::endl);
+    D(std::cout << "m_enable_fullscreen_channel: " << m_enable_fullscreen_channel.load() << std::endl);
+    D(std::cout << "m_enable_ignore_contours: " << m_enable_ignore_contours.load() << std::endl);
+    D(std::cout << "m_enable_alarm_pixels: " << m_enable_alarm_pixels.load() << std::endl);
+    D(std::cout << "m_focus_channel: " << m_focus_channel.load() << std::endl);
+    D(std::cout << "m_focus_channel_area_set: " << m_focus_channel_area_set.load() << std::endl);
+    D(std::cout << "m_focus_channel_area_x: " << m_focus_channel_area_x.load() << std::endl);
+    D(std::cout << "m_focus_channel_area_y: " << m_focus_channel_area_y.load() << std::endl);
+    D(std::cout << "m_focus_channel_area_w: " << m_focus_channel_area_w.load() << std::endl);
+    D(std::cout << "m_focus_channel_area_h: " << m_focus_channel_area_h.load() << std::endl);
 }
 
 void MotionDetector::change_channel(int ch)
@@ -889,9 +926,29 @@ void MotionDetector::detect_motion()
             }
             else {
                 cv::Mat frame0_get = m_readers[m_focus_channel]->get_latest_frame(false);
+
                 if (!frame0_get.empty()) {
-                    cv::resize(frame0_get, m_frame0, cv::Size(m_display_width, m_display_height));
-                    detect_largest_motion_area_set_channel();
+                    if (m_focus_channel_area_set.load()) { // Check if the area is set
+                        // Ensure the coordinates are within the bounds of the frame
+                        long x = std::max(0L, m_focus_channel_area_x.load());
+                        long y = std::max(0L, m_focus_channel_area_y.load());
+                        long w = m_focus_channel_area_w.load();
+                        long h = m_focus_channel_area_h.load();
+
+                        if (x + w > frame0_get.cols) w = frame0_get.cols - x;
+                        if (y + h > frame0_get.rows) h = frame0_get.rows - y;
+
+                        if (w > 0 && h > 0) {
+                            // Crop the subregion
+                            cv::Mat roi = frame0_get(cv::Rect(x, y, w, h));
+                            cv::resize(roi, m_frame0, cv::Size(m_display_width, m_display_height));
+                            detect_largest_motion_area_set_channel();
+                        }
+                    }
+                    else {
+                        cv::resize(frame0_get, m_frame0, cv::Size(m_display_width, m_display_height));
+                        detect_largest_motion_area_set_channel();
+                    }
                 }
             }
         }
@@ -1003,6 +1060,8 @@ void MotionDetector::draw_loop()
                 else {
                     m_main_display = get;
                 }
+
+                m_main_display_updated = true;
             }
 
             if (m_enable_minimap) { draw_minimap(); }
