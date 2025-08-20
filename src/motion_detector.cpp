@@ -469,7 +469,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         }
     }
 
-    if (m_enable_minimap || m_enable_minimap_fullscreen)
+    if (m_enable_minimap || m_enable_minimap_fullscreen || m_focus_channel != -1)
         m_frame0_dbuff.update(m_frame0);
 }
 
