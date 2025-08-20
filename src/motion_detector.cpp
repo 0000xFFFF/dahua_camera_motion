@@ -1059,8 +1059,6 @@ void MotionDetector::draw_loop()
                 else {
                     m_main_display = get;
                 }
-
-                m_main_display_updated = true;
             }
 
             if (m_enable_minimap) { draw_minimap(); }
