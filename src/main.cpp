@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
         .scan<'i', int>();
     program.add_argument("-fca", "--focus_channel_area")
         .help("specify motion area to zoom to (work with) (e.g.: \"<x>x<y>;<w>x<h>\"")
-        .metavar("1-6")
+        .metavar("<x>x<y>;<w>x<h>")
         .default_value(FOCUS_CHANNEL_AREA);
 
     program.add_argument("-fcaa", "--focus_channel_alarm")
