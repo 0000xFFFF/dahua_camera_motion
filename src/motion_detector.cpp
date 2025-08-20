@@ -29,7 +29,6 @@ std::tuple<long, long, long, long> MotionDetector::parse_area(const std::string&
     long w = std::stol(second.substr(0, posX2));
     long h = std::stol(second.substr(posX2 + 1));
 
-    std::cout << x << " " << y << " " << w << " " << h << std::endl;
     return std::make_tuple(x, y, w, h);
 }
 
