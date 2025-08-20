@@ -215,8 +215,8 @@
 #define FOCUS_CHANNEL_AREA ""
 #endif
 
-#ifndef FOCUS_CHANNEL_ALARM
-#define FOCUS_CHANNEL_ALARM 0
+#ifndef FOCUS_CHANNEL_SOUND
+#define FOCUS_CHANNEL_SOUND 0
 #endif
 
 // #define SLEEP_MS_FRAME 300

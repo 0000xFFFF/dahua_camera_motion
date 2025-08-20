@@ -193,9 +193,9 @@ int main(int argc, char* argv[])
         .metavar("<x>x<y>;<w>x<h>")
         .default_value(FOCUS_CHANNEL_AREA);
 
-    program.add_argument("-fcaa", "--focus_channel_alarm")
-        .help("alarm any motion in specified area from -fca")
-        .default_value(FOCUS_CHANNEL_ALARM)
+    program.add_argument("-fcs", "--focus_channel_sound")
+        .help("make sound if motion detected")
+        .default_value(FOCUS_CHANNEL_SOUND)
         .scan<'i', int>();
 
     // init sdl for playing sounds
@@ -253,7 +253,7 @@ int main(int argc, char* argv[])
                 program.get<std::string>("alarm_pixels_file"),
                 program.get<int>("focus_channel"),
                 program.get<std::string>("focus_channel_area"),
-                program.get<int>("focus_channel_alarm")
+                program.get<int>("focus_channel_sound")
 
             );
 

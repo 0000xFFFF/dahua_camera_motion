@@ -43,7 +43,7 @@ class MotionDetector {
                    const std::string& alarm_pixels_file,
                    int focus_channel,
                    const std::string& focus_channel_area,
-                   int focus_channel_alarm);
+                   int focus_channel_sound);
 
     void draw_loop();
     void stop();
@@ -109,7 +109,7 @@ class MotionDetector {
     std::atomic<long> m_focus_channel_area_y;
     std::atomic<long> m_focus_channel_area_w;
     std::atomic<long> m_focus_channel_area_h;
-    std::atomic<int> m_focus_channel_alarm;
+    std::atomic<int> m_focus_channel_sound;
 
     // init
     std::thread m_thread_detect_motion;

@@ -202,7 +202,7 @@ MotionDetector::MotionDetector(const std::string& ip,
                                const std::string& alarm_pixels_file,
                                int focus_channel,
                                const std::string& focus_channel_area,
-                               int focus_channel_alarm)
+                               int focus_channel_sound)
     :
 
       m_display_width(width),
@@ -225,15 +225,12 @@ MotionDetector::MotionDetector(const std::string& ip,
       m_enable_ignore_contours(enable_ignore_contours),
       m_enable_alarm_pixels(enable_alarm_pixels),
       m_focus_channel(focus_channel),
-      m_focus_channel_alarm(focus_channel_alarm),
+      m_focus_channel_sound(focus_channel_sound),
       m_canv3x3(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_canv3x2(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_main_display(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0)))
 
 {
-
-    D(std::cout << "m_focus_channel_alarm: " << m_focus_channel_alarm.load() << std::endl);
-
     if (!ignore_contours.empty()) parse_ignore_contours(ignore_contours);
     if (!ignore_contours_file.empty()) parse_ignore_contours_file(ignore_contours_file);
     print_ignore_contours();
@@ -274,8 +271,6 @@ MotionDetector::MotionDetector(const std::string& ip,
                         << m_focus_channel_area_w << "x"
                         << m_focus_channel_area_h << std::endl;);
         }
-
-        UNUSED(focus_channel_alarm);
     }
 
     m_thread_detect_motion = std::thread([this]() { detect_motion(); });
@@ -305,6 +300,7 @@ MotionDetector::MotionDetector(const std::string& ip,
     D(std::cout << "m_focus_channel_area_y: " << m_focus_channel_area_y.load() << std::endl);
     D(std::cout << "m_focus_channel_area_w: " << m_focus_channel_area_w.load() << std::endl);
     D(std::cout << "m_focus_channel_area_h: " << m_focus_channel_area_h.load() << std::endl);
+    D(std::cout << "m_focus_channel_sound: " << m_focus_channel_sound.load() << std::endl);
 }
 
 void MotionDetector::change_channel(int ch)
@@ -471,6 +467,10 @@ void MotionDetector::detect_largest_motion_area_set_channel()
             }
             m_motion_detect_linger_start = now;
             m_motion_detect_linger = true;
+        }
+
+        if (m_motion_detected_min_ms && m_focus_channel != -1 && m_focus_channel_sound) {
+            play_unique_sound(g_sfx_8bit_clicky); // play sfx alarm if in detected area
         }
     }
     else {
