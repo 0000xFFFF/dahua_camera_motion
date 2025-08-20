@@ -19,7 +19,8 @@ extern "C" {
 FrameReader::FrameReader(int channel,
                          const std::string& ip,
                          const std::string& username,
-                         const std::string& password)
+                         const std::string& password,
+                         bool autostart)
     :
 
       m_ip(ip),
@@ -30,7 +31,9 @@ FrameReader::FrameReader(int channel,
 
     put_placeholder();
 
-    m_thread = std::thread([this]() { connect_and_read(); });
+    if (autostart) {
+        start();
+    }
 }
 
 void FrameReader::put_placeholder()
@@ -310,4 +313,11 @@ void FrameReader::connect_and_read()
     sws_freeContext(swsCtx);
 
     D(std::cout << "Exiting readFrames() thread for channel " << m_channel << std::endl);
+}
+
+void FrameReader::start()
+{
+    if (!m_thread.joinable()) {
+        m_thread = std::thread([this] { connect_and_read(); });
+    }
 }

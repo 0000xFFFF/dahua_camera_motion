@@ -15,6 +15,20 @@
 
 extern Mix_Chunk* g_sfx_8bit_clicky;
 
+std::tuple<long, long, long, long> MotionDetector::parse_area(const std::string& input)
+{
+    size_t posX1 = input.find('X');
+    size_t posSemicolon = input.find(';');
+    size_t posX2 = input.rfind('X');
+
+    long x = std::stol(input.substr(0, posX1));
+    long y = std::stol(input.substr(posX1 + 1, posSemicolon - posX1 - 1));
+    long w = std::stol(input.substr(posSemicolon + 1, posX2 - posSemicolon - 1));
+    long h = std::stol(input.substr(posX2 + 1));
+
+    return std::make_tuple(x, y, w, h);
+}
+
 // e.g. "100x200,150x250,...;300x400,350x450,...";
 void MotionDetector::parse_ignore_contours(const std::string& input)
 {
@@ -80,7 +94,8 @@ void MotionDetector::parse_ignore_contours_file(const std::string& filename)
     m_ignore_contours.update(contours);
 }
 
-void print_contour(const std::vector<cv::Point>& contour) {
+void print_contour(const std::vector<cv::Point>& contour)
+{
     for (size_t x = 0; x < contour.size(); x++) {
         std::cout << contour[x].x << "x" << contour[x].y;
         if (x != contour.size() - 1) { std::cout << ","; }
@@ -181,7 +196,10 @@ MotionDetector::MotionDetector(const std::string& ip,
                                const std::string& ignore_contours,
                                const std::string& ignore_contours_file,
                                const std::string& alarm_pixels,
-                               const std::string& alarm_pixels_file)
+                               const std::string& alarm_pixels_file,
+                               int focus_channel,
+                               const std::string& focus_channel_area,
+                               int focus_channel_alarm)
     :
 
       m_display_width(width),
@@ -191,6 +209,7 @@ MotionDetector::MotionDetector(const std::string& ip,
       m_motion_min_area(area),
       m_motion_min_rect_area(rarea),
       m_motion_detect_min_ms(motion_detect_min_ms),
+      m_current_channel(current_channel),
       m_enable_motion(enable_motion),
       m_enable_motion_zoom_largest(enable_motion_zoom_largest),
       m_enable_tour(enable_tour),
@@ -202,25 +221,14 @@ MotionDetector::MotionDetector(const std::string& ip,
       m_enable_fullscreen_channel(enable_fullscreen_channel),
       m_enable_ignore_contours(enable_ignore_contours),
       m_enable_alarm_pixels(enable_alarm_pixels),
+      m_focus_channel(focus_channel),
+      m_focus_channel_alarm(focus_channel_alarm),
       m_canv3x3(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_canv3x2(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_main_display(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0)))
 
 {
-
     std::cout << "canv size: " << width << "x" << height << std::endl;
-
-    // m_fgbg = cv::createBackgroundSubtractorMOG2(20, 32, true);
-    m_fgbg = cv::createBackgroundSubtractorKNN(20, 400.0, true);
-    // m_fgbg = cv::bgsegm::createBackgroundSubtractorCNT(true, 15, true);
-
-    m_readers.push_back(std::make_unique<FrameReader>(0, ip, username, password));
-
-    for (int channel = 1; channel <= 6; ++channel) {
-        m_readers.push_back(std::make_unique<FrameReader>(channel, ip, username, password));
-    }
-
-    m_thread_detect_motion = std::thread([this]() { detect_motion(); });
 
     if (!ignore_contours.empty()) parse_ignore_contours(ignore_contours);
     if (!ignore_contours_file.empty()) parse_ignore_contours_file(ignore_contours_file);
@@ -230,7 +238,37 @@ MotionDetector::MotionDetector(const std::string& ip,
     if (!alarm_pixels_file.empty()) parse_alarm_pixels_file(alarm_pixels_file);
     print_alarm_pixels();
 
-    change_channel(current_channel);
+    // m_fgbg = cv::createBackgroundSubtractorMOG2(20, 32, true);
+    m_fgbg = cv::createBackgroundSubtractorKNN(20, 400.0, true);
+    // m_fgbg = cv::bgsegm::createBackgroundSubtractorCNT(true, 15, true);
+    //
+    if (focus_channel == -1) {
+
+        m_readers.emplace_back(std::make_unique<FrameReader>(0, ip, username, password, true));
+        for (int channel = 1; channel <= 6; ++channel) {
+            m_readers.emplace_back(std::make_unique<FrameReader>(channel, ip, username, password, true));
+        }
+
+        change_channel(current_channel);
+    }
+    else {
+
+        for (int channel = 0; channel <= 6; channel++) {
+            m_readers.emplace_back(std::make_unique<FrameReader>(channel, ip, username, password, channel == focus_channel));
+        }
+
+        if (!focus_channel_area.empty() && focus_channel_area != "") {
+            auto [x, y, w, h] = parse_area(focus_channel_area);
+            m_focus_channel_area_x = x;
+            m_focus_channel_area_y = y;
+            m_focus_channel_area_w = w;
+            m_focus_channel_area_h = h;
+        }
+
+        UNUSED(focus_channel_alarm);
+    }
+
+    m_thread_detect_motion = std::thread([this]() { detect_motion(); });
 }
 
 void MotionDetector::change_channel(int ch)
@@ -387,11 +425,13 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         auto motion_duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_motion_detect_start).count();
         m_motion_detected_min_ms = motion_duration >= m_motion_detect_min_ms;
         if (m_motion_detected_min_ms) {
-            float rel_x = motion_region.x / static_cast<float>(CROP_WIDTH);
-            float rel_y = motion_region.y / static_cast<float>(CROP_HEIGHT);
-            int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
-            if (m_current_channel != new_channel) {
-                change_channel(new_channel);
+            if (m_focus_channel == -1) {
+                float rel_x = motion_region.x / static_cast<float>(CROP_WIDTH);
+                float rel_y = motion_region.y / static_cast<float>(CROP_HEIGHT);
+                int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
+                if (m_current_channel != new_channel) {
+                    change_channel(new_channel);
+                }
             }
             m_motion_detect_linger_start = now;
             m_motion_detect_linger = true;
@@ -826,7 +866,7 @@ void MotionDetector::detect_motion()
     m_readers[0]->disable_sleep();
 #endif
 
-    // std::cout << "starting motion detection" << std::endl;
+    D(std::cout << "starting motion detection" << std::endl);
 
     while (m_running) {
 
@@ -840,10 +880,19 @@ void MotionDetector::detect_motion()
 
         m_motion_detected = false;
         if (m_enable_motion) {
-            cv::Mat frame0_get = m_readers[0]->get_latest_frame(false);
-            if (!frame0_get.empty() && frame0_get.size().width == W_0 && frame0_get.size().height == H_0) {
-                m_frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
-                detect_largest_motion_area_set_channel();
+            if (m_focus_channel == -1) {
+                cv::Mat frame0_get = m_readers[0]->get_latest_frame(false);
+                if (!frame0_get.empty() && frame0_get.size().width == W_0 && frame0_get.size().height == H_0) {
+                    m_frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
+                    detect_largest_motion_area_set_channel();
+                }
+            }
+            else {
+                cv::Mat frame0_get = m_readers[m_focus_channel]->get_latest_frame(false);
+                if (!frame0_get.empty()) {
+                    cv::resize(frame0_get, m_frame0, cv::Size(m_display_width, m_display_height));
+                    detect_largest_motion_area_set_channel();
+                }
             }
         }
 
@@ -868,6 +917,8 @@ void MotionDetector::detect_motion()
             m_cv_motion.wait_for(lock, std::chrono::milliseconds(m_motion_sleep_ms), [&] { return !m_running; });
         }
     }
+
+    D(std::cout << "ending motion detection" << std::endl);
 }
 
 void on_mouse(int event, int x, int y, int flags, void* userdata)
@@ -884,7 +935,6 @@ void on_mouse(int event, int x, int y, int flags, void* userdata)
 
 void MotionDetector::draw_loop()
 {
-
     cv::namedWindow(DEFAULT_WINDOW_NAME);
     // cv::namedWindow(DEFAULT_WINDOW_NAME, cv::WINDOW_AUTOSIZE);
     cv::setMouseCallback(DEFAULT_WINDOW_NAME, on_mouse, this);
@@ -924,7 +974,7 @@ void MotionDetector::draw_loop()
             if (m_enable_tour) { do_tour_logic(); }
 
             cv::Mat get;
-            if (m_enable_minimap_fullscreen) {
+            if (m_enable_minimap_fullscreen || m_focus_channel != -1) {
                 get = m_frame0_dbuff.get();
             }
             else if (m_enable_fullscreen_channel ||

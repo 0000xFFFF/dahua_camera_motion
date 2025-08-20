@@ -21,19 +21,20 @@
 
 std::unique_ptr<MotionDetector> motionDetector;
 
-//char g_sfxp_8bit_clicky[] = "sfx/clicky-8-bit-sfx.wav";
+// char g_sfxp_8bit_clicky[] = "sfx/clicky-8-bit-sfx.wav";
 Mix_Chunk* g_sfx_8bit_clicky;
 
 #include "sfx.h"
 
-Mix_Chunk* load_embedded_sound() {
-    SDL_RWops *rw = SDL_RWFromConstMem(sfx_clicky_8_bit_sfx_wav, sfx_clicky_8_bit_sfx_wav_len);
+Mix_Chunk* load_embedded_sound()
+{
+    SDL_RWops* rw = SDL_RWFromConstMem(sfx_clicky_8_bit_sfx_wav, sfx_clicky_8_bit_sfx_wav_len);
     if (!rw) {
         SDL_Log("SDL_RWFromConstMem failed: %s", SDL_GetError());
         return NULL;
     }
 
-    Mix_Chunk *chunk = Mix_LoadWAV_RW(rw, 1); // 1 = free RWops automatically
+    Mix_Chunk* chunk = Mix_LoadWAV_RW(rw, 1); // 1 = free RWops automatically
     if (!chunk) {
         SDL_Log("Mix_LoadWAV_RW failed: %s", Mix_GetError());
     }
@@ -183,15 +184,29 @@ int main(int argc, char* argv[])
         .help("specify alarm pixels inside file (seperated by new line) (e.g.: <x>x<y>\\n<x>x<y>...)")
         .default_value(ALARM_PIXELS_FILE);
 
+    program.add_argument("-fc", "--focus_channel")
+        .help("special mode that focuses on single channel when detecting motion")
+        .default_value(FOCUS_CHANNEL)
+        .scan<'i', int>();
+    program.add_argument("-fca", "--focus_channel_area")
+        .help("specify motion area")
+        .metavar("1-6")
+        .default_value(FOCUS_CHANNEL_AREA);
+
+    program.add_argument("-fcaa", "--focus_channel_alarm")
+        .help("alarm any motion in specified area from -fca")
+        .default_value(FOCUS_CHANNEL_ALARM)
+        .scan<'i', int>();
+
     // init sdl for playing sounds
     if (SDL_Init(SDL_INIT_AUDIO) < 0) return 1;
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) return 1;
 
-    //g_sfx_8bit_clicky = Mix_LoadWAV(g_sfxp_8bit_clicky);
-    //if (!g_sfx_8bit_clicky) {
-    //    std::cout << "can't load sfx: " << g_sfxp_8bit_clicky << std::endl;
-    //    return 1;
-    //}
+    // g_sfx_8bit_clicky = Mix_LoadWAV(g_sfxp_8bit_clicky);
+    // if (!g_sfx_8bit_clicky) {
+    //     std::cout << "can't load sfx: " << g_sfxp_8bit_clicky << std::endl;
+    //     return 1;
+    // }
     g_sfx_8bit_clicky = load_embedded_sound();
 
     try {
@@ -235,7 +250,12 @@ int main(int argc, char* argv[])
                 program.get<std::string>("ignore_contours"),
                 program.get<std::string>("ignore_contours_file"),
                 program.get<std::string>("alarm_pixels"),
-                program.get<std::string>("alarm_pixels_file"));
+                program.get<std::string>("alarm_pixels_file"),
+                program.get<int>("focus_channel"),
+                program.get<std::string>("focus_channel_area"),
+                program.get<int>("focus_channel_alarm")
+
+            );
 
             motionDetector->draw_loop();
         }
