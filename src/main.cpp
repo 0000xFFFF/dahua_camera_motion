@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
         .help("specify ignore contours/areas (e.g.: <x>x<y>,...;<x>x<y>,...)")
         .default_value(IGNORE_CONTOURS);
     program.add_argument("-icf", "--ignore_contours_file")
-        .help("specify ignore contours/areas inside file (seperated by new line) (e.g.: <x>x<y>,...\\n<x>x<y>,...)")
+        .help("specify ignore contours/areas inside file (seperated by new line) (e.g.: \"<x>x<y>,...\\n<x>x<y>,...\")")
         .default_value(IGNORE_CONTOURS_FILENAME);
 
     program.add_argument("-eap", "--enable_alarm_pixels")
@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
         .help("specify alarm pixels (e.g.: <x>x<y>;<x>x<y>;...)")
         .default_value(ALARM_PIXELS);
     program.add_argument("-apf", "--alarm_pixels_file")
-        .help("specify alarm pixels inside file (seperated by new line) (e.g.: <x>x<y>\\n<x>x<y>...)")
+        .help("specify alarm pixels inside file (seperated by new line) (e.g.: \"<x>x<y>\\n<x>x<y>...\")")
         .default_value(ALARM_PIXELS_FILE);
 
     program.add_argument("-fc", "--focus_channel")
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
         .default_value(FOCUS_CHANNEL)
         .scan<'i', int>();
     program.add_argument("-fca", "--focus_channel_area")
-        .help("specify motion area")
+        .help("specify motion area to zoom to (work with) (e.g.: \"<x>x<y>;<w>x<h>\"")
         .metavar("1-6")
         .default_value(FOCUS_CHANNEL_AREA);
 
