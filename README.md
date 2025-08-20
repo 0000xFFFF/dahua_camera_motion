@@ -22,10 +22,10 @@ sudo make install
 
 # Usage
 ```sh
-./dcm_master
+./dcm_master --help
 ```
 ```
-Usage: dcm_master [--help] [--version] --ip VAR --username VAR --password VAR [--width VAR] [--height VAR] [--fullscreen] [--detect] [--resolution VAR] [--display_mode 0-4] [--area VAR] [--rarea VAR] [--motion_detect_min_ms VAR] [--enable_motion_zoom_largest 0/1] [--current_channel 1-6] [--enable_motion 0/1] [--enable_tour 0/1] [--enable_info 0/1] [--enable_info_line 0/1] [--enable_info_rect 0/1] [--enable_minimap 0/1] [--enable_minimap_fullscreen 0/1] [--enable_fullscreen_channel 0/1] [--enable_ignore_contours 0/1] [--ignore_contours VAR] [--ignore_contours_file VAR] [--enable_alarm_pixels 0/1] [--alarm_pixels VAR] [--alarm_pixels_file VAR]
+Usage: dcm_master [--help] [--version] --ip VAR --username VAR --password VAR [--width VAR] [--height VAR] [--fullscreen] [--detect] [--resolution VAR] [--display_mode 0-4] [--area VAR] [--rarea VAR] [--motion_detect_min_ms VAR] [--enable_motion_zoom_largest 0/1] [--current_channel 1-6] [--enable_motion 0/1] [--enable_tour 0/1] [--enable_info 0/1] [--enable_info_line 0/1] [--enable_info_rect 0/1] [--enable_minimap 0/1] [--enable_minimap_fullscreen 0/1] [--enable_fullscreen_channel 0/1] [--enable_ignore_contours 0/1] [--ignore_contours VAR] [--ignore_contours_file VAR] [--enable_alarm_pixels 0/1] [--alarm_pixels VAR] [--alarm_pixels_file VAR] [--focus_channel VAR] [--focus_channel_area <x>x<y>;<w>x<h>] [--focus_channel_sound VAR]
 
 Optional arguments:
   -h, --help                           shows help message and exits
@@ -54,8 +54,11 @@ Optional arguments:
   -efc, --enable_fullscreen_channel    enable minimap fullscreen [nargs=0..1] [default: 0]
   -eic, --enable_ignore_contours       enable ignoring contours/areas (specify with -ic) [nargs=0..1] [default: 1]
   -ic, --ignore_contours               specify ignore contours/areas (e.g.: <x>x<y>,...;<x>x<y>,...) [nargs=0..1] [default: ""]
-  -icf, --ignore_contours_file         specify ignore contours/areas inside file (seperated by new line) (e.g.: <x>x<y>,...\n<x>x<y>,...) [nargs=0..1] [default: ""]
+  -icf, --ignore_contours_file         specify ignore contours/areas inside file (seperated by new line) (e.g.: "<x>x<y>,...\n<x>x<y>,...") [nargs=0..1] [default: ""]
   -eap, --enable_alarm_pixels          enable alarm pixels (specify with -ap) [nargs=0..1] [default: 1]
   -ap, --alarm_pixels                  specify alarm pixels (e.g.: <x>x<y>;<x>x<y>;...) [nargs=0..1] [default: ""]
-  -apf, --alarm_pixels_file            specify alarm pixels inside file (seperated by new line) (e.g.: <x>x<y>\n<x>x<y>...) [nargs=0..1] [default: ""]
-```
+  -apf, --alarm_pixels_file            specify alarm pixels inside file (seperated by new line) (e.g.: "<x>x<y>\n<x>x<y>...") [nargs=0..1] [default: ""]
+  -fc, --focus_channel                 special mode that focuses on single channel when detecting motion (don't load other channels) [nargs=0..1] [default: -1]
+  -fca, --focus_channel_area           specify motion area to zoom to (work with) (e.g.: "<x>x<y>;<w>x<h>" [nargs=0..1] [default: ""]
+  -fcs, --focus_channel_sound          make sound if motion detected [nargs=0..1] [default: 0]
+  ```
