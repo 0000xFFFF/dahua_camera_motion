@@ -82,6 +82,11 @@
 #endif
 #endif
 
+
+#ifndef CHANNEL_COUNT
+#define CHANNEL_COUNT 8
+#endif
+
 #ifndef CURRENT_CHANNEL
 #define CURRENT_CHANNEL 1
 #endif

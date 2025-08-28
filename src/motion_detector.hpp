@@ -120,8 +120,8 @@ class MotionDetector {
 
     cv::Mat m_frame0;
     DoubleBufferMat m_frame0_dbuff;
-    cv::Mat m_canv3x3;
-    cv::Mat m_canv3x2;
+    cv::Mat m_canv1;
+    cv::Mat m_canv2;
     cv::Mat m_main_display;
 
     // motion detecting / min frames
@@ -145,7 +145,7 @@ class MotionDetector {
     std::chrono::high_resolution_clock::time_point m_tour_start;
     bool m_tour_start_set{false};
 
-    DoubleBufferVec m_king_chain{{1, 2, 3, 4, 5, 6}};
+    DoubleBufferVec m_king_chain{{1, 2, 3, 4, 5, 6, 7, 8}};
     void move_to_front(int value);
     std::atomic<int> m_layout_changed{false};
 
