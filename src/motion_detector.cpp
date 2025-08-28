@@ -226,8 +226,8 @@ MotionDetector::MotionDetector(const std::string& ip,
       m_enable_alarm_pixels(enable_alarm_pixels),
       m_focus_channel(focus_channel),
       m_focus_channel_sound(focus_channel_sound),
-      m_canv3x3(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
-      m_canv3x2(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
+      m_canv1(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
+      m_canv2(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_main_display(cv::Mat(cv::Size(width, height), CV_8UC3, cv::Scalar(0, 0, 0)))
 
 {
@@ -246,7 +246,7 @@ MotionDetector::MotionDetector(const std::string& ip,
     if (focus_channel == -1) {
 
         m_readers.emplace_back(std::make_unique<FrameReader>(0, ip, username, password, true));
-        for (int channel = 1; channel <= 6; ++channel) {
+        for (int channel = 1; channel <= CHANNEL_COUNT; ++channel) {
             m_readers.emplace_back(std::make_unique<FrameReader>(channel, ip, username, password, true));
         }
 
@@ -254,7 +254,7 @@ MotionDetector::MotionDetector(const std::string& ip,
     }
     else {
 
-        for (int channel = 0; channel <= 6; channel++) {
+        for (int channel = 0; channel <= CHANNEL_COUNT; channel++) {
             m_readers.emplace_back(std::make_unique<FrameReader>(channel, ip, username, password, channel == focus_channel));
         }
 
@@ -340,14 +340,14 @@ void MotionDetector::do_tour_logic()
 #if KING_LAYOUT == KING_LAYOUT_REL
 
         m_tour_current_channel++;
-        if (m_tour_current_channel > 6) { m_tour_current_channel = 1; }
+        if (m_tour_current_channel > CHANNEL_COUNT) { m_tour_current_channel = 1; }
 
         int ch = m_tour_current_channel;
         auto vec = m_king_chain.get();
         std::vector<int> n(vec.size());
         int x = 0;
         n[x++] = ch;
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < CHANNEL_COUNT; i++) {
             int value = i + 1;
             if (value != ch) {
                 n[x++] = value;
@@ -358,7 +358,7 @@ void MotionDetector::do_tour_logic()
 #else
         // fight to top
         m_tour_current_channel++;
-        if (m_tour_current_channel > 6) { m_tour_current_channel = 1; }
+        if (m_tour_current_channel > CHANNEL_COUNT) { m_tour_current_channel = 1; }
         change_channel(m_tour_current_channel);
 #endif
 #endif
@@ -458,9 +458,22 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         m_motion_detected_min_ms = motion_duration >= m_motion_detect_min_ms;
         if (m_motion_detected_min_ms) {
             if (m_focus_channel == -1) {
-                float rel_x = motion_region.x / static_cast<float>(CROP_WIDTH);
-                float rel_y = motion_region.y / static_cast<float>(CROP_HEIGHT);
-                int new_channel = 1 + static_cast<int>(rel_x * 3) + (rel_y >= 0.5f ? 3 : 0);
+
+                float rel_x = motion_region.x / static_cast<float>(W_0);
+                float rel_y = motion_region.y / static_cast<float>(H_0);
+
+                int col = static_cast<int>(rel_x * 3);
+                int row = static_cast<int>(rel_y * 3);
+
+                int new_channel;
+                if (row == 0) { new_channel = 1 + col; } // first row
+                else if (row == 1) {
+                    new_channel = 4 + col;
+                } // second row
+                else {
+                    new_channel = (col == 0 ? 7 : 8);
+                } // third row
+
                 if (m_current_channel != new_channel) {
                     change_channel(new_channel);
                 }
@@ -485,8 +498,8 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         }
     }
 
-    constexpr int mini_ch_w = CROP_WIDTH / 3;
-    constexpr int mini_ch_h = CROP_HEIGHT / 2;
+    constexpr int mini_ch_w = W_0 / 3;
+    constexpr int mini_ch_h = H_0 / 3;
 
     // drawing alarm pixels
     if (m_enable_alarm_pixels && motion_region.size().width < mini_ch_w && motion_region.size().height < mini_ch_h) {
@@ -538,7 +551,7 @@ void MotionDetector::draw_info()
     cv::putText(m_main_display, "Info (i/PAGE UP): " + bool_to_str(m_enable_info),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
-    cv::putText(m_main_display, "Display Mode (up/down,n,a,s,k,w): " + std::to_string(m_display_mode),
+    cv::putText(m_main_display, "Display Mode (up/down,n,a,s,k,j): " + std::to_string(m_display_mode),
                 cv::Point(10, text_y_start + i++ * text_y_step), cv::FONT_HERSHEY_SIMPLEX,
                 font_scale, text_color, font_thickness);
     cv::putText(m_main_display, "Motion (m/* ; l//): " + bool_to_str(m_enable_motion) + " ; " + bool_to_str(m_enable_motion_zoom_largest),
@@ -598,9 +611,9 @@ cv::Mat MotionDetector::paint_main_mat_all()
 {
     bool layout_changed = m_layout_changed;
     size_t w = m_display_width / 3;
-    size_t h = m_display_height / 2;
+    size_t h = m_display_height / 3;
 
-    cv::parallel_for_(cv::Range(0, 6), [&](const cv::Range& range) {
+    cv::parallel_for_(cv::Range(0, CHANNEL_COUNT), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; i++) {
             int ch = i + 1;
             cv::Mat mat = m_readers[ch]->get_latest_frame(layout_changed);
@@ -610,27 +623,27 @@ cv::Mat MotionDetector::paint_main_mat_all()
             int col = i % 3;
             int x = col * w;
             int y = row * h;
-            cv::resize(mat, m_canv3x2(cv::Rect(x, y, w, h)), cv::Size(w, h));
+            cv::resize(mat, m_canv2(cv::Rect(x, y, w, h)), cv::Size(w, h));
             if (ch == m_current_channel) {
-                draw_motion_region(m_canv3x2, x, y, w, h);
+                draw_motion_region(m_canv2, x, y, w, h);
             }
         }
     });
 
     m_layout_changed = false;
-    return m_canv3x2;
+    return m_canv2;
 }
 
-cv::Mat MotionDetector::paint_main_mat_sort() // need to fix this
+cv::Mat MotionDetector::paint_main_mat_sort()
 {
     bool layout_changed = m_layout_changed;
 
     size_t w = m_display_width / 3;
-    size_t h = m_display_height / 2;
+    size_t h = m_display_height / 3;
 
     std::vector vec = m_king_chain.get();
 
-    cv::parallel_for_(cv::Range(0, 6), [&](const cv::Range& range) {
+    cv::parallel_for_(cv::Range(0, CHANNEL_COUNT), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; i++) {
             int ch = vec[i];
             cv::Mat mat = m_readers[ch]->get_latest_frame(layout_changed);
@@ -641,15 +654,15 @@ cv::Mat MotionDetector::paint_main_mat_sort() // need to fix this
             int x = col * w;
             int y = row * h;
             cv::Rect roi(x, y, w, h);
-            cv::resize(mat, m_canv3x2(cv::Rect(x, y, w, h)), cv::Size(w, h));
+            cv::resize(mat, m_canv2(cv::Rect(x, y, w, h)), cv::Size(w, h));
             if (ch == m_current_channel) {
-                draw_motion_region(m_canv3x2, x, y, w, h);
+                draw_motion_region(m_canv2, x, y, w, h);
             }
         }
     });
 
     m_layout_changed = false;
-    return m_canv3x2;
+    return m_canv2;
 }
 
 void MotionDetector::draw_motion_region(cv::Mat canv, size_t posX, size_t posY, size_t width, size_t height)
@@ -685,12 +698,12 @@ cv::Mat MotionDetector::paint_main_mat_king()
 {
     bool layout_changed = m_layout_changed;
 
-    size_t w = m_display_width / 3;
-    size_t h = m_display_height / 3;
+    size_t w = m_display_width / 4;
+    size_t h = m_display_height / 4;
 
     std::vector vec = m_king_chain.get();
 
-    cv::parallel_for_(cv::Range(0, 6), [&](const cv::Range& range) {
+    cv::parallel_for_(cv::Range(0, CHANNEL_COUNT), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; i++) {
             cv::Mat mat = m_readers[vec[i]]->get_latest_frame(layout_changed);
             if (mat.empty()) { continue; }
@@ -699,17 +712,20 @@ cv::Mat MotionDetector::paint_main_mat_king()
             switch (i) {
                 case 0:
                     {
-                        size_t w0 = w * 2;
-                        size_t h0 = h * 2;
-                        cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
-                        draw_motion_region(m_canv3x3(cv::Rect(0 * w, 0 * h, w0, h0)), 0, 0, w0, h0);
+                        size_t w0 = w * 3;
+                        size_t h0 = h * 3;
+                        cv::resize(mat, m_canv1(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
+                        draw_motion_region(m_canv1(cv::Rect(0 * w, 0 * h, w0, h0)), 0, 0, w0, h0);
                         break;
                     }
-                case 1: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 0 * h, w, h)), cv::Size(w, h)); break;
-                case 2: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 1 * h, w, h)), cv::Size(w, h)); break;
-                case 3: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 2 * h, w, h)), cv::Size(w, h)); break;
-                case 4: cv::resize(mat, m_canv3x3(cv::Rect(1 * w, 2 * h, w, h)), cv::Size(w, h)); break;
-                case 5: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 2 * h, w, h)), cv::Size(w, h)); break;
+                case 1: cv::resize(mat, m_canv1(cv::Rect(3 * w, 0 * h, w, h)), cv::Size(w, h)); break;
+                case 2: cv::resize(mat, m_canv1(cv::Rect(3 * w, 1 * h, w, h)), cv::Size(w, h)); break;
+                case 3: cv::resize(mat, m_canv1(cv::Rect(3 * w, 2 * h, w, h)), cv::Size(w, h)); break;
+
+                case 4: cv::resize(mat, m_canv1(cv::Rect(0 * w, 3 * h, w, h)), cv::Size(w, h)); break;
+                case 5: cv::resize(mat, m_canv1(cv::Rect(1 * w, 3 * h, w, h)), cv::Size(w, h)); break;
+                case 6: cv::resize(mat, m_canv1(cv::Rect(2 * w, 3 * h, w, h)), cv::Size(w, h)); break;
+                case 7: cv::resize(mat, m_canv1(cv::Rect(3 * w, 3 * h, w, h)), cv::Size(w, h)); break;
             }
 #endif
 
@@ -718,55 +734,55 @@ cv::Mat MotionDetector::paint_main_mat_king()
             switch (i) {
                 case 0:
                     {
-                        size_t w0 = w * 2;
-                        size_t h0 = h * 2;
-                        cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
-                        draw_motion_region(m_canv3x3, 0, 0, w0, h0);
+                        size_t w0 = w * 3;
+                        size_t h0 = h * 3;
+                        cv::resize(mat, m_canv1(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
+                        draw_motion_region(m_canv1, 0, 0, w0, h0);
                         break;
                     }
-                case 1: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 0 * h, w, h)), cv::Size(w, h)); break;
-                case 2: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 1 * h, w, h)), cv::Size(w, h)); break;
-                case 3: cv::resize(mat, m_canv3x3(cv::Rect(2 * w, 2 * h, w, h)), cv::Size(w, h)); break;
-                case 4: cv::resize(mat, m_canv3x3(cv::Rect(1 * w, 2 * h, w, h)), cv::Size(w, h)); break;
-                case 5: cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 2 * h, w, h)), cv::Size(w, h)); break;
+                case 1: cv::resize(mat, m_canv1(cv::Rect(3 * w, 0 * h, w, h)), cv::Size(w, h)); break;
+                case 2: cv::resize(mat, m_canv1(cv::Rect(3 * w, 1 * h, w, h)), cv::Size(w, h)); break;
+                case 3: cv::resize(mat, m_canv1(cv::Rect(3 * w, 2 * h, w, h)), cv::Size(w, h)); break;
+
+                case 7: cv::resize(mat, m_canv1(cv::Rect(0 * w, 3 * h, w, h)), cv::Size(w, h)); break;
+                case 6: cv::resize(mat, m_canv1(cv::Rect(1 * w, 3 * h, w, h)), cv::Size(w, h)); break;
+                case 5: cv::resize(mat, m_canv1(cv::Rect(2 * w, 3 * h, w, h)), cv::Size(w, h)); break;
+                case 4: cv::resize(mat, m_canv1(cv::Rect(3 * w, 3 * h, w, h)), cv::Size(w, h)); break;
             }
 #endif
         }
     });
 
     m_layout_changed = false;
-    return m_canv3x3;
+    return m_canv1;
 }
 
 cv::Mat MotionDetector::paint_main_mat_top()
 {
     bool layout_changed = m_layout_changed;
 
-    size_t w = m_display_width / 3;
-    size_t h = m_display_height / 3;
+    size_t w = m_display_width / 4;
+    size_t h = m_display_height / 4;
 
     std::vector<int> active_channels;
-
-    // Fill active_channels with [1,2,3,4,5,6] excluding m_current_channel
-    for (int i = 1; i <= 6; i++) {
+    for (int i = 1; i <= CHANNEL_COUNT; i++) {
         if (i != m_current_channel) {
             active_channels.push_back(i);
         }
     }
 
-    cv::parallel_for_(cv::Range(0, 6), [&](const cv::Range& range) {
+    cv::parallel_for_(cv::Range(0, CHANNEL_COUNT), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; i++) {
             cv::Mat mat;
-            cv::Rect roi;
 
             if (i == 0) {
                 mat = m_readers[m_current_channel]->get_latest_frame(layout_changed);
                 if (mat.empty()) { continue; }
 
-                size_t w0 = w * 2;
-                size_t h0 = h * 2;
-                cv::resize(mat, m_canv3x3(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
-                draw_motion_region(m_canv3x3, 0, 0, w0, h0);
+                size_t w0 = w * 3;
+                size_t h0 = h * 3;
+                cv::resize(mat, m_canv1(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
+                draw_motion_region(m_canv1, 0, 0, w0, h0);
             }
             else {
                 // Other slots are from active_channels (excluding m_current_channel)
@@ -776,20 +792,20 @@ cv::Mat MotionDetector::paint_main_mat_top()
 
                 // Layout for circular arrangement
                 switch (i) {
-                    case 1: roi = cv::Rect(2 * w, 0 * h, w, h); break;
-                    case 2: roi = cv::Rect(2 * w, 1 * h, w, h); break;
-                    case 3: roi = cv::Rect(2 * w, 2 * h, w, h); break;
-                    case 4: roi = cv::Rect(1 * w, 2 * h, w, h); break;
-                    case 5: roi = cv::Rect(0 * w, 2 * h, w, h); break;
+                    case 1: cv::resize(mat, m_canv1(cv::Rect(3 * w, 0 * h, w, h)), cv::Size(w, h)); break;
+                    case 2: cv::resize(mat, m_canv1(cv::Rect(3 * w, 1 * h, w, h)), cv::Size(w, h)); break;
+                    case 3: cv::resize(mat, m_canv1(cv::Rect(3 * w, 2 * h, w, h)), cv::Size(w, h)); break;
+                    case 7: cv::resize(mat, m_canv1(cv::Rect(0 * w, 3 * h, w, h)), cv::Size(w, h)); break;
+                    case 6: cv::resize(mat, m_canv1(cv::Rect(1 * w, 3 * h, w, h)), cv::Size(w, h)); break;
+                    case 5: cv::resize(mat, m_canv1(cv::Rect(2 * w, 3 * h, w, h)), cv::Size(w, h)); break;
+                    case 4: cv::resize(mat, m_canv1(cv::Rect(3 * w, 3 * h, w, h)), cv::Size(w, h)); break;
                 }
-
-                cv::resize(mat, m_canv3x3(roi), cv::Size(w, h));
             }
         }
     });
 
     m_layout_changed = false;
-    return m_canv3x3;
+    return m_canv1;
 }
 
 void MotionDetector::handle_keys()
@@ -819,7 +835,7 @@ void MotionDetector::handle_keys()
     else if (key == 't' || key == '.') { m_enable_tour = !m_enable_tour; }
     else if (key == 'r' || key == KEY_BACKSPACE) {
         m_current_channel = 1;
-        m_king_chain.update({1, 2, 3, 4, 5, 6});
+        m_king_chain.update({1, 2, 3, 4, 5, 6, 7, 8});
         m_motion_detected = false;
         m_enable_info = ENABLE_INFO;
         m_enable_motion = ENABLE_MOTION;
@@ -832,14 +848,14 @@ void MotionDetector::handle_keys()
     }
     else if (key == KEY_LINUX_ARROW_LEFT || key == KEY_WIN_ARROW_LEFT) {
         int new_ch = m_current_channel + 1;
-        if (new_ch > 6) new_ch = 1;
+        if (new_ch > CHANNEL_COUNT) new_ch = 1;
         change_channel(new_ch);
     } else if (key == KEY_LINUX_ARROW_RIGHT || key == KEY_WIN_ARROW_LEFT) { 
         int new_ch = m_current_channel - 1;
-        if (new_ch < 1) new_ch = 6;
+        if (new_ch < 1) new_ch = CHANNEL_COUNT;
         change_channel(new_ch);
     }
-    else if (key >= '1' && key <= '6') {
+    else if (key >= '1' && key <= '0' + CHANNEL_COUNT) {
         change_channel(key - '0');
     }
     else if (key == 'c') {
