@@ -675,8 +675,8 @@ void MotionDetector::draw_motion_region(cv::Mat canv, size_t posX, size_t posY, 
         int row = (ch - 1) / 3;
         int col = (ch - 1) % 3;
 
-        constexpr int mini_ch_w = CROP_WIDTH / 3;
-        constexpr int mini_ch_h = CROP_HEIGHT / 2;
+        constexpr int mini_ch_w = W_0 / 3;
+        constexpr int mini_ch_h = H_0 / 3;
 
         float scaleX = static_cast<float>(width) / mini_ch_w;
         float scaleY = static_cast<float>(height) / mini_ch_h;
@@ -935,7 +935,7 @@ void MotionDetector::detect_motion()
             if (m_focus_channel == -1) {
                 cv::Mat frame0_get = m_readers[0]->get_latest_frame(false);
                 if (!frame0_get.empty() && frame0_get.size().width == W_0 && frame0_get.size().height == H_0) {
-                    m_frame0 = frame0_get(cv::Rect(0, 0, CROP_WIDTH, CROP_HEIGHT));
+                    m_frame0 = frame0_get;
                     detect_largest_motion_area_set_channel();
                 }
             }

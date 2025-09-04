@@ -40,8 +40,11 @@
 #define W_HD         1920
 #define H_HD         1080
 
-#define MINIMAP_WIDTH  300
-#define MINIMAP_HEIGHT 160
+#define MINIMAP_WIDTH  W_0/4
+#define MINIMAP_HEIGHT H_0/4
+
+
+// 1-6
 #define CROP_WIDTH     704
 #define CROP_HEIGHT    384
 
@@ -66,10 +69,10 @@
 #define ENABLE_IGNORE_CONTOURS 1
 #endif
 #ifndef DEFAULT_WIDTH
-#define DEFAULT_WIDTH CROP_WIDTH
+#define DEFAULT_WIDTH W_0
 #endif
 #ifndef DEFAULT_HEIGHT
-#define DEFAULT_HEIGHT CROP_HEIGHT
+#define DEFAULT_HEIGHT H_0
 #endif
 #endif
 
