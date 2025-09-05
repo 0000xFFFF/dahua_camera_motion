@@ -1,2 +1,2 @@
-- fix sort option
-- fix or rm d option
+- make low cpu mode that just streams ch 0 (replace all chs with low q)
+- add to that low cpu mode to get hq on motion
