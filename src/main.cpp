@@ -59,33 +59,33 @@ int main(int argc, char* argv[])
     argparse::ArgumentParser program("dcm_master");
 
     program.add_argument("-i", "--ip")
-        .help("IP to connect to")
+        .help("ip to connect to")
         .required();
     program.add_argument("-u", "--username")
-        .help("Account username")
+        .help("account username")
         .required();
     program.add_argument("-p", "--password")
-        .help("Account password")
+        .help("account password")
         .required();
 
     program.add_argument("-ww", "--width")
-        .help("Window width")
+        .help("window width")
         .default_value(DEFAULT_WIDTH)
         .scan<'i', int>();
     program.add_argument("-wh", "--height")
-        .help("Window height")
+        .help("window height")
         .default_value(DEFAULT_HEIGHT)
         .scan<'i', int>();
     program.add_argument("-fs", "--fullscreen")
-        .help("Start in fullscreen mode")
+        .help("start in fullscreen mode")
         .default_value(false)
         .implicit_value(true);
     program.add_argument("-d", "--detect")
-        .help("Detect screen size with xrandr")
+        .help("detect screen size with xrandr")
         .default_value(false)
         .implicit_value(true);
     program.add_argument("-r", "--resolution")
-        .help("index of resolution to use (default: 0)")
+        .help("index of resolution to use")
         .default_value(0)
         .scan<'i', int>();
 
@@ -96,26 +96,26 @@ int main(int argc, char* argv[])
         .scan<'i', int>();
 
     program.add_argument("-a", "--area")
-        .help("Min contour area for detection")
+        .help("min contour area for detection")
         .default_value(MOTION_DETECT_AREA)
         .scan<'i', int>();
     program.add_argument("-ra", "--rarea")
-        .help("Min contour's bounding rectangle area for detection")
+        .help("min contour's bounding rectangle area for detection")
         .default_value(MOTION_DETECT_RECT_AREA)
         .scan<'i', int>();
     program.add_argument("-ms", "--motion_detect_min_ms")
-        .help("min milliseconds of detected motion to switch channel")
+        .help("minimum milliseconds of detected motion to switch channel")
         .default_value(MOTION_DETECT_MIN_MS)
         .scan<'i', int>();
     program.add_argument("-emzl", "--enable_motion_zoom_largest")
-        .help("enable motion zoom largest")
+        .help("zoom channel on largest detected motion")
         .metavar("0/1")
         .default_value(ENABLE_MOTION_ZOOM_LARGEST)
         .scan<'i', int>();
 
     program.add_argument("-ch", "--current_channel")
         .help("which channel to start with")
-        .metavar("1-6")
+        .metavar("1-8")
         .default_value(CURRENT_CHANNEL)
         .scan<'i', int>();
 
@@ -125,9 +125,14 @@ int main(int argc, char* argv[])
         .default_value(ENABLE_MOTION)
         .scan<'i', int>();
     program.add_argument("-et", "--enable_tour")
-        .help("enable motion zoom largest")
+        .help("tour, switch channels every X ms (set with -etm)")
         .metavar("0/1")
         .default_value(ENABLE_TOUR)
+        .scan<'i', int>();
+    program.add_argument("-etm", "--enable_tour_ms")
+        .help("how many ms to focus on a channel before switching")
+        .metavar("0/1")
+        .default_value(TOUR_MS)
         .scan<'i', int>();
     program.add_argument("-ei", "--enable_info")
         .help("enable drawing info")
@@ -140,7 +145,7 @@ int main(int argc, char* argv[])
         .default_value(ENABLE_INFO_LINE)
         .scan<'i', int>();
     program.add_argument("-eir", "--enable_info_rect")
-        .help("enable drawing motion rectangle")
+        .help("enable drawing largest motion rectangle")
         .metavar("0/1")
         .default_value(ENABLE_INFO_RECT)
         .scan<'i', int>();
@@ -155,11 +160,12 @@ int main(int argc, char* argv[])
         .default_value(ENABLE_MINIMAP_FULLSCREEN)
         .scan<'i', int>();
     program.add_argument("-efc", "--enable_fullscreen_channel")
-        .help("enable minimap fullscreen")
+        .help("enable fullscreen channel")
         .metavar("0/1")
         .default_value(ENABLE_FULLSCREEN_CHANNEL)
         .scan<'i', int>();
 
+    // IGNORE
     program.add_argument("-eic", "--enable_ignore_contours")
         .help("enable ignoring contours/areas (specify with -ic)")
         .metavar("0/1")
@@ -172,6 +178,7 @@ int main(int argc, char* argv[])
         .help("specify ignore contours/areas inside file (seperated by new line) (e.g.: \"<x>x<y>,...\\n<x>x<y>,...\")")
         .default_value(IGNORE_CONTOURS_FILENAME);
 
+    // ALARM
     program.add_argument("-eap", "--enable_alarm_pixels")
         .help("enable alarm pixels (specify with -ap)")
         .metavar("0/1")
@@ -184,6 +191,7 @@ int main(int argc, char* argv[])
         .help("specify alarm pixels inside file (seperated by new line) (e.g.: \"<x>x<y>\\n<x>x<y>...\")")
         .default_value(ALARM_PIXELS_FILE);
 
+    // FOCUS CHANNEL MODE
     program.add_argument("-fc", "--focus_channel")
         .help("special mode that focuses on single channel when detecting motion (don't load other channels)")
         .default_value(FOCUS_CHANNEL)
@@ -192,9 +200,8 @@ int main(int argc, char* argv[])
         .help("specify motion area to zoom to (work with) (e.g.: \"<x>x<y>;<w>x<h>\"")
         .metavar("<x>x<y>;<w>x<h>")
         .default_value(FOCUS_CHANNEL_AREA);
-
     program.add_argument("-fcs", "--focus_channel_sound")
-        .help("make sound if motion detected")
+        .help("make sound if motion is detected")
         .default_value(FOCUS_CHANNEL_SOUND)
         .scan<'i', int>();
 
