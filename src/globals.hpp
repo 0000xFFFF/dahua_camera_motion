@@ -200,11 +200,11 @@
 #endif
 
 #ifndef DEFAULT_WIDTH
-#define DEFAULT_WIDTH W_HD
+#define DEFAULT_WIDTH (int)(W_HD*0.8)
 #endif
 
 #ifndef DEFAULT_HEIGHT
-#define DEFAULT_HEIGHT H_HD
+#define DEFAULT_HEIGHT (int)(H_HD*0.8)
 #endif
 
 #ifndef NO_RESIZE
