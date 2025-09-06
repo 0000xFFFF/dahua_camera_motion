@@ -30,6 +30,7 @@ class MotionDetector {
                    int enable_motion_zoom_largest,
                    int enable_tour,
                    int enable_info,
+                   int tour_ms,
                    int enable_info_line,
                    int enable_info_rect,
                    int enable_minimap,
@@ -91,6 +92,7 @@ class MotionDetector {
     int m_motion_min_area;
     int m_motion_min_rect_area;
     int m_motion_detect_min_ms;
+    int m_tour_ms;
     std::atomic<int> m_current_channel;
     std::atomic<bool> m_enable_motion;
     std::atomic<bool> m_enable_motion_zoom_largest;
