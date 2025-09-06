@@ -188,6 +188,7 @@ MotionDetector::MotionDetector(const std::string& ip,
                                int enable_motion,
                                int enable_motion_zoom_largest,
                                int enable_tour,
+                               int tour_ms,
                                int enable_info,
                                int enable_info_line,
                                int enable_info_rect,
@@ -212,6 +213,7 @@ MotionDetector::MotionDetector(const std::string& ip,
       m_motion_min_area(area),
       m_motion_min_rect_area(rarea),
       m_motion_detect_min_ms(motion_detect_min_ms),
+      m_tour_ms(tour_ms),
       m_current_channel(current_channel),
       m_enable_motion(enable_motion),
       m_enable_motion_zoom_largest(enable_motion_zoom_largest),
@@ -331,7 +333,7 @@ void MotionDetector::do_tour_logic()
     auto currentTime = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_tour_start).count();
 
-    if (elapsed >= TOUR_MS) {
+    if (elapsed >= m_tour_ms) {
         m_tour_start = std::chrono::high_resolution_clock::now();
 #if KING_LAYOUT == KING_LAYOUT_CIRC
         change_channel(m_king_chain.get().back());
@@ -591,7 +593,7 @@ void MotionDetector::draw_info_line()
     else if (m_enable_tour) {
         auto currentTime = std::chrono::high_resolution_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - m_tour_start).count();
-        float p = (float)elapsed / TOUR_MS;
+        float p = (float)elapsed / m_tour_ms;
         if (p > 100) { p = 100; }
         cv::rectangle(m_main_display, cv::Rect(0, 0, m_main_display.size().width, m_main_display.size().height), cv::Scalar(0, 0, 0), 1, cv::LINE_8);
 

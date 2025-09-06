@@ -58,6 +58,7 @@ int main(int argc, char* argv[])
 
     argparse::ArgumentParser program("dcm_master");
 
+    // REQUIRED
     program.add_argument("-i", "--ip")
         .help("ip to connect to")
         .required();
@@ -68,6 +69,7 @@ int main(int argc, char* argv[])
         .help("account password")
         .required();
 
+    // WINDOW LAYOUT
     program.add_argument("-ww", "--width")
         .help("window width")
         .default_value(DEFAULT_WIDTH)
@@ -89,14 +91,31 @@ int main(int argc, char* argv[])
         .default_value(0)
         .scan<'i', int>();
 
+    // WHAT TO DISPLAY ON START
     program.add_argument("-dm", "--display_mode")
         .help("display mode for cameras (0 = single, 1 = all, 2 = sort, 3 = king, 4 = top")
         .metavar("0-4")
         .default_value(DISPLAY_MODE)
         .scan<'i', int>();
+    program.add_argument("-ch", "--current_channel")
+        .help("which channel to start with")
+        .metavar("1-8")
+        .default_value(CURRENT_CHANNEL)
+        .scan<'i', int>();
+    program.add_argument("-efc", "--enable_fullscreen_channel")
+        .help("enable fullscreen channel")
+        .metavar("0/1")
+        .default_value(ENABLE_FULLSCREEN_CHANNEL)
+        .scan<'i', int>();
 
+    // MOTION DETECTION
+    program.add_argument("-em", "--enable_motion")
+        .help("enable motion")
+        .metavar("0/1")
+        .default_value(ENABLE_MOTION)
+        .scan<'i', int>();
     program.add_argument("-a", "--area")
-        .help("min contour area for detection")
+        .help("min contour area for motion detection")
         .default_value(MOTION_DETECT_AREA)
         .scan<'i', int>();
     program.add_argument("-ra", "--rarea")
@@ -113,27 +132,19 @@ int main(int argc, char* argv[])
         .default_value(ENABLE_MOTION_ZOOM_LARGEST)
         .scan<'i', int>();
 
-    program.add_argument("-ch", "--current_channel")
-        .help("which channel to start with")
-        .metavar("1-8")
-        .default_value(CURRENT_CHANNEL)
-        .scan<'i', int>();
-
-    program.add_argument("-em", "--enable_motion")
-        .help("enable motion")
-        .metavar("0/1")
-        .default_value(ENABLE_MOTION)
-        .scan<'i', int>();
+    // TOUR
     program.add_argument("-et", "--enable_tour")
-        .help("tour, switch channels every X ms (set with -etm)")
+        .help("tour, switch channels every X ms (set with -tms)")
         .metavar("0/1")
         .default_value(ENABLE_TOUR)
         .scan<'i', int>();
-    program.add_argument("-etm", "--enable_tour_ms")
+    program.add_argument("-tms", "--tour_ms")
         .help("how many ms to focus on a channel before switching")
         .metavar("0/1")
         .default_value(TOUR_MS)
         .scan<'i', int>();
+
+    // INFO
     program.add_argument("-ei", "--enable_info")
         .help("enable drawing info")
         .metavar("0/1")
@@ -158,11 +169,6 @@ int main(int argc, char* argv[])
         .help("enable minimap fullscreen")
         .metavar("0/1")
         .default_value(ENABLE_MINIMAP_FULLSCREEN)
-        .scan<'i', int>();
-    program.add_argument("-efc", "--enable_fullscreen_channel")
-        .help("enable fullscreen channel")
-        .metavar("0/1")
-        .default_value(ENABLE_FULLSCREEN_CHANNEL)
         .scan<'i', int>();
 
     // IGNORE
@@ -246,6 +252,7 @@ int main(int argc, char* argv[])
                 program.get<int>("enable_motion"),
                 program.get<int>("enable_motion_zoom_largest"),
                 program.get<int>("enable_tour"),
+                program.get<int>("tour_ms"),
                 program.get<int>("enable_info"),
                 program.get<int>("enable_info_line"),
                 program.get<int>("enable_info_rect"),
