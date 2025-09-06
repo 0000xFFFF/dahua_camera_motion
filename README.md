@@ -39,8 +39,8 @@ Required Options (detailed usage):
   -p, --password                       account password [required]
 
 Window Options (detailed usage):
-  -ww, --width                         window width [nargs=0..1] [default: 1920]
-  -wh, --height                        window height [nargs=0..1] [default: 1080]
+  -ww, --width                         window width [nargs=0..1] [default: 1536]
+  -wh, --height                        window height [nargs=0..1] [default: 864]
   -fs, --fullscreen                    start in fullscreen mode 
   -d, --detect                         detect screen size with xrandr 
   -r, --resolution                     index of resolution to use [nargs=0..1] [default: 0]
@@ -62,10 +62,10 @@ Tour Options (detailed usage):
   -tms, --tour_ms                      how many ms to focus on a channel before switching [nargs=0..1] [default: 3000]
 
 Info Options (detailed usage):
-  -ei, --enable_info                   enable drawing info [nargs=0..1] [default: 1]
+  -ei, --enable_info                   enable drawing info [nargs=0..1] [default: 0]
   -eil, --enable_info_line             enable drawing line info (motion, linger, tour, ...) [nargs=0..1] [default: 1]
   -eir, --enable_info_rect             enable drawing largest motion rectangle [nargs=0..1] [default: 1]
-  -emm, --enable_minimap               enable minimap [nargs=0..1] [default: 1]
+  -emm, --enable_minimap               enable minimap [nargs=0..1] [default: 0]
   -emf, --enable_minimap_fullscreen    enable minimap fullscreen [nargs=0..1] [default: 0]
 
 Ignore Options (detailed usage):
