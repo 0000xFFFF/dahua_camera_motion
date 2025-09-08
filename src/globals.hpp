@@ -151,7 +151,7 @@
 #endif
 
 #ifndef ENABLE_ALARM_PIXELS
-#define ENABLE_ALARM_PIXELS 0
+#define ENABLE_ALARM_PIXELS 1
 #endif
 
 #ifndef ALARM_PIXELS
