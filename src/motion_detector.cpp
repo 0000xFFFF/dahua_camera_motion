@@ -27,19 +27,10 @@ cv::Mat MotionDetector::get_frame(int channel, int layout_changed)
 
         if (frame0.empty()) { return frame; }
 
-        switch (channel) {
-
-            case 1:
-            case 2:
-            case 3: frame = frame0(cv::Rect(mini_ch_w * (channel - 1), mini_ch_h * 0, mini_ch_w, mini_ch_h)); break;
-
-            case 4:
-            case 5:
-            case 6: frame = frame0(cv::Rect(mini_ch_w * (channel - 4), mini_ch_h * 1, mini_ch_w, mini_ch_h)); break;
-
-            case 7:
-            case 8: frame = frame0(cv::Rect(mini_ch_w * (channel - 7), mini_ch_h * 2, mini_ch_w, mini_ch_h)); break;
-        }
+        int row = (channel - 1) / 3; // groups of 3 channels
+        if (channel >= 7) row = 2;   // adjust since only 2 channels in last row
+        int col = (channel - 1) % 3; // column index
+        frame = frame0(cv::Rect(mini_ch_w * col, mini_ch_h * row, mini_ch_w, mini_ch_h));
 
         return frame;
     }
