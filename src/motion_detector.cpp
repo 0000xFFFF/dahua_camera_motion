@@ -1047,6 +1047,10 @@ void MotionDetector::draw_loop()
               << "   c - create vertex\n"
               << "   v - join contour\n"
               << "   b - clear all" << std::endl;
+
+    std::cout << "to create alarm pixels:\n"
+              << "   x - create alarm pixel\n"
+              << "   z - clear all" << std::endl;
 #endif
 
     if (m_fullscreen) {
