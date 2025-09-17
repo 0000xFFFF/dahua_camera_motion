@@ -213,7 +213,8 @@ int main(int argc, char* argv[])
         .default_value(FOCUS_CHANNEL_SOUND)
         .scan<'i', int>();
 
-    options_focus.add_argument("-lc", "--low_cpu")
+    auto& options_special = program.add_group("Special Options");
+    options_special.add_argument("-lc", "--low_cpu")
         .help("low cpu mode")
         .default_value(LOW_CPU_MODE)
         .scan<'i', int>();
