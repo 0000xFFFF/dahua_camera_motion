@@ -83,3 +83,20 @@ Focus Channel Options (detailed usage):
   -fca, --focus_channel_area           specify motion area to zoom to (work with) (e.g.: "<x>x<y>;<w>x<h>" [nargs=0..1] [default: ""]
   -fcs, --focus_channel_sound          make sound if motion is detected [nargs=0..1] [default: 0]
 ```
+
+## Setting ignore area and alarm pixels
+```sh
+make ignore
+./dcm_master -i <ip> -u <username> -p <password>
+```
+### Creating ignore contours
+* zoom into image using mouse (clicking on image will tell you pixel coords in console)
+* press 'C' to draw a vertex point for current contour (must draw min 2 pixels so it shows actual line)
+* press 'V' to close the contour
+* press 'B' to clear all contours
+* you can load contours from cmd line args (seperate with ;) or file (seperate with newline)
+
+### Creating alarm pixels
+* press 'X' to set alarm pixel (when motion is detected in this pixel it will play a sound)
+* peess 'Z' to clear all alarm pixels
+* you can load alarm pixels from cmd line args (seperate with ;) or file (seperate with newline)
