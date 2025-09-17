@@ -22,17 +22,13 @@ cv::Mat MotionDetector::get_frame(int channel, int layout_changed)
         constexpr int mini_ch_w = W_0 / 3;
         constexpr int mini_ch_h = H_0 / 3;
 
-        cv::Mat frame0 = m_frame0;
-        cv::Mat frame;
-
-        if (frame0.empty()) { return frame; }
+        cv::Mat frame0 = m_frame0_dbuff.get();
+        if (frame0.empty()) { return frame0; }
 
         int row = (channel - 1) / 3; // groups of 3 channels
         if (channel >= 7) row = 2;   // adjust since only 2 channels in last row
         int col = (channel - 1) % 3; // column index
-        frame = frame0(cv::Rect(mini_ch_w * col, mini_ch_h * row, mini_ch_w, mini_ch_h));
-
-        return frame;
+        return frame0(cv::Rect(mini_ch_w * col, mini_ch_h * row, mini_ch_w, mini_ch_h));
     }
 
     return m_readers[channel]->get_latest_frame(layout_changed);
@@ -554,8 +550,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         }
     }
 
-    if (m_enable_minimap || m_enable_minimap_fullscreen || m_focus_channel != -1)
-        m_frame0_dbuff.update(m_frame0);
+    m_frame0_dbuff.update(m_frame0);
 }
 
 void MotionDetector::draw_minimap()
