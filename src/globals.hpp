@@ -227,4 +227,8 @@
 #define FOCUS_CHANNEL_SOUND 0
 #endif
 
+#ifndef LOW_CPU_MODE
+#define LOW_CPU_MODE 0
+#endif
+
 // #define SLEEP_MS_FRAME 300

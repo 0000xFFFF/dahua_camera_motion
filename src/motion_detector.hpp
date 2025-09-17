@@ -44,7 +44,8 @@ class MotionDetector {
                    const std::string& alarm_pixels_file,
                    int focus_channel,
                    const std::string& focus_channel_area,
-                   int focus_channel_sound);
+                   int focus_channel_sound,
+                   int low_cpu);
 
     void draw_loop();
     void stop();
@@ -82,6 +83,8 @@ class MotionDetector {
 
     std::tuple<long, long, long, long> parse_area(const std::string& input);
 
+    cv::Mat get_frame(int channel, int layout_changed);
+
     std::atomic<bool> m_running{true};
 
     // set from params
@@ -93,6 +96,7 @@ class MotionDetector {
     int m_motion_min_rect_area;
     int m_motion_detect_min_ms;
     int m_tour_ms;
+    int m_low_cpu;
     std::atomic<int> m_current_channel;
     std::atomic<bool> m_enable_motion;
     std::atomic<bool> m_enable_motion_zoom_largest;

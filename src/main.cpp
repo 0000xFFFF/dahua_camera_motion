@@ -213,6 +213,11 @@ int main(int argc, char* argv[])
         .default_value(FOCUS_CHANNEL_SOUND)
         .scan<'i', int>();
 
+    options_focus.add_argument("-lc", "--low_cpu")
+        .help("low cpu mode")
+        .default_value(LOW_CPU_MODE)
+        .scan<'i', int>();
+
     // init sdl for playing sounds
     if (SDL_Init(SDL_INIT_AUDIO) < 0) return 1;
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) return 1;
@@ -269,7 +274,8 @@ int main(int argc, char* argv[])
                 program.get<std::string>("alarm_pixels_file"),
                 program.get<int>("focus_channel"),
                 program.get<std::string>("focus_channel_area"),
-                program.get<int>("focus_channel_sound")
+                program.get<int>("focus_channel_sound"),
+                program.get<int>("low_cpu")
 
             );
 

@@ -15,6 +15,38 @@
 
 extern Mix_Chunk* g_sfx_8bit_clicky;
 
+cv::Mat MotionDetector::get_frame(int channel, int layout_changed)
+{
+
+    if (m_low_cpu) {
+        constexpr int mini_ch_w = W_0 / 3;
+        constexpr int mini_ch_h = H_0 / 3;
+
+        cv::Mat frame0 = m_frame0;
+        cv::Mat frame;
+
+        if (frame0.empty()) { return frame; }
+
+        switch (channel) {
+
+            case 1:
+            case 2:
+            case 3: frame = frame0(cv::Rect(mini_ch_w * (channel - 1), mini_ch_h * 0, mini_ch_w, mini_ch_h)); break;
+
+            case 4:
+            case 5:
+            case 6: frame = frame0(cv::Rect(mini_ch_w * (channel - 4), mini_ch_h * 1, mini_ch_w, mini_ch_h)); break;
+
+            case 7:
+            case 8: frame = frame0(cv::Rect(mini_ch_w * (channel - 7), mini_ch_h * 2, mini_ch_w, mini_ch_h)); break;
+        }
+
+        return frame;
+    }
+
+    return m_readers[channel]->get_latest_frame(layout_changed);
+}
+
 std::tuple<long, long, long, long> MotionDetector::parse_area(const std::string& input)
 {
     size_t posSemicolon = input.find(';');
@@ -203,7 +235,8 @@ MotionDetector::MotionDetector(const std::string& ip,
                                const std::string& alarm_pixels_file,
                                int focus_channel,
                                const std::string& focus_channel_area,
-                               int focus_channel_sound)
+                               int focus_channel_sound,
+                               int low_cpu)
     :
 
       m_display_width(width),
@@ -214,6 +247,7 @@ MotionDetector::MotionDetector(const std::string& ip,
       m_motion_min_rect_area(rarea),
       m_motion_detect_min_ms(motion_detect_min_ms),
       m_tour_ms(tour_ms),
+      m_low_cpu(low_cpu),
       m_current_channel(current_channel),
       m_enable_motion(enable_motion),
       m_enable_motion_zoom_largest(enable_motion_zoom_largest),
@@ -245,7 +279,15 @@ MotionDetector::MotionDetector(const std::string& ip,
     m_fgbg = cv::createBackgroundSubtractorKNN(20, 400.0, true);
     // m_fgbg = cv::bgsegm::createBackgroundSubtractorCNT(true, 15, true);
     //
-    if (focus_channel == -1) {
+    if (low_cpu) {
+        m_readers.emplace_back(std::make_unique<FrameReader>(0, ip, username, password, true));
+        for (int channel = 1; channel <= CHANNEL_COUNT; ++channel) {
+            m_readers.emplace_back(std::make_unique<FrameReader>(channel, ip, username, password, false));
+        }
+
+        change_channel(current_channel);
+    }
+    else if (focus_channel == -1) {
 
         m_readers.emplace_back(std::make_unique<FrameReader>(0, ip, username, password, true));
         for (int channel = 1; channel <= CHANNEL_COUNT; ++channel) {
@@ -303,6 +345,7 @@ MotionDetector::MotionDetector(const std::string& ip,
     D(std::cout << "m_focus_channel_area_w: " << m_focus_channel_area_w.load() << std::endl);
     D(std::cout << "m_focus_channel_area_h: " << m_focus_channel_area_h.load() << std::endl);
     D(std::cout << "m_focus_channel_sound: " << m_focus_channel_sound.load() << std::endl);
+    D(std::cout << "m_low_cpu: " << m_low_cpu << std::endl);
 }
 
 void MotionDetector::change_channel(int ch)
@@ -618,7 +661,7 @@ cv::Mat MotionDetector::paint_main_mat_all()
     cv::parallel_for_(cv::Range(0, CHANNEL_COUNT), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; i++) {
             int ch = i + 1;
-            cv::Mat mat = m_readers[ch]->get_latest_frame(layout_changed);
+            cv::Mat mat = get_frame(ch, layout_changed);
             if (mat.empty()) { continue; }
 
             int row = i / 3;
@@ -648,7 +691,7 @@ cv::Mat MotionDetector::paint_main_mat_sort()
     cv::parallel_for_(cv::Range(0, CHANNEL_COUNT), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; i++) {
             int ch = vec[i];
-            cv::Mat mat = m_readers[ch]->get_latest_frame(layout_changed);
+            cv::Mat mat = get_frame(ch, layout_changed);
             if (mat.empty()) { continue; }
 
             int row = i / 3;
@@ -707,7 +750,7 @@ cv::Mat MotionDetector::paint_main_mat_king()
 
     cv::parallel_for_(cv::Range(0, CHANNEL_COUNT), [&](const cv::Range& range) {
         for (int i = range.start; i < range.end; i++) {
-            cv::Mat mat = m_readers[vec[i]]->get_latest_frame(layout_changed);
+            cv::Mat mat = get_frame(vec[i], layout_changed);
             if (mat.empty()) { continue; }
 
 #if KING_LAYOUT == KING_LAYOUT_REL
@@ -778,7 +821,7 @@ cv::Mat MotionDetector::paint_main_mat_top()
             cv::Mat mat;
 
             if (i == 0) {
-                mat = m_readers[m_current_channel]->get_latest_frame(layout_changed);
+                mat = get_frame(m_current_channel, layout_changed);
                 if (mat.empty()) { continue; }
 
                 size_t w0 = w * 3;
@@ -789,7 +832,7 @@ cv::Mat MotionDetector::paint_main_mat_top()
             else {
                 // Other slots are from active_channels (excluding m_current_channel)
                 int channel = active_channels[i - 1]; // Skip 0th slot
-                mat = m_readers[channel]->get_latest_frame(layout_changed);
+                mat = get_frame(channel, layout_changed);
                 if (mat.empty()) { continue; }
 
                 // Layout for circular arrangement
@@ -1054,7 +1097,7 @@ void MotionDetector::draw_loop()
             else if (m_enable_fullscreen_channel ||
                      (m_display_mode == DISPLAY_MODE_SINGLE) ||
                      (m_enable_motion && m_enable_motion_zoom_largest && (m_motion_detected_min_ms || m_motion_detect_linger))) {
-                get = m_readers[m_current_channel]->get_latest_frame(m_layout_changed);
+                get = get_frame(m_current_channel, m_layout_changed);
                 draw_motion_region(get, 0, 0, get.size().width, get.size().height);
             }
             else if (m_display_mode == DISPLAY_MODE_SORT) {
@@ -1077,18 +1120,18 @@ void MotionDetector::draw_loop()
                 else {
                     m_main_display = get;
                 }
+
+                if (m_enable_minimap) { draw_minimap(); }
+                if (m_enable_info) { draw_info(); }
+                if (m_enable_info_line) { draw_info_line(); }
+
+                cv::imshow(DEFAULT_WINDOW_NAME, m_main_display);
+
+                if (m_display_width == 0) { m_display_width = m_main_display.size().width; }
+                if (m_display_height == 0) { m_display_height = m_main_display.size().height; }
+
+                handle_keys();
             }
-
-            if (m_enable_minimap) { draw_minimap(); }
-            if (m_enable_info) { draw_info(); }
-            if (m_enable_info_line) { draw_info_line(); }
-
-            cv::imshow(DEFAULT_WINDOW_NAME, m_main_display);
-
-            if (m_display_width == 0) { m_display_width = m_main_display.size().width; }
-            if (m_display_height == 0) { m_display_height = m_main_display.size().height; }
-
-            handle_keys();
 
 #ifndef SLEEP_MS_DRAW
             // Calculate sleep time based on measured FPS
