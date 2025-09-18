@@ -60,7 +60,8 @@ std::pair<int, int> detect_screen_size(const int& index)
     return {W_HD, H_HD}; // Default fallback
 }
 
-void play_unique_sound(Mix_Chunk* sound) {
+void play_unique_sound(Mix_Chunk* sound)
+{
     // Search if the same chunk is already playing
     int num_channels = Mix_AllocateChannels(-1);
     for (int i = 0; i < num_channels; i++) {
@@ -71,4 +72,16 @@ void play_unique_sound(Mix_Chunk* sound) {
 
     // Not playing yet, find a free channel and play
     Mix_PlayChannel(-1, sound, 0);
+}
+
+std::pair<int, int> get_width_height(int width, int height, int detect, int resolution)
+{
+    if (detect) {
+        auto [detected_width, detected_height] = detect_screen_size(resolution);
+        width = detected_width;
+        height = detected_height;
+        std::cout << "Detected screen size: " << width << "x" << height << std::endl;
+    }
+
+    return {width, height};
 }
