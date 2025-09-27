@@ -85,8 +85,8 @@ inline constexpr int TOUR_MS = 3000;
 inline constexpr int CONN_RETRY_MS = 10000;
 
 // Window defaults
-inline constexpr int DEFAULT_WIDTH = static_cast<int>(W_HD * 0.8);  // assumes W_HD is defined
-inline constexpr int DEFAULT_HEIGHT = static_cast<int>(H_HD * 0.8); // assumes H_HD is defined
+inline constexpr int DEFAULT_WIDTH = static_cast<int>(W_HD * 0.8);
+inline constexpr int DEFAULT_HEIGHT = static_cast<int>(H_HD * 0.8);
 inline constexpr bool NO_RESIZE = false;
 inline constexpr auto DEFAULT_WINDOW_NAME = "Motion";
 
