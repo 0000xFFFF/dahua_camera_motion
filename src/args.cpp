@@ -4,11 +4,9 @@
 
 std::unique_ptr<argparse::ArgumentParser> parse_args() {
 
-    DPL("FAIL?");
     auto program= std::make_unique<argparse::ArgumentParser>("dcm_master");
     program->add_description("motion detection kiosk for dahua cameras");
 
-    DPL("FAIL?");
     auto& options_required = program->add_group("Required Options");
     options_required.add_argument("-i", "--ip")
         .help("ip to connect to")
@@ -20,7 +18,6 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .help("account password")
         .required();
 
-    DPL("FAIL?");
     auto& options_window = program->add_group("Window Options");
     options_window.add_argument("-ww", "--width")
         .help("window width")
@@ -43,7 +40,6 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .default_value(0)
         .scan<'i', int>();
 
-    DPL("FAIL?");
     auto& options_start = program->add_group("Start Options");
     options_start.add_argument("-dm", "--display_mode")
         .help("display mode for cameras (0 = single, 1 = all, 2 = sort, 3 = king, 4 = top")
@@ -171,6 +167,5 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .default_value(LOW_CPU_MODE)
         .scan<'i', int>();
 
-    DPL("RETURN ARGS?");
     return program;
 }
