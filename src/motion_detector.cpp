@@ -53,7 +53,6 @@ MotionDetectorParams::MotionDetectorParams(std::unique_ptr<argparse::ArgumentPar
 {
 
     if (program->get<bool>("ignore_alarm_make")) {
-        enable_info = 1;
         width = W_0;
         height = H_0;
         enable_minimap_fullscreen = 1;
