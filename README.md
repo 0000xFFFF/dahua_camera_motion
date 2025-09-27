@@ -25,7 +25,7 @@ sudo make install
 ./dcm_master --help
 ```
 ```
-Usage: dcm_master [--help] [--version] --ip VAR --username VAR --password VAR [--width VAR] [--height VAR] [--fullscreen] [--detect] [--resolution VAR] [--display_mode 0-4] [--current_channel 1-8] [--enable_fullscreen_channel 0/1] [--enable_motion 0/1] [--area VAR] [--rarea VAR] [--motion_detect_min_ms VAR] [--enable_motion_zoom_largest 0/1] [--enable_tour 0/1] [--tour_ms 0/1] [--enable_info 0/1] [--enable_info_line 0/1] [--enable_info_rect 0/1] [--enable_minimap 0/1] [--enable_minimap_fullscreen 0/1] [--enable_ignore_contours 0/1] [--ignore_contours VAR] [--ignore_contours_file VAR] [--enable_alarm_pixels 0/1] [--alarm_pixels VAR] [--alarm_pixels_file VAR] [--focus_channel VAR] [--focus_channel_area <x>x<y>;<w>x<h>] [--focus_channel_sound VAR]
+Usage: dcm_master [--help] [--version] --ip VAR --username VAR --password VAR [--width VAR] [--height VAR] [--fullscreen] [--detect] [--resolution VAR] [--display_mode 0-4] [--current_channel 1-8] [--enable_fullscreen_channel 0/1] [--enable_motion 0/1] [--area VAR] [--rarea VAR] [--motion_detect_min_ms VAR] [--enable_motion_zoom_largest 0/1] [--enable_tour 0/1] [--tour_ms 0/1] [--enable_info 0/1] [--enable_info_line 0/1] [--enable_info_rect 0/1] [--enable_minimap 0/1] [--enable_minimap_fullscreen 0/1] [--ignore_alarm_make] [--enable_ignore_contours 0/1] [--ignore_contours VAR] [--ignore_contours_file VAR] [--enable_alarm_pixels 0/1] [--alarm_pixels VAR] [--alarm_pixels_file VAR] [--focus_channel VAR] [--focus_channel_area <x>x<y>;<w>x<h>] [--focus_channel_sound VAR] [--low_cpu VAR]
 
 motion detection kiosk for dahua cameras
 
@@ -68,6 +68,9 @@ Info Options (detailed usage):
   -emm, --enable_minimap               enable minimap [nargs=0..1] [default: 0]
   -emf, --enable_minimap_fullscreen    enable minimap fullscreen [nargs=0..1] [default: 0]
 
+Ignore & Alarm Options (detailed usage):
+  -iamake, --ignore_alarm_make         start creating ignore area and alarm pixels 
+
 Ignore Options (detailed usage):
   -eic, --enable_ignore_contours       enable ignoring contours/areas (specify with -ic) [nargs=0..1] [default: 1]
   -ic, --ignore_contours               specify ignore contours/areas (e.g.: <x>x<y>,...;<x>x<y>,...) [nargs=0..1] [default: ""]
@@ -82,12 +85,14 @@ Focus Channel Options (detailed usage):
   -fc, --focus_channel                 special mode that focuses on single channel when detecting motion (don't load other channels) [nargs=0..1] [default: -1]
   -fca, --focus_channel_area           specify motion area to zoom to (work with) (e.g.: "<x>x<y>;<w>x<h>" [nargs=0..1] [default: ""]
   -fcs, --focus_channel_sound          make sound if motion is detected [nargs=0..1] [default: 0]
+
+Special Options (detailed usage):
+  -lc, --low_cpu                       low cpu mode [nargs=0..1] [default: 0]
 ```
 
 ## Setting ignore area and alarm pixels
 ```sh
-make ignore
-./dcm_master -i <ip> -u <username> -p <password>
+./dcm_master -i <ip> -u <username> -p <password> -iamake
 ```
 ### Creating ignore contours
 * zoom into image using mouse (clicking on image will tell you pixel coords in console)
