@@ -25,14 +25,16 @@
 #define KEY_LINUX_HOME        106
 #define KEY_LINUX_END         107
 
-#define CAP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
-
 // proj settings
-#define DISPLAY_MODE_SINGLE 0
-#define DISPLAY_MODE_ALL    1
-#define DISPLAY_MODE_SORT   2
-#define DISPLAY_MODE_KING   3
-#define DISPLAY_MODE_TOP    4
+enum DISPLAY_MODE {
+    DISPLAY_MODE_SINGLE,
+    DISPLAY_MODE_ALL,
+    DISPLAY_MODE_SORT,
+    DISPLAY_MODE_KING,
+    DISPLAY_MODE_TOP,
+};
+
+inline constexpr enum DISPLAY_MODE DISPLAY_MODE_DEFAULT = DISPLAY_MODE_SINGLE;
 
 #define USE_SUBTYPE1 false
 #define W_0          704
@@ -40,20 +42,12 @@
 #define W_HD         1920
 #define H_HD         1080
 
-#define MINIMAP_WIDTH  W_0/4
-#define MINIMAP_HEIGHT H_0/4
-
+#define MINIMAP_WIDTH  W_0 / 4
+#define MINIMAP_HEIGHT H_0 / 4
 
 // 1-6
-#define CROP_WIDTH     704
-#define CROP_HEIGHT    384
-
-//
-// ==[ build settings
-//
-#ifndef DEBUG
-// #define DEBUG
-#endif
+#define CROP_WIDTH  704
+#define CROP_HEIGHT 384
 
 #ifdef MAKE_IGNORE
 #ifndef ENABLE_INFO
@@ -76,159 +70,63 @@
 #endif
 #endif
 
-#ifdef DEBUG
-#ifndef ENABLE_INFO
-#define ENABLE_INFO 1
-#endif
-#ifndef ENABLE_MINIMAP
-#define ENABLE_MINIMAP 1
-#endif
-#endif
+// Channel configuration
+inline constexpr int CHANNEL_COUNT = 8;
+inline constexpr int CURRENT_CHANNEL = 1;
 
+// Info overlay
+inline constexpr bool ENABLE_INFO = false;
+inline constexpr bool ENABLE_INFO_LINE = true;
+inline constexpr bool ENABLE_INFO_RECT = true;
 
-#ifndef CHANNEL_COUNT
-#define CHANNEL_COUNT 8
-#endif
+// Minimap
+inline constexpr bool ENABLE_MINIMAP = false;
+inline constexpr bool ENABLE_MINIMAP_FULLSCREEN = false;
 
-#ifndef CURRENT_CHANNEL
-#define CURRENT_CHANNEL 1
-#endif
+// Motion detection
+inline constexpr bool ENABLE_MOTION = true;
+inline constexpr int MOTION_DETECT_AREA = 10;
+inline constexpr int MOTION_DETECT_RECT_AREA = 0;
+inline constexpr int MOTION_DETECT_MIN_MS = 1000;
+inline constexpr int MOTION_DETECT_LINGER_MS = 3000; // after motion keep zoom for X ms
+inline constexpr bool ENABLE_MOTION_ZOOM_LARGEST = false;
 
-#ifndef ENABLE_INFO
-#define ENABLE_INFO 0
-#endif
+// Ignore contours
+inline constexpr bool ENABLE_IGNORE_CONTOURS = true;
+inline constexpr auto IGNORE_CONTOURS = "";
+inline constexpr auto IGNORE_CONTOURS_FILENAME = "";
 
-#ifndef ENABLE_INFO_LINE
-#define ENABLE_INFO_LINE 1
-#endif
+// Alarm pixels
+inline constexpr bool ENABLE_ALARM_PIXELS = true;
+inline constexpr auto ALARM_PIXELS = "";
+inline constexpr auto ALARM_PIXELS_FILE = "";
 
-#ifndef ENABLE_INFO_RECT
-#define ENABLE_INFO_RECT 1
-#endif
+// Hardware acceleration
+inline constexpr bool USE_CUDA = false;
 
-#ifndef ENABLE_MINIMAP
-#define ENABLE_MINIMAP 0
-#endif
+// Layout modes
+inline constexpr int KING_LAYOUT_REL = 1;
+inline constexpr int KING_LAYOUT_CIRC = 2;
+inline constexpr int KING_LAYOUT = KING_LAYOUT_REL;
 
-#ifndef ENABLE_MINIMAP_FULLSCREEN
-#define ENABLE_MINIMAP_FULLSCREEN 0
-#endif
+// Tour & fullscreen
+inline constexpr bool ENABLE_TOUR = false;
+inline constexpr bool ENABLE_FULLSCREEN_CHANNEL = false;
+inline constexpr int TOUR_MS = 3000;
 
-#ifndef ENABLE_MOTION
-#define ENABLE_MOTION 1
-#endif
+// Connection retries
+inline constexpr int CONN_RETRY_MS = 10000;
 
-#ifndef MOTION_DETECT_AREA
-#define MOTION_DETECT_AREA 10
-#endif
+// Window defaults
+inline constexpr int DEFAULT_WIDTH = static_cast<int>(W_HD * 0.8);  // assumes W_HD is defined
+inline constexpr int DEFAULT_HEIGHT = static_cast<int>(H_HD * 0.8); // assumes H_HD is defined
+inline constexpr bool NO_RESIZE = false;
+inline constexpr auto DEFAULT_WINDOW_NAME = "Motion";
 
-#ifndef MOTION_DETECT_RECT_AREA
-#define MOTION_DETECT_RECT_AREA 0
-#endif
+// Focus channel
+inline constexpr int FOCUS_CHANNEL = -1;
+inline constexpr auto FOCUS_CHANNEL_AREA = "";
+inline constexpr bool FOCUS_CHANNEL_SOUND = false;
 
-#ifndef MOTION_DETECT_MIN_MS
-#define MOTION_DETECT_MIN_MS 1000
-#endif
-
-#ifndef MOTION_DETECT_LINGER_MS
-#define MOTION_DETECT_LINGER_MS 3000 // after motion keep zoom for X ms
-#endif
-
-#ifndef ENABLE_MOTION_ZOOM_LARGEST
-#define ENABLE_MOTION_ZOOM_LARGEST 0
-#endif
-
-#ifndef ENABLE_IGNORE_CONTOURS
-#define ENABLE_IGNORE_CONTOURS 1
-#endif
-
-#ifndef IGNORE_CONTOURS
-#define IGNORE_CONTOURS ""
-#endif
-
-#ifndef IGNORE_CONTOURS_FILENAME
-#define IGNORE_CONTOURS_FILENAME ""
-#endif
-
-#ifndef ENABLE_ALARM_PIXELS
-#define ENABLE_ALARM_PIXELS 1
-#endif
-
-#ifndef ALARM_PIXELS
-#define ALARM_PIXELS ""
-#endif
-
-#ifndef ALARM_PIXELS_FILE
-#define ALARM_PIXELS_FILE ""
-#endif
-
-#ifndef USE_CUDA
-#define USE_CUDA 0
-#endif
-
-#define KING_LAYOUT_REL  1
-#define KING_LAYOUT_CIRC 2
-
-#ifndef KING_LAYOUT
-#define KING_LAYOUT 1
-#endif
-
-#ifndef DISPLAY_MODE
-#define DISPLAY_MODE DISPLAY_MODE_SINGLE
-#endif
-
-#ifndef ENABLE_TOUR
-#define ENABLE_TOUR 0
-#endif
-
-#ifndef ENABLE_FULLSCREEN_CHANNEL
-#define ENABLE_FULLSCREEN_CHANNEL 0
-#endif
-
-// milis
-// #define SLEEP_MS_MOTION 300
-// #define SLEEP_MS_DRAW 200
-// #define SLEEP_MS_ERROR 10
-// #define SLEEP_MS_FRAME 50 // frame reader sleep
-
-#ifndef TOUR_MS
-#define TOUR_MS 3000
-#endif
-
-#ifndef CONN_RETRY_MS
-#define CONN_RETRY_MS 10000
-#endif
-
-#ifndef DEFAULT_WIDTH
-#define DEFAULT_WIDTH (int)(W_HD*0.8)
-#endif
-
-#ifndef DEFAULT_HEIGHT
-#define DEFAULT_HEIGHT (int)(H_HD*0.8)
-#endif
-
-#ifndef NO_RESIZE
-#define NO_RESIZE 0
-#endif
-
-#ifndef DEFAULT_WINDOW_NAME
-#define DEFAULT_WINDOW_NAME "Motion"
-#endif
-
-#ifndef FOCUS_CHANNEL
-#define FOCUS_CHANNEL -1
-#endif
-
-#ifndef FOCUS_CHANNEL_AREA
-#define FOCUS_CHANNEL_AREA ""
-#endif
-
-#ifndef FOCUS_CHANNEL_SOUND
-#define FOCUS_CHANNEL_SOUND 0
-#endif
-
-#ifndef LOW_CPU_MODE
-#define LOW_CPU_MODE 0
-#endif
-
-// #define SLEEP_MS_FRAME 300
+// CPU mode
+inline constexpr bool LOW_CPU_MODE = false;

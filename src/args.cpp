@@ -44,7 +44,7 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
     options_start.add_argument("-dm", "--display_mode")
         .help("display mode for cameras (0 = single, 1 = all, 2 = sort, 3 = king, 4 = top")
         .metavar("0-4")
-        .default_value(DISPLAY_MODE)
+        .default_value(DISPLAY_MODE_DEFAULT)
         .scan<'i', int>();
     options_start.add_argument("-ch", "--current_channel")
         .help("which channel to start with")
@@ -119,6 +119,13 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .metavar("0/1")
         .default_value(ENABLE_MINIMAP_FULLSCREEN)
         .scan<'i', int>();
+
+
+    auto& options_ignore_and_alarm = program->add_group("Ignore & Alarm Options");
+    options_ignore_and_alarm.add_argument("-iamake", "--ignore_alarm_make")
+        .help("start creating ignore area and alarm pixels")
+        .default_value(false)
+        .implicit_value(true);
 
     auto& options_ignore = program->add_group("Ignore Options");
     options_ignore.add_argument("-eic", "--enable_ignore_contours")
