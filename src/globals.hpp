@@ -36,82 +36,49 @@ enum DISPLAY_MODE {
 
 inline constexpr enum DISPLAY_MODE DISPLAY_MODE_DEFAULT = DISPLAY_MODE_SINGLE;
 
-#define USE_SUBTYPE1 false
-#define W_0          704
-#define H_0          576
-#define W_HD         1920
-#define H_HD         1080
+inline constexpr bool USE_SUBTYPE1 = false;
+inline constexpr int W_0 = 704;
+inline constexpr int H_0 = 576;
+inline constexpr int W_HD = 1920;
+inline constexpr int H_HD = 1080;
 
-#define MINIMAP_WIDTH  W_0 / 4
-#define MINIMAP_HEIGHT H_0 / 4
-
-// 1-6
-#define CROP_WIDTH  704
-#define CROP_HEIGHT 384
-
-#ifdef MAKE_IGNORE
-#ifndef ENABLE_INFO
-#define ENABLE_INFO 0
-#endif
-#ifndef ENABLE_MINIMAP
-#define ENABLE_MINIMAP 0
-#endif
-#ifndef ENABLE_MINIMAP_FULLSCREEN
-#define ENABLE_MINIMAP_FULLSCREEN 1
-#endif
-#ifndef ENABLE_IGNORE_CONTOURS
-#define ENABLE_IGNORE_CONTOURS 1
-#endif
-#ifndef DEFAULT_WIDTH
-#define DEFAULT_WIDTH W_0
-#endif
-#ifndef DEFAULT_HEIGHT
-#define DEFAULT_HEIGHT H_0
-#endif
-#endif
+inline constexpr int MINIMAP_WIDTH = static_cast<int>(W_0 / 4);
+inline constexpr int MINIMAP_HEIGHT = static_cast<int>(H_0 / 4);
 
 // Channel configuration
 inline constexpr int CHANNEL_COUNT = 8;
 inline constexpr int CURRENT_CHANNEL = 1;
 
 // Info overlay
-inline constexpr bool ENABLE_INFO = false;
-inline constexpr bool ENABLE_INFO_LINE = true;
-inline constexpr bool ENABLE_INFO_RECT = true;
+inline constexpr int ENABLE_INFO = 0;
+inline constexpr int ENABLE_INFO_LINE = 1;
+inline constexpr int ENABLE_INFO_RECT = 1;
 
 // Minimap
-inline constexpr bool ENABLE_MINIMAP = false;
-inline constexpr bool ENABLE_MINIMAP_FULLSCREEN = false;
+inline constexpr int ENABLE_MINIMAP = 0;
+inline constexpr int ENABLE_MINIMAP_FULLSCREEN = 0;
 
 // Motion detection
-inline constexpr bool ENABLE_MOTION = true;
+inline constexpr int ENABLE_MOTION = 1;
 inline constexpr int MOTION_DETECT_AREA = 10;
 inline constexpr int MOTION_DETECT_RECT_AREA = 0;
 inline constexpr int MOTION_DETECT_MIN_MS = 1000;
 inline constexpr int MOTION_DETECT_LINGER_MS = 3000; // after motion keep zoom for X ms
-inline constexpr bool ENABLE_MOTION_ZOOM_LARGEST = false;
+inline constexpr int ENABLE_MOTION_ZOOM_LARGEST = 0;
 
 // Ignore contours
-inline constexpr bool ENABLE_IGNORE_CONTOURS = true;
+inline constexpr int ENABLE_IGNORE_CONTOURS = 1;
 inline constexpr auto IGNORE_CONTOURS = "";
 inline constexpr auto IGNORE_CONTOURS_FILENAME = "";
 
 // Alarm pixels
-inline constexpr bool ENABLE_ALARM_PIXELS = true;
+inline constexpr int ENABLE_ALARM_PIXELS = 1;
 inline constexpr auto ALARM_PIXELS = "";
 inline constexpr auto ALARM_PIXELS_FILE = "";
 
-// Hardware acceleration
-inline constexpr bool USE_CUDA = false;
-
-// Layout modes
-inline constexpr int KING_LAYOUT_REL = 1;
-inline constexpr int KING_LAYOUT_CIRC = 2;
-inline constexpr int KING_LAYOUT = KING_LAYOUT_REL;
-
 // Tour & fullscreen
-inline constexpr bool ENABLE_TOUR = false;
-inline constexpr bool ENABLE_FULLSCREEN_CHANNEL = false;
+inline constexpr int ENABLE_TOUR = 0;
+inline constexpr int ENABLE_FULLSCREEN_CHANNEL = 0;
 inline constexpr int TOUR_MS = 3000;
 
 // Connection retries
@@ -126,7 +93,9 @@ inline constexpr auto DEFAULT_WINDOW_NAME = "Motion";
 // Focus channel
 inline constexpr int FOCUS_CHANNEL = -1;
 inline constexpr auto FOCUS_CHANNEL_AREA = "";
-inline constexpr bool FOCUS_CHANNEL_SOUND = false;
+inline constexpr int FOCUS_CHANNEL_SOUND = 0;
 
 // CPU mode
-inline constexpr bool LOW_CPU_MODE = false;
+inline constexpr int LOW_CPU_MODE = 0;
+
+// #define USE_CUDA

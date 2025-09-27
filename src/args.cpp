@@ -44,7 +44,7 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
     options_start.add_argument("-dm", "--display_mode")
         .help("display mode for cameras (0 = single, 1 = all, 2 = sort, 3 = king, 4 = top")
         .metavar("0-4")
-        .default_value(DISPLAY_MODE_DEFAULT)
+        .default_value(static_cast<int>(DISPLAY_MODE_DEFAULT))
         .scan<'i', int>();
     options_start.add_argument("-ch", "--current_channel")
         .help("which channel to start with")
@@ -173,6 +173,7 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .help("low cpu mode")
         .default_value(LOW_CPU_MODE)
         .scan<'i', int>();
+
 
     return program;
 }
