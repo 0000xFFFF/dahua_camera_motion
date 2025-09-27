@@ -23,17 +23,17 @@ int main(int argc, char* argv[])
     CpuUsageMonitor monitor;
 #endif
 
-        auto program = parse_args();
-        program->parse_args(argc, argv);
+    auto program = parse_args();
+    program->parse_args(argc, argv);
 
-        init_sound();
+    init_sound();
 
-        MotionDetectorParams params(program);
+    MotionDetectorParams params(program);
 
-        {
-            motionDetector = std::make_unique<MotionDetector>(params);
-            motionDetector->draw_loop();
-        }
+    {
+        motionDetector = std::make_unique<MotionDetector>(params);
+        motionDetector->draw_loop();
+    }
 
     uninit_sound();
 
