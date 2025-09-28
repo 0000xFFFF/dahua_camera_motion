@@ -65,6 +65,7 @@ class MotionDetector {
 
     std::atomic<bool> m_running{true};
 
+    int m_subtype;
     int m_display_width;
     int m_display_height;
     bool m_fullscreen;

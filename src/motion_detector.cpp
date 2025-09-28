@@ -12,7 +12,8 @@
 #include <unistd.h>
 
 MotionDetector::MotionDetector(const MotionDetectorParams& params)
-    : m_display_width(params.width),
+    : m_subtype(params.subtype),
+      m_display_width(params.width),
       m_display_height(params.height),
       m_fullscreen(params.fullscreen),
       m_display_mode(params.display_mode),
@@ -72,9 +73,9 @@ void MotionDetector::init_alarm_pixels(const MotionDetectorParams& params)
 
 void MotionDetector::init_default(const MotionDetectorParams& params)
 {
-    m_readers.emplace_back(std::make_unique<FrameReader>(0, params.ip, params.username, params.password, true));
+    m_readers.emplace_back(std::make_unique<FrameReader>(0, params.ip, params.username, params.password, params.subtype, true));
     for (int channel = 1; channel <= CHANNEL_COUNT; ++channel) {
-        m_readers.emplace_back(std::make_unique<FrameReader>(channel, params.ip, params.username, params.password, true));
+        m_readers.emplace_back(std::make_unique<FrameReader>(channel, params.ip, params.username, params.password, params.subtype, true));
     }
 
     change_channel(params.current_channel);
@@ -82,9 +83,9 @@ void MotionDetector::init_default(const MotionDetectorParams& params)
 
 void MotionDetector::init_lowcpu(const MotionDetectorParams& params)
 {
-    m_readers.emplace_back(std::make_unique<FrameReader>(0, params.ip, params.username, params.password, true));
+    m_readers.emplace_back(std::make_unique<FrameReader>(0, params.ip, params.username, params.password, params.subtype, true));
     for (int channel = 1; channel <= CHANNEL_COUNT; ++channel) {
-        m_readers.emplace_back(std::make_unique<FrameReader>(channel, params.ip, params.username, params.password, false));
+        m_readers.emplace_back(std::make_unique<FrameReader>(channel, params.ip, params.username, params.password, params.subtype, false));
     }
 
     change_channel(params.current_channel);
@@ -93,7 +94,7 @@ void MotionDetector::init_lowcpu(const MotionDetectorParams& params)
 void MotionDetector::init_focus(const MotionDetectorParams& params)
 {
     for (int channel = 0; channel <= CHANNEL_COUNT; channel++) {
-        m_readers.emplace_back(std::make_unique<FrameReader>(channel, params.ip, params.username, params.password, channel == params.focus_channel));
+        m_readers.emplace_back(std::make_unique<FrameReader>(channel, params.ip, params.username, params.password, params.subtype, channel == params.focus_channel));
     }
 
     if (!params.focus_channel_area.empty() && params.focus_channel_area != "") {

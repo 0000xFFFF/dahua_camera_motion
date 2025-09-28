@@ -36,7 +36,7 @@ enum DISPLAY_MODE {
 
 inline constexpr enum DISPLAY_MODE DISPLAY_MODE_DEFAULT = DISPLAY_MODE_SINGLE;
 
-inline constexpr bool USE_SUBTYPE1 = false;
+inline constexpr int SUBTYPE = 0;
 inline constexpr int W_0 = 704;
 inline constexpr int H_0 = 576;
 inline constexpr int W_HD = 1920;

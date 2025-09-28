@@ -41,6 +41,11 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .scan<'i', int>();
 
     auto& options_start = program->add_group("Start Options");
+    options_start.add_argument("-st", "--subtype")
+        .help("witch subtype to use (0 = full hq, 1 = smaller resolution)")
+        .metavar("0-4")
+        .default_value(static_cast<int>(SUBTYPE))
+        .scan<'i', int>();
     options_start.add_argument("-dm", "--display_mode")
         .help("display mode for cameras (0 = single, 1 = all, 2 = sort, 3 = king, 4 = top")
         .metavar("0-4")

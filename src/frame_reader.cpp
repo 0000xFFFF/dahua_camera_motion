@@ -20,13 +20,15 @@ FrameReader::FrameReader(int channel,
                          const std::string& ip,
                          const std::string& username,
                          const std::string& password,
+                         int subtype,
                          bool autostart)
     :
 
       m_ip(ip),
       m_username(username),
       m_password(password),
-      m_channel(channel)
+      m_channel(channel),
+      m_subtype(subtype)
 {
 
     put_placeholder();
@@ -106,12 +108,12 @@ void FrameReader::stop()
 }
 
 std::string FrameReader::construct_rtsp_url(const std::string& ip, const std::string& username,
-                                            const std::string& password)
+                                            const std::string& password, int subtype)
 {
-    int subtype = (USE_SUBTYPE1 && m_channel != 0) ? 1 : 0;
+    int st = (subtype && m_channel != 0) ? 1 : 0;
     return "rtsp://" + username + ":" + password + "@" + ip +
            ":554/cam/realmonitor?channel=" + std::to_string(m_channel) +
-           "&subtype=" + std::to_string(subtype);
+           "&subtype=" + std::to_string(st);
 }
 
 void FrameReader::connect_and_read()
@@ -119,7 +121,7 @@ void FrameReader::connect_and_read()
     bool connected = false;
 
     std::cout << "start capture: " << m_channel << std::endl;
-    std::string rtsp_url = construct_rtsp_url(m_ip, m_username, m_password);
+    std::string rtsp_url = construct_rtsp_url(m_ip, m_username, m_password, m_subtype);
 
     avformat_network_init();
     AVFormatContext* formatCtx = avformat_alloc_context();

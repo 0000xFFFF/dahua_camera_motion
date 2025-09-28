@@ -7,6 +7,7 @@ struct MotionDetectorParams {
     std::string ip;
     std::string username;
     std::string password;
+    int subtype;
     int width;
     int height;
     bool fullscreen;

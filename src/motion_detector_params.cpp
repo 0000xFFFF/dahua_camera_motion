@@ -8,6 +8,7 @@ MotionDetectorParams::MotionDetectorParams(std::unique_ptr<argparse::ArgumentPar
     ip                         {program->get<std::string>("ip")},
     username                   {program->get<std::string>("username")},
     password                   {program->get<std::string>("password")},
+    subtype                    {program->get<int>("subtype")},
     width                      {program->get<int>("width")},
     height                     {program->get<int>("height")},
     fullscreen                 {program->get<bool>("fullscreen")},

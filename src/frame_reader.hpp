@@ -12,6 +12,7 @@ class FrameReader {
                 const std::string& ip,
                 const std::string& username,
                 const std::string& password,
+                int subtype,
                 bool autostart);
 
     cv::Mat get_latest_frame(bool no_empty_frame);
@@ -23,7 +24,7 @@ class FrameReader {
 
   private:
     void connect_and_read();
-    std::string construct_rtsp_url(const std::string& ip, const std::string& username, const std::string& password);
+    std::string construct_rtsp_url(const std::string& ip, const std::string& username, const std::string& password, int subtype);
     void put_placeholder();
 
   private:
@@ -32,6 +33,7 @@ class FrameReader {
     std::string m_username;
     std::string m_password;
     int m_channel;
+    int m_subtype;
     std::atomic<double> captured_fps{15.0};
 
     std::atomic<bool> m_sleep{true};
