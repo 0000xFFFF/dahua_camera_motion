@@ -32,30 +32,25 @@ class MotionDetector {
     void init_ignore_contours(const MotionDetectorParams& params);
     void init_alarm_pixels(const MotionDetectorParams& params);
 
-    // detecting
     void detect_motion();
     void detect_largest_motion_area_set_channel();
 
     void change_channel(int ch);
     void do_tour_logic();
 
-    // drawing
-    void draw_paint_minimap();
-    void draw_paint_info();
-    void draw_paint_info_line();
-    void draw_paint_motion_region(cv::Mat canv, size_t posX, size_t posY, size_t width, size_t height);
+    void draw_loop_handle_keys();
 
-    //
+    void draw_paint_info_minimap();
+    void draw_paint_info_text();
+    void draw_paint_info_line();
+    void draw_paint_info_motion_region(cv::Mat canv, size_t posX, size_t posY, size_t width, size_t height);
+
     cv::Mat draw_paint_main_mat_all();
     cv::Mat draw_paint_main_mat_sort();
     cv::Mat draw_paint_main_mat_multi();
     cv::Mat draw_paint_main_mat_king();
     cv::Mat draw_paint_main_mat_top();
 
-    // handle keyes
-    void draw_loop_handle_keys();
-
-    // make ignore area
     void parse_ignore_contours(const std::string& input);
     void parse_ignore_contours_file(const std::string& filename);
     void print_ignore_contours();
@@ -70,7 +65,6 @@ class MotionDetector {
 
     std::atomic<bool> m_running{true};
 
-    // set from params
     int m_display_width;
     int m_display_height;
     bool m_fullscreen;
