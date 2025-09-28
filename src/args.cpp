@@ -110,7 +110,7 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .default_value(ENABLE_INFO_LINE)
         .scan<'i', int>();
     options_info.add_argument("-eir", "--enable_info_rect")
-        .help("enable drawing largest motion rectangle")
+        .help("enable drawing motion rectangles and contours")
         .metavar("0/1")
         .default_value(ENABLE_INFO_RECT)
         .scan<'i', int>();

@@ -134,7 +134,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     double max_area = 0;
     m_motion_detected = false;
 
-    if (m_enable_minimap || m_enable_minimap_fullscreen)
+    if ((m_enable_minimap || m_enable_minimap_fullscreen) && m_enable_info_rect)
         cv::drawContours(m_frame0, contours, -1, cv::Scalar(255, 0, 0), 1);
 
     for (const auto& contour : contours) {
@@ -142,7 +142,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
             cv::Rect rect = cv::boundingRect(contour);
             double area = rect.width * rect.height;
             if (area >= m_motion_min_rect_area) {
-                if (m_enable_minimap || m_enable_minimap_fullscreen)
+                if ((m_enable_minimap || m_enable_minimap_fullscreen) && m_enable_info_rect)
                     cv::rectangle(m_frame0, rect, cv::Scalar(0, 255, 0), 1);
 
                 if (area > max_area) {
@@ -158,7 +158,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     auto now = std::chrono::high_resolution_clock::now();
     if (m_motion_detected) {
 
-        if (m_enable_minimap || m_enable_minimap_fullscreen)
+        if ((m_enable_minimap || m_enable_minimap_fullscreen) && m_enable_info_rect)
             cv::rectangle(m_frame0, motion_region, cv::Scalar(0, 0, 255), 2);
 
         m_motion_region.push(motion_region);
