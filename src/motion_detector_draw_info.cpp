@@ -1,7 +1,7 @@
 #include "motion_detector.hpp"
 #include "utils.hpp"
 
-void MotionDetector::draw_info()
+void MotionDetector::draw_paint_info()
 {
     const int text_y_start = 200;
     const int text_y_step = 35;
@@ -42,7 +42,7 @@ void MotionDetector::draw_info()
                 font_scale, text_color, font_thickness);
 }
 
-void MotionDetector::draw_info_line()
+void MotionDetector::draw_paint_info_line()
 {
     if (m_motion_detected_min_ms) {
         cv::rectangle(m_main_display, cv::Rect(0, 0, m_main_display.size().width, m_main_display.size().height), cv::Scalar(0, 0, 255), 1, cv::LINE_8);

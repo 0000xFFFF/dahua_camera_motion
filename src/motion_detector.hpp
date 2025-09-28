@@ -40,15 +40,15 @@ class MotionDetector {
     void do_tour_logic();
 
     // drawing
-    void draw_minimap();
-    void draw_info();
-    void draw_info_line();
-    void draw_motion_region(cv::Mat canv, size_t posX, size_t posY, size_t width, size_t height);
-    cv::Mat paint_main_mat_all();
-    cv::Mat paint_main_mat_sort();
-    cv::Mat paint_main_mat_multi();
-    cv::Mat paint_main_mat_king();
-    cv::Mat paint_main_mat_top();
+    void draw_paint_minimap();
+    void draw_paint_info();
+    void draw_paint_info_line();
+    void draw_paint_motion_region(cv::Mat canv, size_t posX, size_t posY, size_t width, size_t height);
+    cv::Mat draw_paint_main_mat_all();
+    cv::Mat draw_paint_main_mat_sort();
+    cv::Mat draw_paint_main_mat_multi();
+    cv::Mat draw_paint_main_mat_king();
+    cv::Mat draw_paint_main_mat_top();
     void handle_keys();
 
     // make ignore area

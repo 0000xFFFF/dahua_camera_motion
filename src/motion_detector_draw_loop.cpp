@@ -55,19 +55,19 @@ void MotionDetector::draw_loop()
                      (m_display_mode == DISPLAY_MODE_SINGLE) ||
                      (m_enable_motion && m_enable_motion_zoom_largest && (m_motion_detected_min_ms || m_motion_detect_linger))) {
                 get = get_frame(m_current_channel, m_layout_changed);
-                draw_motion_region(get, 0, 0, get.size().width, get.size().height);
+                draw_paint_motion_region(get, 0, 0, get.size().width, get.size().height);
             }
             else if (m_display_mode == DISPLAY_MODE_SORT) {
-                get = paint_main_mat_sort();
+                get = draw_paint_main_mat_sort();
             }
             else if (m_display_mode == DISPLAY_MODE_KING) {
-                get = paint_main_mat_king();
+                get = draw_paint_main_mat_king();
             }
             else if (m_display_mode == DISPLAY_MODE_TOP) {
-                get = paint_main_mat_top();
+                get = draw_paint_main_mat_top();
             }
             else if (m_display_mode == DISPLAY_MODE_ALL) {
-                get = paint_main_mat_all();
+                get = draw_paint_main_mat_all();
             }
 
             if (!get.empty()) {
@@ -78,9 +78,9 @@ void MotionDetector::draw_loop()
                     m_main_display = get;
                 }
 
-                if (m_enable_minimap) { draw_minimap(); }
-                if (m_enable_info) { draw_info(); }
-                if (m_enable_info_line) { draw_info_line(); }
+                if (m_enable_minimap) { draw_paint_minimap(); }
+                if (m_enable_info) { draw_paint_info(); }
+                if (m_enable_info_line) { draw_paint_info_line(); }
 
                 cv::imshow(DEFAULT_WINDOW_NAME, m_main_display);
 

@@ -1,6 +1,6 @@
 #include "motion_detector.hpp"
 
-void MotionDetector::draw_minimap()
+void MotionDetector::draw_paint_minimap()
 {
     cv::Mat frame0 = m_frame0_dbuff.get();
     if (frame0.empty()) { return; }
