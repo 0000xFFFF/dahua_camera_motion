@@ -1,7 +1,7 @@
 #include "motion_detector.hpp"
 #include "utils.hpp"
 
-void MotionDetector::draw_paint_info()
+void MotionDetector::draw_paint_info_text()
 {
     const int text_y_start = 200;
     const int text_y_step = 35;
@@ -42,7 +42,7 @@ void MotionDetector::draw_paint_info()
                 font_scale, text_color, font_thickness);
 }
 
-void MotionDetector::draw_paint_minimap()
+void MotionDetector::draw_paint_info_minimap()
 {
     cv::Mat frame0 = m_frame0_dbuff.get();
     if (frame0.empty()) { return; }
@@ -86,7 +86,7 @@ void MotionDetector::draw_paint_info_line()
     }
 }
 
-void MotionDetector::draw_paint_motion_region(cv::Mat canv, size_t posX, size_t posY, size_t width, size_t height)
+void MotionDetector::draw_paint_info_motion_region(cv::Mat canv, size_t posX, size_t posY, size_t width, size_t height)
 {
     if (!m_enable_info_rect || !m_motion_detected_min_ms) { return; }
     auto opt_region = m_motion_region.pop();

@@ -19,7 +19,7 @@ cv::Mat MotionDetector::draw_paint_main_mat_all()
             int y = row * h;
             cv::resize(mat, m_canv2(cv::Rect(x, y, w, h)), cv::Size(w, h));
             if (ch == m_current_channel) {
-                draw_paint_motion_region(m_canv2, x, y, w, h);
+                draw_paint_info_motion_region(m_canv2, x, y, w, h);
             }
         }
     });
@@ -50,7 +50,7 @@ cv::Mat MotionDetector::draw_paint_main_mat_sort()
             cv::Rect roi(x, y, w, h);
             cv::resize(mat, m_canv2(cv::Rect(x, y, w, h)), cv::Size(w, h));
             if (ch == m_current_channel) {
-                draw_paint_motion_region(m_canv2, x, y, w, h);
+                draw_paint_info_motion_region(m_canv2, x, y, w, h);
             }
         }
     });
@@ -81,7 +81,7 @@ cv::Mat MotionDetector::draw_paint_main_mat_king()
                         size_t w0 = w * 3;
                         size_t h0 = h * 3;
                         cv::resize(mat, m_canv1(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
-                        draw_paint_motion_region(m_canv1(cv::Rect(0 * w, 0 * h, w0, h0)), 0, 0, w0, h0);
+                        draw_paint_info_motion_region(m_canv1(cv::Rect(0 * w, 0 * h, w0, h0)), 0, 0, w0, h0);
                         break;
                     }
                 case 1: cv::resize(mat, m_canv1(cv::Rect(3 * w, 0 * h, w, h)), cv::Size(w, h)); break;
@@ -125,7 +125,7 @@ cv::Mat MotionDetector::draw_paint_main_mat_top()
                 size_t w0 = w * 3;
                 size_t h0 = h * 3;
                 cv::resize(mat, m_canv1(cv::Rect(0 * w, 0 * h, w0, h0)), cv::Size(w0, h0));
-                draw_paint_motion_region(m_canv1, 0, 0, w0, h0);
+                draw_paint_info_motion_region(m_canv1, 0, 0, w0, h0);
             }
             else {
                 // Other slots are from active_channels (excluding m_current_channel)
