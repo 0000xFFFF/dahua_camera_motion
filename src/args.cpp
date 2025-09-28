@@ -170,7 +170,7 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
 
     auto& options_special = program->add_group("Special Options");
     options_special.add_argument("-lc", "--low_cpu")
-        .help("low cpu mode")
+        .help("low cpu mode (uses only channel 0 to draw everything)")
         .default_value(LOW_CPU_MODE)
         .scan<'i', int>();
 
