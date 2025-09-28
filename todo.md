@@ -1,3 +1,2 @@
-- turn every build option to arg flag
 - add option to not draw motion rects
 - add to that low cpu mode to get hq on motion
