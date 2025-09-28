@@ -1,4 +1,5 @@
 #include "globals.hpp"
+#include "opencv2/core/types.hpp"
 #include <SDL2/SDL_mixer.h>
 #include <array>
 #include <iostream>
@@ -72,4 +73,17 @@ void play_unique_sound(Mix_Chunk* sound)
 
     // Not playing yet, find a free channel and play
     Mix_PlayChannel(-1, sound, 0);
+}
+
+void print_contour(const std::vector<cv::Point>& contour)
+{
+    for (size_t x = 0; x < contour.size(); x++) {
+        std::cout << contour[x].x << "x" << contour[x].y;
+        if (x != contour.size() - 1) { std::cout << ","; }
+    }
+}
+
+std::string bool_to_str(bool b)
+{
+    return std::string(b ? "Yes" : "No");
 }

@@ -13,51 +13,25 @@
 
 #include "globals.hpp"
 
-struct MotionDetectorParams {
-    std::string ip;
-    std::string username;
-    std::string password;
-    int width;
-    int height;
-    bool fullscreen;
-    int display_mode;
-    int area;
-    int rarea;
-    int motion_detect_min_ms;
-    int current_channel;
-    int enable_motion;
-    int enable_motion_zoom_largest;
-    int enable_tour;
-    int enable_info;
-    int tour_ms;
-    int enable_info_line;
-    int enable_info_rect;
-    int enable_minimap;
-    int enable_minimap_fullscreen;
-    int enable_fullscreen_channel;
-    int enable_ignore_contours;
-    int enable_alarm_pixels;
-    std::string ignore_contours;
-    std::string ignore_contours_file;
-    std::string alarm_pixels;
-    std::string alarm_pixels_file;
-    int focus_channel;
-    std::string focus_channel_area;
-    int focus_channel_sound;
-    int low_cpu;
-    MotionDetectorParams(std::unique_ptr<argparse::ArgumentParser>& program);
-};
+#include "motion_detector_params.hpp"
 
 class MotionDetector {
 
   public:
-    MotionDetector(MotionDetectorParams params);
+    MotionDetector(const MotionDetectorParams& params);
 
     void draw_loop();
     void stop();
     DoubleBuffer<cv::Point> m_mouse_pos;
 
   private:
+    void init_default(const MotionDetectorParams& params);
+    void init_lowcpu(const MotionDetectorParams& params);
+    void init_focus(const MotionDetectorParams& params);
+
+    void init_ignore_contours(const MotionDetectorParams& params);
+    void init_alarm_pixels(const MotionDetectorParams& params);
+
     // detecting
     void detect_motion();
     void detect_largest_motion_area_set_channel();
@@ -75,7 +49,6 @@ class MotionDetector {
     cv::Mat paint_main_mat_multi();
     cv::Mat paint_main_mat_king();
     cv::Mat paint_main_mat_top();
-    std::string bool_to_str(bool b);
     void handle_keys();
 
     // make ignore area
