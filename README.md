@@ -87,7 +87,7 @@ Focus Channel Options (detailed usage):
   -fcs, --focus_channel_sound          make sound if motion is detected [nargs=0..1] [default: 0]
 
 Special Options (detailed usage):
-  -lc, --low_cpu                       low cpu mode [nargs=0..1] [default: 0]
+  -lc, --low_cpu                       low cpu mode (uses only channel 0 to draw everything) [nargs=0..1] [default: 0]
 ```
 
 ## Setting ignore area and alarm pixels
