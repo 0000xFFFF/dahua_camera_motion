@@ -1,7 +1,7 @@
 #include "motion_detector.hpp"
 #include "utils.hpp"
 
-void MotionDetector::handle_keys()
+void MotionDetector::draw_loop_handle_keys()
 {
     // clang-format off
     int key = cv::waitKey(1);

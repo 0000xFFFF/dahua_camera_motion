@@ -87,7 +87,7 @@ void MotionDetector::draw_loop()
                 if (m_display_width == 0) { m_display_width = m_main_display.size().width; }
                 if (m_display_height == 0) { m_display_height = m_main_display.size().height; }
 
-                handle_keys();
+                draw_loop_handle_keys();
             }
 
 #ifndef SLEEP_MS_DRAW

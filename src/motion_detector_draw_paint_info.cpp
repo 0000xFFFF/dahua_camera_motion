@@ -42,6 +42,23 @@ void MotionDetector::draw_paint_info()
                 font_scale, text_color, font_thickness);
 }
 
+void MotionDetector::draw_paint_minimap()
+{
+    cv::Mat frame0 = m_frame0_dbuff.get();
+    if (frame0.empty()) { return; }
+
+    cv::Mat minimap;
+    cv::resize(frame0, minimap, cv::Size(MINIMAP_WIDTH, MINIMAP_HEIGHT));
+
+    // Add white border
+    cv::Mat minimap_padded;
+    cv::copyMakeBorder(minimap, minimap_padded, 2, 2, 2, 2, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
+
+    // Place minimap on main display
+    cv::Point minimap_pos = cv::Point(10, 10);
+    minimap_padded.copyTo(m_main_display(cv::Rect(minimap_pos.x, minimap_pos.y, minimap_padded.cols, minimap_padded.rows)));
+}
+
 void MotionDetector::draw_paint_info_line()
 {
     if (m_motion_detected_min_ms) {
@@ -66,5 +83,34 @@ void MotionDetector::draw_paint_info_line()
     }
     else {
         cv::rectangle(m_main_display, cv::Rect(0, 0, m_main_display.size().width, m_main_display.size().height), cv::Scalar(0, 0, 0), 1, cv::LINE_8);
+    }
+}
+
+void MotionDetector::draw_paint_motion_region(cv::Mat canv, size_t posX, size_t posY, size_t width, size_t height)
+{
+    if (!m_enable_info_rect || !m_motion_detected_min_ms) { return; }
+    auto opt_region = m_motion_region.pop();
+    if (opt_region) {
+        int ch = m_current_channel;
+        cv::Rect region = *opt_region;
+        int row = (ch - 1) / 3;
+        int col = (ch - 1) % 3;
+
+        constexpr int mini_ch_w = W_0 / 3;
+        constexpr int mini_ch_h = H_0 / 3;
+
+        float scaleX = static_cast<float>(width) / mini_ch_w;
+        float scaleY = static_cast<float>(height) / mini_ch_h;
+
+        int offsetX = col * mini_ch_w;
+        int offsetY = row * mini_ch_h;
+
+        cv::Rect new_motion_region(
+            (region.x - offsetX) * scaleX + posX,
+            (region.y - offsetY) * scaleY + posY,
+            region.width * scaleX,
+            region.height * scaleY);
+
+        cv::rectangle(canv, new_motion_region, cv::Scalar(0, 0, 255), 2);
     }
 }

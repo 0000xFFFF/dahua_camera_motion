@@ -93,26 +93,6 @@
       "-D_REENTRANT",
       "-o",
       "dcm_master",
-      "src/motion_detector_draw_info.cpp"
-    ],
-    "directory": "/home/user/.vip/mytools/dahua_camera_motion",
-    "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_draw_info.cpp",
-    "output": "/home/user/.vip/mytools/dahua_camera_motion/dcm_master"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang++",
-      "-c",
-      "-D",
-      "DEBUG",
-      "-g",
-      "-fno-omit-frame-pointer",
-      "-I/usr/include/opencv4",
-      "-I/usr/include/SDL2",
-      "-D_GNU_SOURCE=1",
-      "-D_REENTRANT",
-      "-o",
-      "dcm_master",
       "src/motion_detector_draw_loop.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
@@ -133,10 +113,10 @@
       "-D_REENTRANT",
       "-o",
       "dcm_master",
-      "src/motion_detector_draw_minimap.cpp"
+      "src/motion_detector_draw_paint_info.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
-    "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_draw_minimap.cpp",
+    "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_draw_paint_info.cpp",
     "output": "/home/user/.vip/mytools/dahua_camera_motion/dcm_master"
   },
   {
@@ -153,10 +133,10 @@
       "-D_REENTRANT",
       "-o",
       "dcm_master",
-      "src/motion_detector_draw_paint.cpp"
+      "src/motion_detector_draw_paint_main_mat.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
-    "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_draw_paint.cpp",
+    "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_draw_paint_main_mat.cpp",
     "output": "/home/user/.vip/mytools/dahua_camera_motion/dcm_master"
   },
   {
@@ -375,12 +355,12 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/args-3dda87.o",
+      "/tmp/args-0f9c7c.o",
       "src/args.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
     "file": "/home/user/.vip/mytools/dahua_camera_motion/src/args.cpp",
-    "output": "/tmp/args-3dda87.o"
+    "output": "/tmp/args-0f9c7c.o"
   },
   {
     "arguments": [
@@ -458,12 +438,12 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/frame_reader-e746c0.o",
+      "/tmp/frame_reader-fcbe8a.o",
       "src/frame_reader.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
     "file": "/home/user/.vip/mytools/dahua_camera_motion/src/frame_reader.cpp",
-    "output": "/tmp/frame_reader-e746c0.o"
+    "output": "/tmp/frame_reader-fcbe8a.o"
   },
   {
     "arguments": [
@@ -541,12 +521,12 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/main-a72a86.o",
+      "/tmp/main-78e546.o",
       "src/main.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
     "file": "/home/user/.vip/mytools/dahua_camera_motion/src/main.cpp",
-    "output": "/tmp/main-a72a86.o"
+    "output": "/tmp/main-78e546.o"
   },
   {
     "arguments": [
@@ -624,12 +604,12 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/motion_detector-a84615.o",
+      "/tmp/motion_detector-4b296f.o",
       "src/motion_detector.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
     "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector.cpp",
-    "output": "/tmp/motion_detector-a84615.o"
+    "output": "/tmp/motion_detector-4b296f.o"
   },
   {
     "arguments": [
@@ -707,95 +687,12 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/motion_detector_draw_info-7c129a.o",
-      "src/motion_detector_draw_info.cpp"
-    ],
-    "directory": "/home/user/.vip/mytools/dahua_camera_motion",
-    "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_draw_info.cpp",
-    "output": "/tmp/motion_detector_draw_info-7c129a.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/clang++",
-      "-cc1",
-      "-triple",
-      "x86_64-pc-linux-gnu",
-      "-emit-obj",
-      "-dumpdir",
-      "dcm_master-",
-      "-disable-free",
-      "-clear-ast-before-backend",
-      "-disable-llvm-verifier",
-      "-discard-value-names",
-      "-main-file-name",
-      "-mrelocation-model",
-      "pic",
-      "-pic-level",
-      "2",
-      "-pic-is-pie",
-      "-mframe-pointer=all",
-      "-fmath-errno",
-      "-ffp-contract=on",
-      "-fno-rounding-math",
-      "-mconstructor-aliases",
-      "-funwind-tables=2",
-      "-target-cpu",
-      "x86-64",
-      "-tune-cpu",
-      "generic",
-      "-debug-info-kind=constructor",
-      "-dwarf-version=5",
-      "-debugger-tuning=gdb",
-      "-fdebug-compilation-dir=/home/user/.vip/mytools/dahua_camera_motion",
-      "-fcoverage-compilation-dir=/home/user/.vip/mytools/dahua_camera_motion",
-      "-resource-dir",
-      "/usr/lib/clang/20",
-      "-D",
-      "DEBUG",
-      "-I",
-      "/usr/include/opencv4",
-      "-I",
-      "/usr/include/SDL2",
-      "-D",
-      "_GNU_SOURCE=1",
-      "-D",
-      "_REENTRANT",
-      "-internal-isystem",
-      "/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../include/c++/15.2.1",
-      "-internal-isystem",
-      "/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../include/c++/15.2.1/x86_64-pc-linux-gnu",
-      "-internal-isystem",
-      "/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../include/c++/15.2.1/backward",
-      "-internal-isystem",
-      "/usr/lib/clang/20/include",
-      "-internal-isystem",
-      "/usr/local/include",
-      "-internal-isystem",
-      "/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../x86_64-pc-linux-gnu/include",
-      "-internal-externc-isystem",
-      "/include",
-      "-internal-externc-isystem",
-      "/usr/include",
-      "-fdeprecated-macro",
-      "-ferror-limit",
-      "19",
-      "-stack-protector",
-      "2",
-      "-fgnuc-version=4.2.1",
-      "-fskip-odr-check-in-gmf",
-      "-fcxx-exceptions",
-      "-fexceptions",
-      "-faddrsig",
-      "-D__GCC_HAVE_DWARF2_CFI_ASM=1",
-      "-x",
-      "c++",
-      "-o",
-      "/tmp/motion_detector_draw_loop-a54b52.o",
+      "/tmp/motion_detector_draw_loop-8cf3a5.o",
       "src/motion_detector_draw_loop.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
     "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_draw_loop.cpp",
-    "output": "/tmp/motion_detector_draw_loop-a54b52.o"
+    "output": "/tmp/motion_detector_draw_loop-8cf3a5.o"
   },
   {
     "arguments": [
@@ -873,12 +770,12 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/motion_detector_draw_minimap-9ef0ac.o",
-      "src/motion_detector_draw_minimap.cpp"
+      "/tmp/motion_detector_draw_paint_info-b0627c.o",
+      "src/motion_detector_draw_paint_info.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
-    "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_draw_minimap.cpp",
-    "output": "/tmp/motion_detector_draw_minimap-9ef0ac.o"
+    "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_draw_paint_info.cpp",
+    "output": "/tmp/motion_detector_draw_paint_info-b0627c.o"
   },
   {
     "arguments": [
@@ -956,12 +853,12 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/motion_detector_draw_paint-2cd406.o",
-      "src/motion_detector_draw_paint.cpp"
+      "/tmp/motion_detector_draw_paint_main_mat-bba0d2.o",
+      "src/motion_detector_draw_paint_main_mat.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
-    "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_draw_paint.cpp",
-    "output": "/tmp/motion_detector_draw_paint-2cd406.o"
+    "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_draw_paint_main_mat.cpp",
+    "output": "/tmp/motion_detector_draw_paint_main_mat-bba0d2.o"
   },
   {
     "arguments": [
@@ -1039,12 +936,12 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/motion_detector_handle_keys-deabb8.o",
+      "/tmp/motion_detector_handle_keys-3e4dca.o",
       "src/motion_detector_handle_keys.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
     "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_handle_keys.cpp",
-    "output": "/tmp/motion_detector_handle_keys-deabb8.o"
+    "output": "/tmp/motion_detector_handle_keys-3e4dca.o"
   },
   {
     "arguments": [
@@ -1122,12 +1019,12 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/motion_detector_motion-5d3450.o",
+      "/tmp/motion_detector_motion-96a854.o",
       "src/motion_detector_motion.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
     "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_motion.cpp",
-    "output": "/tmp/motion_detector_motion-5d3450.o"
+    "output": "/tmp/motion_detector_motion-96a854.o"
   },
   {
     "arguments": [
@@ -1205,12 +1102,12 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/motion_detector_params-2b6cbc.o",
+      "/tmp/motion_detector_params-5a6718.o",
       "src/motion_detector_params.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
     "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_params.cpp",
-    "output": "/tmp/motion_detector_params-2b6cbc.o"
+    "output": "/tmp/motion_detector_params-5a6718.o"
   },
   {
     "arguments": [
@@ -1288,12 +1185,12 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/motion_detector_utils-4f0eb7.o",
+      "/tmp/motion_detector_utils-447bbf.o",
       "src/motion_detector_utils.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
     "file": "/home/user/.vip/mytools/dahua_camera_motion/src/motion_detector_utils.cpp",
-    "output": "/tmp/motion_detector_utils-4f0eb7.o"
+    "output": "/tmp/motion_detector_utils-447bbf.o"
   },
   {
     "arguments": [
@@ -1371,12 +1268,12 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/signal-24e0fc.o",
+      "/tmp/signal-987c1b.o",
       "src/signal.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
     "file": "/home/user/.vip/mytools/dahua_camera_motion/src/signal.cpp",
-    "output": "/tmp/signal-24e0fc.o"
+    "output": "/tmp/signal-987c1b.o"
   },
   {
     "arguments": [
@@ -1454,12 +1351,12 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/sound-78b832.o",
+      "/tmp/sound-58b6e1.o",
       "src/sound.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
     "file": "/home/user/.vip/mytools/dahua_camera_motion/src/sound.cpp",
-    "output": "/tmp/sound-78b832.o"
+    "output": "/tmp/sound-58b6e1.o"
   },
   {
     "arguments": [
@@ -1537,11 +1434,11 @@
       "-x",
       "c++",
       "-o",
-      "/tmp/utils-22ab8e.o",
+      "/tmp/utils-34d26e.o",
       "src/utils.cpp"
     ],
     "directory": "/home/user/.vip/mytools/dahua_camera_motion",
     "file": "/home/user/.vip/mytools/dahua_camera_motion/src/utils.cpp",
-    "output": "/tmp/utils-22ab8e.o"
+    "output": "/tmp/utils-34d26e.o"
   }
 ]

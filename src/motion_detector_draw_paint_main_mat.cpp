@@ -1,5 +1,6 @@
 #include "motion_detector.hpp"
 
+
 cv::Mat MotionDetector::draw_paint_main_mat_all()
 {
     bool layout_changed = m_layout_changed;
@@ -150,31 +151,4 @@ cv::Mat MotionDetector::draw_paint_main_mat_top()
     return m_canv1;
 }
 
-void MotionDetector::draw_paint_motion_region(cv::Mat canv, size_t posX, size_t posY, size_t width, size_t height)
-{
-    if (!m_enable_info_rect || !m_motion_detected_min_ms) { return; }
-    auto opt_region = m_motion_region.pop();
-    if (opt_region) {
-        int ch = m_current_channel;
-        cv::Rect region = *opt_region;
-        int row = (ch - 1) / 3;
-        int col = (ch - 1) % 3;
 
-        constexpr int mini_ch_w = W_0 / 3;
-        constexpr int mini_ch_h = H_0 / 3;
-
-        float scaleX = static_cast<float>(width) / mini_ch_w;
-        float scaleY = static_cast<float>(height) / mini_ch_h;
-
-        int offsetX = col * mini_ch_w;
-        int offsetY = row * mini_ch_h;
-
-        cv::Rect new_motion_region(
-            (region.x - offsetX) * scaleX + posX,
-            (region.y - offsetY) * scaleY + posY,
-            region.width * scaleX,
-            region.height * scaleY);
-
-        cv::rectangle(canv, new_motion_region, cv::Scalar(0, 0, 255), 2);
-    }
-}

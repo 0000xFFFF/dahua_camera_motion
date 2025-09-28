@@ -44,12 +44,16 @@ class MotionDetector {
     void draw_paint_info();
     void draw_paint_info_line();
     void draw_paint_motion_region(cv::Mat canv, size_t posX, size_t posY, size_t width, size_t height);
+
+    //
     cv::Mat draw_paint_main_mat_all();
     cv::Mat draw_paint_main_mat_sort();
     cv::Mat draw_paint_main_mat_multi();
     cv::Mat draw_paint_main_mat_king();
     cv::Mat draw_paint_main_mat_top();
-    void handle_keys();
+
+    // handle keyes
+    void draw_loop_handle_keys();
 
     // make ignore area
     void parse_ignore_contours(const std::string& input);
