@@ -23,7 +23,7 @@ bench_cpu:
 music:
 	xxd -i sfx/clicky-8-bit-sfx.wav > src/sfx.h
 
-install: release
+install:
 	install -m 755 $(EXEC) $(BINDIR)
 
 uninstall:
