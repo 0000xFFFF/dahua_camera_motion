@@ -23,7 +23,7 @@ bench_cpu:
 music:
 	xxd -i sfx/clicky-8-bit-sfx.wav > src/sfx.h
 
-install:
+install: release
 	install -m 755 $(EXEC) $(BINDIR)
 
 uninstall:
@@ -31,6 +31,7 @@ uninstall:
 
 lowcpu:
 	$(CC) $(ARGS) $(RELEASE_ARGS) -D SLEEP_MS_FRAME=100 -D SLEEP_MS_DRAW=100 -D SLEEP_MS_MOTION=100 $(LIBS) $(FILES) -o $(EXEC)
+
 
 release:
 	$(CC) $(ARGS) $(RELEASE_ARGS) $(LIBS) $(FILES) -o $(EXEC)
