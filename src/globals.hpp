@@ -37,6 +37,16 @@ enum DISPLAY_MODE {
 inline constexpr enum DISPLAY_MODE DISPLAY_MODE_DEFAULT = DISPLAY_MODE_SINGLE;
 
 inline constexpr int SUBTYPE = 0;
+// Video Standards:
+// Feature              PAL                                                      NTSC
+// Full Name            Phase Alternating Line                                   National Television System Committee
+// Region               Europe, Asia, Africa, Australia                          North America, Japan, parts of South America
+// Frame Rate           25 fps (frames per second)                               30 fps (actually 29.97 fps)
+// Power System Match   50 Hz power grid regions                                 60 Hz power grid regions
+// Resolution (Analog)  720 × 576 pixels                                         720 × 480 pixels
+// Color Encoding       Phase-alternating color signal (less color distortion)   Simpler color encoding (more color shift possible)
+//
+// we are using PAL here:
 inline constexpr int W_0 = 704;
 inline constexpr int H_0 = 576;
 inline constexpr int W_HD = 1920;
