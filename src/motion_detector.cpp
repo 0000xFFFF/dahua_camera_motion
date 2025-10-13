@@ -49,12 +49,11 @@ MotionDetector::MotionDetector(const MotionDetectorParams& params)
     // m_fgbg = cv::bgsegm::createBackgroundSubtractorCNT(true, 15, true);
 
     // clang-format off
-    if (params.low_cpu)                  { init_lowcpu(params);  }
-    else if (params.focus_channel == -1) { init_default(params); }
-    else                                 { init_focus(params);   }
+    if      (params.low_cpu)             { init_lowcpu(params);  m_thread_ch0 = std::thread([this]() { update_ch0(); }); }
+    else if (params.focus_channel == -1) { init_default(params); m_thread_ch0 = std::thread([this]() { update_ch0(); }); }
+    else if (params.focus_channel != -1) { init_focus(params);                                                           }
     // clang-format on
 
-    m_thread_ch0 = std::thread([this]() { update_ch0(); });
     m_thread_detect_motion = std::thread([this]() { detect_motion(); });
 }
 
@@ -120,6 +119,7 @@ void MotionDetector::stop()
     m_cv_draw.notify_one();
     m_cv_motion.notify_one();
     if (m_thread_detect_motion.joinable()) { m_thread_detect_motion.join(); }
+    if (m_thread_ch0.joinable()) { m_thread_ch0.join(); }
     for (auto& reader : m_readers) { reader->stop(); }
     D(std::cout << "destroy all win" << std::endl);
     cv::destroyAllWindows();
