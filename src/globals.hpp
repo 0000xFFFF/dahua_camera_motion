@@ -34,7 +34,7 @@ enum DISPLAY_MODE {
     DISPLAY_MODE_TOP,
 };
 
-inline constexpr enum DISPLAY_MODE DISPLAY_MODE_DEFAULT = DISPLAY_MODE_SINGLE;
+inline constexpr enum DISPLAY_MODE DISPLAY_MODE_DEFAULT = DISPLAY_MODE_KING;
 
 inline constexpr int SUBTYPE = 0;
 // Video Standards:
@@ -74,7 +74,7 @@ inline constexpr int MOTION_DETECT_AREA = 10;
 inline constexpr int MOTION_DETECT_RECT_AREA = 0;
 inline constexpr int MOTION_DETECT_MIN_MS = 1000;
 inline constexpr int MOTION_DETECT_LINGER_MS = 3000; // after motion keep zoom for X ms
-inline constexpr int ENABLE_MOTION_ZOOM_LARGEST = 0;
+inline constexpr int ENABLE_MOTION_ZOOM_LARGEST = 1;
 
 // Ignore contours
 inline constexpr int ENABLE_IGNORE_CONTOURS = 1;
