@@ -44,7 +44,7 @@ void MotionDetector::draw_paint_info_text()
 
 void MotionDetector::draw_paint_info_minimap()
 {
-    cv::Mat frame0 = m_frame0_dbuff.get();
+    cv::Mat frame0 = m_frame_detection_dbuff.get();
     if (frame0.empty()) { return; }
 
     cv::Mat minimap;

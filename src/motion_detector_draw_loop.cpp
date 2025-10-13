@@ -49,7 +49,7 @@ void MotionDetector::draw_loop()
 
             cv::Mat get;
             if (m_enable_minimap_fullscreen || m_focus_channel != -1) {
-                get = m_frame0_dbuff.get();
+                get = m_frame_detection_dbuff.get();
             }
             else if (m_enable_fullscreen_channel ||
                      (m_display_mode == DISPLAY_MODE_SINGLE) ||

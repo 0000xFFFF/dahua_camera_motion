@@ -33,6 +33,7 @@ class MotionDetector {
     void init_alarm_pixels(const MotionDetectorParams& params);
 
     void detect_motion();
+    void update_ch0();
     void detect_largest_motion_area_set_channel();
 
     void change_channel(int ch);
@@ -96,6 +97,7 @@ class MotionDetector {
     std::atomic<int> m_focus_channel_sound;
 
     // init
+    std::thread m_thread_ch0;
     std::thread m_thread_detect_motion;
     std::vector<std::unique_ptr<FrameReader>> m_readers;
     // cv::Ptr<cv::BackgroundSubtractorMOG2> m_fgbg;     // 69.6
@@ -104,6 +106,8 @@ class MotionDetector {
 
     cv::Mat m_frame0;
     DoubleBufferMat m_frame0_dbuff;
+    cv::Mat m_frame_detection;
+    DoubleBufferMat m_frame_detection_dbuff;
     cv::Mat m_canv1;
     cv::Mat m_canv2;
     cv::Mat m_main_display;
@@ -123,6 +127,7 @@ class MotionDetector {
     // draw & motion sleeps
     long long int m_draw_sleep_ms{0};
     long long int m_motion_sleep_ms{0};
+    long long int m_ch0_sleep_ms{0};
 
     // tour
     std::atomic<int> m_tour_current_channel{1};
@@ -135,6 +140,9 @@ class MotionDetector {
 
     std::mutex m_mtx_draw;
     std::condition_variable m_cv_draw;
+
+    std::mutex m_mtx_ch0;
+    std::condition_variable m_cv_ch0;
 
     std::mutex m_mtx_motion;
     std::condition_variable m_cv_motion;

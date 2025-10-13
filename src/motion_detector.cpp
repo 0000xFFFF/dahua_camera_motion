@@ -54,6 +54,7 @@ MotionDetector::MotionDetector(const MotionDetectorParams& params)
     else                                 { init_focus(params);   }
     // clang-format on
 
+    m_thread_ch0 = std::thread([this]() { update_ch0(); });
     m_thread_detect_motion = std::thread([this]() { detect_motion(); });
 }
 
