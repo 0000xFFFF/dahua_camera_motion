@@ -25,7 +25,7 @@ sudo make install
 ./dcm_master --help
 ```
 ```
-Usage: dcm_master [--help] [--version] --ip VAR --username VAR --password VAR [--width VAR] [--height VAR] [--fullscreen] [--detect] [--resolution VAR] [--subtype 0-4] [--display_mode 0-4] [--current_channel 1-8] [--enable_fullscreen_channel 0/1] [--enable_motion 0/1] [--area VAR] [--rarea VAR] [--motion_detect_min_ms VAR] [--enable_motion_zoom_largest 0/1] [--enable_tour 0/1] [--tour_ms 0/1] [--enable_info 0/1] [--enable_info_line 0/1] [--enable_info_rect 0/1] [--enable_minimap 0/1] [--enable_minimap_fullscreen 0/1] [--ignore_alarm_make] [--enable_ignore_contours 0/1] [--ignore_contours VAR] [--ignore_contours_file VAR] [--enable_alarm_pixels 0/1] [--alarm_pixels VAR] [--alarm_pixels_file VAR] [--focus_channel VAR] [--focus_channel_area <x>x<y>;<w>x<h>] [--focus_channel_sound VAR] [--low_cpu VAR] [--low_cpu_hq_motion VAR] [--low_cpu_hq_motion_dual VAR]
+Usage: dcm_master [--help] [--version] --ip ip --username username --password password [--width NUMBER] [--height NUMBER] [--fullscreen] [--detect] [--resolution 0,1,2,...] [--subtype 0/1] [--display_mode 0-4] [--current_channel 1-8] [--enable_fullscreen_channel 0/1] [--enable_motion 0/1] [--area 0/1] [--rarea 0/1] [--motion_detect_min_ms NUMBER] [--enable_motion_zoom_largest 0/1] [--enable_tour 0/1] [--tour_ms 0/1] [--enable_info 0/1] [--enable_info_line 0/1] [--enable_info_rect 0/1] [--enable_minimap 0/1] [--enable_minimap_fullscreen 0/1] [--ignore_alarm_make] [--enable_ignore_contours 0/1] [--ignore_contours "<x>x<y> ...,<x>x<y> ..."] [--ignore_contours_file ignore.txt] [--enable_alarm_pixels 0/1] [--alarm_pixels "<x>x<y> <x>x<y> ..."] [--alarm_pixels_file alarm.txt] [--focus_channel 1-8] [--focus_channel_area "<x>x<y> <w>x<h>"] [--focus_channel_sound 0/1] [--low_cpu 0/1] [--low_cpu_hq_motion 0/1] [--low_cpu_hq_motion_dual 0/1]
 
 motion detection kiosk for dahua cameras
 
@@ -34,9 +34,9 @@ Optional arguments:
   -v, --version                        prints version information and exits 
 
 Required Options (detailed usage):
-  -i, --ip                             ip to connect to [required]
-  -u, --username                       account username [required]
-  -p, --password                       account password [required]
+  -i, --ip ip                          ip to connect to [required]
+  -u, --username username              account username [required]
+  -p, --password password              account password [required]
 
 Window Options (detailed usage):
   -ww, --width                         window width [nargs=0..1] [default: 1536]
@@ -74,17 +74,17 @@ Ignore & Alarm Options (detailed usage):
 
 Ignore Options (detailed usage):
   -eic, --enable_ignore_contours       enable ignoring contours/areas (specify with -ic) [nargs=0..1] [default: 1]
-  -ic, --ignore_contours               specify ignore contours/areas (e.g.: <x>x<y>,...;<x>x<y>,...) [nargs=0..1] [default: ""]
-  -icf, --ignore_contours_file         specify ignore contours/areas inside file (seperated by new line) (e.g.: "<x>x<y>,...\n<x>x<y>,...") [nargs=0..1] [default: ""]
+  -ic, --ignore_contours               specify ignore contours/areas (points seperated by space, contours seperated by comma) (e.g.: "<x>x<y> ...,<x>x<y> ...") [nargs=0..1] [default: ""]
+  -icf, --ignore_contours_file         specify ignore contours/areas inside file (points seperated by space, contours seperated by new line) (e.g.: "<x>x<y> ...\n<x>x<y> ...") [nargs=0..1] [default: ""]
 
 Alarm Options (detailed usage):
   -eap, --enable_alarm_pixels          enable alarm pixels (specify with -ap) [nargs=0..1] [default: 1]
-  -ap, --alarm_pixels                  specify alarm pixels (e.g.: <x>x<y>;<x>x<y>;...) [nargs=0..1] [default: ""]
+  -ap, --alarm_pixels                  specify alarm pixels (seperated by space) (e.g.: "<x>x<y> <x>x<y> ...") [nargs=0..1] [default: ""]
   -apf, --alarm_pixels_file            specify alarm pixels inside file (seperated by new line) (e.g.: "<x>x<y>\n<x>x<y>...") [nargs=0..1] [default: ""]
 
 Focus Channel Options (detailed usage):
   -fc, --focus_channel                 special mode that focuses on single channel when detecting motion (don't load other channels) [nargs=0..1] [default: -1]
-  -fca, --focus_channel_area           specify motion area to zoom to (work with) (e.g.: "<x>x<y>;<w>x<h>" [nargs=0..1] [default: ""]
+  -fca, --focus_channel_area           specify motion area to zoom to (work with) (e.g.: "<x>x<y> <w>x<h>" [nargs=0..1] [default: ""]
   -fcs, --focus_channel_sound          make sound if motion is detected [nargs=0..1] [default: 0]
 
 Special Options (detailed usage):

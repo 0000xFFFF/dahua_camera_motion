@@ -10,21 +10,26 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
     auto& options_required = program->add_group("Required Options");
     options_required.add_argument("-i", "--ip")
         .help("ip to connect to")
+        .metavar("ip")
         .required();
     options_required.add_argument("-u", "--username")
         .help("account username")
+        .metavar("username")
         .required();
     options_required.add_argument("-p", "--password")
         .help("account password")
+        .metavar("password")
         .required();
 
     auto& options_window = program->add_group("Window Options");
     options_window.add_argument("-ww", "--width")
         .help("window width")
+        .metavar("NUMBER")
         .default_value(DEFAULT_WIDTH)
         .scan<'i', int>();
     options_window.add_argument("-wh", "--height")
         .help("window height")
+        .metavar("NUMBER")
         .default_value(DEFAULT_HEIGHT)
         .scan<'i', int>();
     options_window.add_argument("-fs", "--fullscreen")
@@ -37,13 +42,14 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .implicit_value(true);
     options_window.add_argument("-r", "--resolution")
         .help("index of resolution to use")
+        .metavar("0,1,2,...")
         .default_value(0)
         .scan<'i', int>();
 
     auto& options_start = program->add_group("Start Options");
     options_start.add_argument("-st", "--subtype")
         .help("witch subtype to use (0 = full hq, 1 = smaller resolution)")
-        .metavar("0-4")
+        .metavar("0/1")
         .default_value(static_cast<int>(SUBTYPE))
         .scan<'i', int>();
     options_start.add_argument("-dm", "--display_mode")
@@ -70,14 +76,17 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .scan<'i', int>();
     options_motion.add_argument("-a", "--area")
         .help("min contour area for motion detection")
+        .metavar("0/1")
         .default_value(MOTION_DETECT_AREA)
         .scan<'i', int>();
     options_motion.add_argument("-ra", "--rarea")
         .help("min contour's bounding rectangle area for detection")
+        .metavar("0/1")
         .default_value(MOTION_DETECT_RECT_AREA)
         .scan<'i', int>();
     options_motion.add_argument("-ms", "--motion_detect_min_ms")
         .help("minimum milliseconds of detected motion to switch channel")
+        .metavar("NUMBER")
         .default_value(MOTION_DETECT_MIN_MS)
         .scan<'i', int>();
     options_motion.add_argument("-emzl", "--enable_motion_zoom_largest")
@@ -143,7 +152,7 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .metavar("\"<x>x<y> ...,<x>x<y> ...\"")
         .default_value(IGNORE_CONTOURS);
     options_ignore.add_argument("-icf", "--ignore_contours_file")
-        .help("specify ignore contours/areas inside file (seperated by new line) (e.g.: \"<x>x<y>,...\\n<x>x<y>,...\")")
+        .help("specify ignore contours/areas inside file (points seperated by space, contours seperated by new line) (e.g.: \"<x>x<y> ...\\n<x>x<y> ...\")")
         .metavar("ignore.txt")
         .default_value(IGNORE_CONTOURS_FILENAME);
 
@@ -166,6 +175,7 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
     auto& options_focus = program->add_group("Focus Channel Options");
     options_focus.add_argument("-fc", "--focus_channel")
         .help("special mode that focuses on single channel when detecting motion (don't load other channels)")
+        .metavar("1-8")
         .default_value(FOCUS_CHANNEL)
         .scan<'i', int>();
     options_focus.add_argument("-fca", "--focus_channel_area")
@@ -174,20 +184,24 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .default_value(FOCUS_CHANNEL_AREA);
     options_focus.add_argument("-fcs", "--focus_channel_sound")
         .help("make sound if motion is detected")
+        .metavar("0/1")
         .default_value(FOCUS_CHANNEL_SOUND)
         .scan<'i', int>();
 
     auto& options_special = program->add_group("Special Options");
     options_special.add_argument("-lc", "--low_cpu")
         .help("low cpu mode (uses only channel 0 to draw everything)")
+        .metavar("0/1")
         .default_value(LOW_CPU_MODE)
         .scan<'i', int>();
     options_special.add_argument("-lchqm", "--low_cpu_hq_motion")
         .help("if motion is detected get high quality after switching channel")
+        .metavar("0/1")
         .default_value(LOW_CPU_MODE_HQ_MOTION)
         .scan<'i', int>();
     options_special.add_argument("-lchqmd", "--low_cpu_hq_motion_dual")
         .help("keep last 2 channels running in high quality (use this if motion is detected on 2 channels and it swaps them frequently)")
+        .metavar("0/1")
         .default_value(LOW_CPU_MODE_HQ_MOTION_DUAL)
         .scan<'i', int>();
 
