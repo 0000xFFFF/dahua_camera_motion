@@ -139,10 +139,12 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .default_value(ENABLE_IGNORE_CONTOURS)
         .scan<'i', int>();
     options_ignore.add_argument("-ic", "--ignore_contours")
-        .help("specify ignore contours/areas (e.g.: <x>x<y>,...;<x>x<y>,...)")
+        .help("specify ignore contours/areas (points seperated by space, contours seperated by comma) (e.g.: \"<x>x<y> ...,<x>x<y> ...\")")
+        .metavar("\"<x>x<y> ...,<x>x<y> ...\"")
         .default_value(IGNORE_CONTOURS);
     options_ignore.add_argument("-icf", "--ignore_contours_file")
         .help("specify ignore contours/areas inside file (seperated by new line) (e.g.: \"<x>x<y>,...\\n<x>x<y>,...\")")
+        .metavar("ignore.txt")
         .default_value(IGNORE_CONTOURS_FILENAME);
 
     auto& options_alarm = program->add_group("Alarm Options");
@@ -152,10 +154,12 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .default_value(ENABLE_ALARM_PIXELS)
         .scan<'i', int>();
     options_alarm.add_argument("-ap", "--alarm_pixels")
-        .help("specify alarm pixels (e.g.: <x>x<y>;<x>x<y>;...)")
+        .help("specify alarm pixels (seperated by space) (e.g.: \"<x>x<y> <x>x<y> ...\")")
+        .metavar("\"<x>x<y> <x>x<y> ...\"")
         .default_value(ALARM_PIXELS);
     options_alarm.add_argument("-apf", "--alarm_pixels_file")
         .help("specify alarm pixels inside file (seperated by new line) (e.g.: \"<x>x<y>\\n<x>x<y>...\")")
+        .metavar("alarm.txt")
         .default_value(ALARM_PIXELS_FILE);
 
 
@@ -165,8 +169,8 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .default_value(FOCUS_CHANNEL)
         .scan<'i', int>();
     options_focus.add_argument("-fca", "--focus_channel_area")
-        .help("specify motion area to zoom to (work with) (e.g.: \"<x>x<y>;<w>x<h>\"")
-        .metavar("<x>x<y>;<w>x<h>")
+        .help("specify motion area to zoom to (work with) (e.g.: \"<x>x<y> <w>x<h>\"")
+        .metavar("\"<x>x<y> <w>x<h>\"")
         .default_value(FOCUS_CHANNEL_AREA);
     options_focus.add_argument("-fcs", "--focus_channel_sound")
         .help("make sound if motion is detected")

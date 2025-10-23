@@ -102,9 +102,9 @@ Special Options (detailed usage):
 * press 'C' to draw a vertex point for current contour (must draw min 2 pixels so it shows actual line)
 * press 'V' to close the contour
 * press 'B' to clear all contours
-* you can load contours from cmd line args (seperate with ;) or file (seperate with newline)
+* you can load contours from cmd line args or file (see options -ic & -icf in --help)
 
 ### Creating alarm pixels
 * press 'X' to set alarm pixel (when motion is detected in this pixel it will play a sound)
 * peess 'Z' to clear all alarm pixels
-* you can load alarm pixels from cmd line args (seperate with ;) or file (seperate with newline)
+* you can load alarm pixels from cmd line args or file (see options -ap & -apf in --help)

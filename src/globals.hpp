@@ -1,6 +1,6 @@
 #pragma once
 
-#define VERSION "1.0.0"
+#define VERSION "2.0.0"
 
 //
 // ==[ static useful stuff
@@ -77,6 +77,10 @@ inline constexpr int MOTION_DETECT_RECT_AREA = 0;
 inline constexpr int MOTION_DETECT_MIN_MS = 1000;
 inline constexpr int MOTION_DETECT_LINGER_MS = 3000; // after motion keep zoom for X ms
 inline constexpr int ENABLE_MOTION_ZOOM_LARGEST = 1;
+
+inline constexpr char SPLIT_COORD = 'x';
+inline constexpr char SPLIT_POINT = ' ';
+inline constexpr char SPLIT_LIST = ',';
 
 // Ignore contours
 inline constexpr int ENABLE_IGNORE_CONTOURS = 1;

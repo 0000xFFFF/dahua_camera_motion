@@ -41,7 +41,6 @@ void MotionDetector::change_channel(int ch)
 
     int prev = m_current_channel;
 
-
     m_layout_changed = true;
     move_to_front(ch);
     m_previous_channel = prev;
@@ -106,12 +105,12 @@ void MotionDetector::do_tour_logic()
 
 std::tuple<long, long, long, long> MotionDetector::parse_area(const std::string& input)
 {
-    size_t posSemicolon = input.find(';');
+    size_t posSemicolon = input.find(SPLIT_POINT);
     std::string first = input.substr(0, posSemicolon);
     std::string second = input.substr(posSemicolon + 1);
 
-    size_t posX1 = first.find('x');
-    size_t posX2 = second.find('x');
+    size_t posX1 = first.find(SPLIT_COORD);
+    size_t posX2 = second.find(SPLIT_COORD);
 
     long x = std::stol(first.substr(0, posX1));
     long y = std::stol(first.substr(posX1 + 1));
@@ -121,20 +120,20 @@ std::tuple<long, long, long, long> MotionDetector::parse_area(const std::string&
     return std::make_tuple(x, y, w, h);
 }
 
-// e.g. "100x200,150x250,...;300x400,350x450,...";
+// e.g. "100x200 150x250 ...,300x400 350x450 ...";
 void MotionDetector::parse_ignore_contours(const std::string& input)
 {
     std::vector<std::vector<cv::Point>> contours;
     std::stringstream ss(input);
     std::string contourStr;
 
-    while (std::getline(ss, contourStr, ';')) { // Split contours by ";"
+    while (std::getline(ss, contourStr, SPLIT_LIST)) { // Split contours by ","
         std::vector<cv::Point> contour;
         std::stringstream pointStream(contourStr);
         std::string pointStr;
 
-        while (std::getline(pointStream, pointStr, ',')) { // Split points by ","
-            size_t xPos = pointStr.find('x');              // Find 'x' separator
+        while (std::getline(pointStream, pointStr, SPLIT_POINT)) { // Split points by " "
+            size_t xPos = pointStr.find(SPLIT_COORD);              // Find 'x' separator
 
             if (xPos != std::string::npos) {
                 int x = std::stoi(pointStr.substr(0, xPos));
@@ -167,8 +166,8 @@ void MotionDetector::parse_ignore_contours_file(const std::string& filename)
         std::stringstream pointStream(contourStr);
         std::string pointStr;
 
-        while (std::getline(pointStream, pointStr, ',')) { // Split points by ","
-            size_t xPos = pointStr.find('x');              // Find 'x' separator
+        while (std::getline(pointStream, pointStr, SPLIT_POINT)) { // Split points by " "
+            size_t xPos = pointStr.find(SPLIT_COORD);              // Find 'x' separator
 
             if (xPos != std::string::npos) {
                 int x = std::stoi(pointStr.substr(0, xPos));
@@ -192,10 +191,10 @@ void MotionDetector::print_ignore_contours()
     std::cout << "-ic \"";
     for (size_t i = 0; i < ignore_contours.size(); i++) {
         for (size_t x = 0; x < ignore_contours[i].size(); x++) {
-            std::cout << ignore_contours[i][x].x << "x" << ignore_contours[i][x].y;
-            if (x != ignore_contours[i].size() - 1) { std::cout << ","; }
+            std::cout << ignore_contours[i][x].x << SPLIT_COORD << ignore_contours[i][x].y;
+            if (x != ignore_contours[i].size() - 1) { std::cout << SPLIT_POINT; }
         }
-        if (i != ignore_contours.size() - 1) { std::cout << ";"; }
+        if (i != ignore_contours.size() - 1) { std::cout << SPLIT_LIST; }
     }
     std::cout << "\"" << std::endl;
 }
@@ -206,8 +205,8 @@ void MotionDetector::parse_alarm_pixels(const std::string& input)
     std::stringstream ss(input);
     std::string pointStr;
 
-    while (std::getline(ss, pointStr, ';')) {
-        size_t xPos = pointStr.find('x');
+    while (std::getline(ss, pointStr, SPLIT_POINT)) {
+        size_t xPos = pointStr.find(SPLIT_COORD);
 
         if (xPos != std::string::npos) {
             int x = std::stoi(pointStr.substr(0, xPos));
@@ -231,7 +230,7 @@ void MotionDetector::parse_alarm_pixels_file(const std::string& filename)
     }
 
     while (std::getline(file, pointStr)) {
-        size_t xPos = pointStr.find('x');
+        size_t xPos = pointStr.find(SPLIT_COORD);
         if (xPos != std::string::npos) {
             int x = std::stoi(pointStr.substr(0, xPos));
             int y = std::stoi(pointStr.substr(xPos + 1));
@@ -249,8 +248,8 @@ void MotionDetector::print_alarm_pixels()
     auto aps = m_alarm_pixels.get();
     std::cout << "-ap \"";
     for (size_t i = 0; i < aps.size(); i++) {
-        std::cout << aps[i].x << "x" << aps[i].y;
-        if (i != aps.size() - 1) { std::cout << ","; }
+        std::cout << aps[i].x << SPLIT_COORD << aps[i].y;
+        if (i != aps.size() - 1) { std::cout << SPLIT_POINT; }
     }
     std::cout << "\"" << std::endl;
 }

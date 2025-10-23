@@ -78,8 +78,8 @@ void play_unique_sound(Mix_Chunk* sound)
 void print_contour(const std::vector<cv::Point>& contour)
 {
     for (size_t x = 0; x < contour.size(); x++) {
-        std::cout << contour[x].x << "x" << contour[x].y;
-        if (x != contour.size() - 1) { std::cout << ","; }
+        std::cout << contour[x].x << SPLIT_COORD << contour[x].y;
+        if (x != contour.size() - 1) { std::cout << SPLIT_POINT; }
     }
 }
 
