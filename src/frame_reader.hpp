@@ -21,6 +21,8 @@ class FrameReader {
     double get_fps();
     void start();
     void stop();
+    bool is_running();
+    bool is_active();
 
   private:
     void connect_and_read();
@@ -43,6 +45,7 @@ class FrameReader {
     LockFreeRingBuffer<cv::Mat, 2> m_frame_buffer;
     DoubleBufferMat m_frame_dbuffer;
     cv::VideoCapture m_cap;
-    std::atomic<bool> m_running{true};
+    std::atomic<bool> m_running{false};
     std::atomic<bool> m_cleaning{false};
+    std::atomic<bool> m_active{false};
 };

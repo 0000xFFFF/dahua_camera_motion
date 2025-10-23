@@ -230,6 +230,7 @@ void FrameReader::connect_and_read()
     int64_t pts_tolerance = static_cast<int64_t>(estimated_frames_skipped * formatCtx->streams[videoStreamIndex]->time_base.den / formatCtx->streams[videoStreamIndex]->time_base.num);
 #endif
 
+    m_active = true;
     // Read Frames
     while (m_running) {
 
@@ -310,6 +311,8 @@ void FrameReader::connect_and_read()
 #endif
     }
 
+    m_active = false;
+
     // Cleanup
     av_frame_free(&frame);
     avcodec_free_context(&codecCtx);
@@ -325,4 +328,12 @@ void FrameReader::start()
         m_running = true;
         m_thread = std::thread([this] { connect_and_read(); });
     }
+}
+
+bool FrameReader::is_running() {
+    return m_running.load();
+}
+
+bool FrameReader::is_active() {
+    return m_active.load();
 }

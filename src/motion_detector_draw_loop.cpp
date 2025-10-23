@@ -54,6 +54,18 @@ void MotionDetector::draw_loop()
             else if (m_enable_fullscreen_channel ||
                      (m_display_mode == DISPLAY_MODE_SINGLE) ||
                      (m_enable_motion && m_enable_motion_zoom_largest && (m_motion_detected_min_ms || m_motion_detect_linger))) {
+
+                //if (m_low_cpu_hq_motion) {
+                //    for (int i = 1; i <= CHANNEL_COUNT; i++) {
+                //        if (i == m_current_channel) {
+                //            m_readers[i]->start();
+                //        }
+                //        else {
+                //            m_readers[i]->stop();
+                //        }
+                //    }
+                //}
+
                 get = get_frame(m_current_channel, m_layout_changed);
                 draw_paint_info_motion_region(get, 0, 0, get.size().width, get.size().height);
             }

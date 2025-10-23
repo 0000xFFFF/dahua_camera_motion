@@ -1,10 +1,17 @@
+#include "debug.hpp"
 #include "motion_detector.hpp"
 #include <fstream>
 
 cv::Mat MotionDetector::get_frame(int channel, int layout_changed)
 {
-
     if (m_low_cpu) {
+        if (m_low_cpu_hq_motion) {
+            if (m_readers[channel]->is_running() && m_readers[channel]->is_active()) {
+                return m_readers[channel]->get_latest_frame(layout_changed);
+            }
+        }
+
+        // get frame fro ch 0
         constexpr int mini_ch_w = W_0 / 3;
         constexpr int mini_ch_h = H_0 / 3;
 
