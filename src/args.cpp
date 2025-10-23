@@ -103,7 +103,7 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .scan<'i', int>();
     options_tour.add_argument("-tms", "--tour_ms")
         .help("how many ms to focus on a channel before switching")
-        .metavar("0/1")
+        .metavar("NUMBER")
         .default_value(TOUR_MS)
         .scan<'i', int>();
 
