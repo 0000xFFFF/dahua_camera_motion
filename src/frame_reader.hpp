@@ -13,7 +13,8 @@ class FrameReader {
                 const std::string& username,
                 const std::string& password,
                 int subtype,
-                bool autostart);
+                bool autostart,
+                bool has_placeholder);
 
     cv::Mat get_latest_frame(bool no_empty_frame);
     void disable_sleep();

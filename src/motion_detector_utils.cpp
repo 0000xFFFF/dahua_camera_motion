@@ -40,6 +40,20 @@ void MotionDetector::change_channel(int ch)
         }
     }
 #endif
+
+    if (m_low_cpu_hq_motion) {
+        if (!m_readers[ch]->is_running()) {
+            for (int i = 1; i <= CHANNEL_COUNT; i++) {
+                if (i == ch) {
+                    m_readers[i]->start();
+                }
+                else {
+                    m_readers[i]->stop();
+                }
+            }
+        }
+    }
+
     m_layout_changed = true;
     move_to_front(ch);
     m_current_channel = ch;

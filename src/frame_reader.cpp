@@ -21,7 +21,8 @@ FrameReader::FrameReader(int channel,
                          const std::string& username,
                          const std::string& password,
                          int subtype,
-                         bool autostart)
+                         bool autostart,
+                         bool has_placeholder)
     :
 
       m_ip(ip),
@@ -31,7 +32,9 @@ FrameReader::FrameReader(int channel,
       m_subtype(subtype)
 {
 
-    put_placeholder();
+    if (has_placeholder) {
+        put_placeholder();
+    }
 
     if (autostart) {
         start();
@@ -230,7 +233,6 @@ void FrameReader::connect_and_read()
     int64_t pts_tolerance = static_cast<int64_t>(estimated_frames_skipped * formatCtx->streams[videoStreamIndex]->time_base.den / formatCtx->streams[videoStreamIndex]->time_base.num);
 #endif
 
-    m_active = true;
     // Read Frames
     while (m_running) {
 
@@ -259,6 +261,7 @@ void FrameReader::connect_and_read()
 
                 m_frame_buffer.push(image.clone());
                 m_frame_dbuffer.update(image);
+                m_active = true;
 
                 i++;
                 if (i % 30 == 0) {
