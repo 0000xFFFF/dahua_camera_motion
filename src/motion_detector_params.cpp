@@ -36,7 +36,9 @@ MotionDetectorParams::MotionDetectorParams(std::unique_ptr<argparse::ArgumentPar
     focus_channel              {program->get<int>("focus_channel")},
     focus_channel_area         {program->get<std::string>("focus_channel_area")},
     focus_channel_sound        {program->get<int>("focus_channel_sound")},
-    low_cpu                    {program->get<int>("low_cpu")}
+    low_cpu                    {program->get<int>("low_cpu")},
+    low_cpu_hq_motion          {program->get<int>("low_cpu_hq_motion")},
+    low_cpu_hq_motion_dual     {program->get<int>("low_cpu_hq_motion_dual")}
 // clang-format on
 {
 
@@ -62,6 +64,12 @@ MotionDetectorParams::MotionDetectorParams(std::unique_ptr<argparse::ArgumentPar
         width = detected_width;
         height = detected_height;
         std::cout << "Detected screen size: " << width << "x" << height << std::endl;
+    }
+
+    if (low_cpu_hq_motion) { low_cpu = 1; }
+    if (low_cpu_hq_motion_dual) {
+        low_cpu = 1;
+        low_cpu_hq_motion = 1;
     }
 
     // clang-format off
@@ -96,5 +104,7 @@ MotionDetectorParams::MotionDetectorParams(std::unique_ptr<argparse::ArgumentPar
     D(std::cout << "focus_channel_area        = " << focus_channel_area         << std::endl);
     D(std::cout << "focus_channel_sound       = " << focus_channel_sound        << std::endl);
     D(std::cout << "low_cpu                   = " << low_cpu                    << std::endl);
+    D(std::cout << "low_cpu_hq_motion         = " << low_cpu_hq_motion          << std::endl);
+    D(std::cout << "low_cpu_hq_motion_dual    = " << low_cpu_hq_motion_dual     << std::endl);
     // clang-format on
 }

@@ -105,7 +105,9 @@ inline constexpr int FOCUS_CHANNEL = -1;
 inline constexpr auto FOCUS_CHANNEL_AREA = "";
 inline constexpr int FOCUS_CHANNEL_SOUND = 0;
 
-// CPU mode
+// low CPU mode
 inline constexpr int LOW_CPU_MODE = 0;
+inline constexpr int LOW_CPU_MODE_HQ_MOTION = 0;
+inline constexpr int LOW_CPU_MODE_HQ_MOTION_DUAL = 0;
 
 // #define USE_CUDA

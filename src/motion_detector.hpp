@@ -76,8 +76,10 @@ class MotionDetector {
     int m_motion_detect_min_ms;
     int m_tour_ms;
     int m_low_cpu;
-    int m_low_cpu_hq_motion = 1;
+    int m_low_cpu_hq_motion;
+    int m_low_cpu_hq_motion_dual;
     std::atomic<int> m_current_channel;
+    std::atomic<int> m_previous_channel{-1};
     std::atomic<bool> m_enable_motion;
     std::atomic<bool> m_enable_motion_zoom_largest;
     std::atomic<bool> m_enable_tour;

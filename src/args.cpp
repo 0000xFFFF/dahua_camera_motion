@@ -178,7 +178,14 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .help("low cpu mode (uses only channel 0 to draw everything)")
         .default_value(LOW_CPU_MODE)
         .scan<'i', int>();
-
+    options_special.add_argument("-lchqm", "--low_cpu_hq_motion")
+        .help("if motion is detected get high quality after switching channel")
+        .default_value(LOW_CPU_MODE_HQ_MOTION)
+        .scan<'i', int>();
+    options_special.add_argument("-lchqmd", "--low_cpu_hq_motion_dual")
+        .help("keep last 2 channels running in high quality (use this if motion is detected on 2 channels and it swaps them frequently")
+        .default_value(LOW_CPU_MODE_HQ_MOTION_DUAL)
+        .scan<'i', int>();
 
     return program;
 }

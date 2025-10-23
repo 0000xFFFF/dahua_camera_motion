@@ -5,10 +5,8 @@
 cv::Mat MotionDetector::get_frame(int channel, int layout_changed)
 {
     if (m_low_cpu) {
-        if (m_low_cpu_hq_motion) {
-            if (m_readers[channel]->is_running() && m_readers[channel]->is_active()) {
-                return m_readers[channel]->get_latest_frame(layout_changed);
-            }
+        if (m_low_cpu_hq_motion && m_readers[channel]->is_running() && m_readers[channel]->is_active()) {
+            return m_readers[channel]->get_latest_frame(layout_changed);
         }
 
         // get frame fro ch 0
@@ -41,6 +39,14 @@ void MotionDetector::change_channel(int ch)
     }
 #endif
 
+    int prev = m_current_channel;
+
+
+    m_layout_changed = true;
+    move_to_front(ch);
+    m_previous_channel = prev;
+    m_current_channel = ch;
+
     if (m_low_cpu_hq_motion) {
         if (!m_readers[ch]->is_running()) {
             for (int i = 1; i <= CHANNEL_COUNT; i++) {
@@ -48,15 +54,18 @@ void MotionDetector::change_channel(int ch)
                     m_readers[i]->start();
                 }
                 else {
-                    m_readers[i]->stop();
+                    if (m_low_cpu_hq_motion_dual) {
+                        if (i != prev) {
+                            m_readers[i]->stop();
+                        }
+                    }
+                    else {
+                        m_readers[i]->stop();
+                    }
                 }
             }
         }
     }
-
-    m_layout_changed = true;
-    move_to_front(ch);
-    m_current_channel = ch;
 }
 
 void MotionDetector::move_to_front(int ch)

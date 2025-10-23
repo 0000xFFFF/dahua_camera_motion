@@ -22,6 +22,8 @@ MotionDetector::MotionDetector(const MotionDetectorParams& params)
       m_motion_detect_min_ms(params.motion_detect_min_ms),
       m_tour_ms(params.tour_ms),
       m_low_cpu(params.low_cpu),
+      m_low_cpu_hq_motion(params.low_cpu_hq_motion),
+      m_low_cpu_hq_motion_dual(params.low_cpu_hq_motion_dual),
       m_current_channel(params.current_channel),
       m_enable_motion(params.enable_motion),
       m_enable_motion_zoom_largest(params.enable_motion_zoom_largest),

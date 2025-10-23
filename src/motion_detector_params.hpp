@@ -36,5 +36,7 @@ struct MotionDetectorParams {
     std::string focus_channel_area;
     int focus_channel_sound;
     int low_cpu;
+    int low_cpu_hq_motion;
+    int low_cpu_hq_motion_dual;
     MotionDetectorParams(std::unique_ptr<argparse::ArgumentParser>& program);
 };
