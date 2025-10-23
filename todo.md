@@ -1,3 +1,0 @@
-- low cpu mode:
-    - move getting ch 0 to another thread rather on detect motion thread
-    - add to that low cpu mode to get hq on motion
