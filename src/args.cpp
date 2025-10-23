@@ -4,7 +4,7 @@
 
 std::unique_ptr<argparse::ArgumentParser> parse_args() {
 
-    auto program= std::make_unique<argparse::ArgumentParser>("dcm_master");
+    auto program= std::make_unique<argparse::ArgumentParser>("dcm_master", VERSION);
     program->add_description("motion detection kiosk for dahua cameras");
 
     auto& options_required = program->add_group("Required Options");
