@@ -44,4 +44,5 @@ class FrameReader {
     DoubleBufferMat m_frame_dbuffer;
     cv::VideoCapture m_cap;
     std::atomic<bool> m_running{true};
+    std::atomic<bool> m_cleaning{false};
 };

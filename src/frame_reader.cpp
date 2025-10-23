@@ -95,6 +95,7 @@ double FrameReader::get_fps()
 
 void FrameReader::stop()
 {
+    m_cleaning = true;
     D(std::cout << "[" << m_channel << "] reader stop" << std::endl);
     m_running = false;
     m_cv.notify_one();
@@ -105,6 +106,7 @@ void FrameReader::stop()
         D(std::cout << "[" << m_channel << "] reader joined" << std::endl);
     }
     D(std::cout << "[" << m_channel << "] reader stopped" << std::endl);
+    m_cleaning = false;
 }
 
 std::string FrameReader::construct_rtsp_url(const std::string& ip, const std::string& username,
@@ -319,7 +321,8 @@ void FrameReader::connect_and_read()
 
 void FrameReader::start()
 {
-    if (!m_thread.joinable()) {
+    if (!m_running && !m_cleaning) {
+        m_running = true;
         m_thread = std::thread([this] { connect_and_read(); });
     }
 }
