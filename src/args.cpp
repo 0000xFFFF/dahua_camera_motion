@@ -1,6 +1,5 @@
 #include "globals.hpp"
 #include "args.hpp"
-#include "debug.hpp"
 
 std::unique_ptr<argparse::ArgumentParser> parse_args() {
 
