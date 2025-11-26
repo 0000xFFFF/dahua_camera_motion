@@ -80,6 +80,13 @@ cv::Mat FrameReader::get_latest_frame(bool no_empty_frame)
     return frame ? *frame : cv::Mat();
 }
 
+cv::UMat FrameReader::get_latest_frame_umat(bool no_empty_frame)
+{
+    cv::Mat mat = get_latest_frame(no_empty_frame);
+    if (mat.empty()) return cv::UMat();
+    return mat.getUMat(cv::ACCESS_READ);
+}
+
 void FrameReader::enable_sleep()
 {
     m_sleep = true;

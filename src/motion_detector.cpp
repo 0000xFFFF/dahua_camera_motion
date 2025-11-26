@@ -38,11 +38,20 @@ MotionDetector::MotionDetector(const MotionDetectorParams& params)
       m_enable_alarm_pixels(params.enable_alarm_pixels),
       m_focus_channel(params.focus_channel),
       m_focus_channel_sound(params.focus_channel_sound),
-      m_canv1(cv::Mat(cv::Size(params.width, params.height), CV_8UC3, cv::Scalar(0, 0, 0))),
-      m_canv2(cv::Mat(cv::Size(params.width, params.height), CV_8UC3, cv::Scalar(0, 0, 0))),
-      m_main_display(cv::Mat(cv::Size(params.width, params.height), CV_8UC3, cv::Scalar(0, 0, 0)))
-
+      m_canv1(cv::UMat(cv::Size(params.width, params.height), CV_8UC3, cv::Scalar(0, 0, 0))),
+      m_canv2(cv::UMat(cv::Size(params.width, params.height), CV_8UC3, cv::Scalar(0, 0, 0))),
+      m_main_display(cv::UMat(cv::Size(params.width, params.height), CV_8UC3, cv::Scalar(0, 0, 0)))
 {
+    // Check OpenCL availability
+    if (cv::ocl::haveOpenCL()) {
+        cv::ocl::setUseOpenCL(true);
+        std::cout << "OpenCL enabled: " << cv::ocl::useOpenCL() << std::endl;
+        cv::ocl::Context ctx = cv::ocl::Context::getDefault();
+        if (ctx.ptr()) {
+            std::cout << "OpenCL device: " << ctx.device(0).name() << std::endl;
+        }
+    }
+
     init_ignore_contours(params);
     init_alarm_pixels(params);
 

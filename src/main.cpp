@@ -17,6 +17,19 @@ std::unique_ptr<MotionDetector> motionDetector;
 
 int main(int argc, char* argv[])
 {
+    // Add near the start of main():
+    std::cout << "OpenCV build info:\n"
+              << cv::getBuildInformation() << std::endl;
+    std::cout << "OpenCL available: " << cv::ocl::haveOpenCL() << std::endl;
+    if (cv::ocl::haveOpenCL()) {
+        cv::ocl::setUseOpenCL(true);
+        std::vector<cv::ocl::PlatformInfo> platforms;
+        cv::ocl::getPlatfomsInfo(platforms);
+        for (const auto& p : platforms) {
+            std::cout << "Platform: " << p.name() << std::endl;
+        }
+    }
+
     init_signal();
 
 #ifdef DEBUG_CPU

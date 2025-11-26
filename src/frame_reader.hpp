@@ -2,6 +2,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
+#include <opencv2/core/ocl.hpp>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <thread>
@@ -16,7 +17,8 @@ class FrameReader {
                 bool autostart,
                 bool has_placeholder);
 
-    cv::Mat get_latest_frame(bool no_empty_frame);
+    cv::Mat get_latest_frame(bool no_empty_frame = false);
+    cv::UMat get_latest_frame_umat(bool no_empty_frame = false); // Add this
     void disable_sleep();
     void enable_sleep();
     double get_fps();

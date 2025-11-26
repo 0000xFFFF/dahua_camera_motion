@@ -111,9 +111,9 @@ class MotionDetector {
     DoubleBufferMat m_frame0_dbuff;
     cv::Mat m_frame_detection;
     DoubleBufferMat m_frame_detection_dbuff;
-    cv::Mat m_canv1;
-    cv::Mat m_canv2;
-    cv::Mat m_main_display;
+    cv::UMat m_canv1;
+    cv::UMat m_canv2;
+    cv::UMat m_main_display;
 
     // motion detecting / min frames
     LockFreeRingBuffer<cv::Rect, 2> m_motion_region;

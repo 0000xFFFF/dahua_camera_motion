@@ -55,7 +55,6 @@ void MotionDetector::draw_loop()
                      (m_display_mode == DISPLAY_MODE_SINGLE) ||
                      (m_enable_motion && m_enable_motion_zoom_largest && (m_motion_detected_min_ms || m_motion_detect_linger))) {
 
-
                 get = get_frame(m_current_channel, m_layout_changed);
                 draw_paint_info_motion_region(get, 0, 0, get.size().width, get.size().height);
             }
@@ -74,17 +73,15 @@ void MotionDetector::draw_loop()
 
             if (!get.empty()) {
                 if (!NO_RESIZE && get.size() != cv::Size(m_display_width, m_display_height)) {
-                    cv::resize(get, m_main_display, cv::Size(m_display_width, m_display_height));
+                    cv::UMat get_umat = get.getUMat(cv::ACCESS_READ);
+                    cv::resize(get_umat, m_main_display, cv::Size(m_display_width, m_display_height));
                 }
                 else {
-                    m_main_display = get;
+                    get.copyTo(m_main_display);
                 }
 
-                if (m_enable_minimap) { draw_paint_info_minimap(); }
-                if (m_enable_info) { draw_paint_info_text(); }
-                if (m_enable_info_line) { draw_paint_info_line(); }
-
-                cv::imshow(DEFAULT_WINDOW_NAME, m_main_display);
+                // For imshow, convert back to Mat
+                cv::imshow(DEFAULT_WINDOW_NAME, m_main_display.getMat(cv::ACCESS_READ));
 
                 if (m_display_width == 0) { m_display_width = m_main_display.size().width; }
                 if (m_display_height == 0) { m_display_height = m_main_display.size().height; }
