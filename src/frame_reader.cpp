@@ -43,8 +43,8 @@ FrameReader::FrameReader(int channel,
 
 void FrameReader::put_placeholder()
 {
-    cv::Mat placeholder_cpu(cv::Size(1000, 1000), CV_8UC3);
-    cv::rectangle(placeholder_cpu, cv::Rect(0, 0, placeholder_cpu.size().width, placeholder_cpu.size().height), cv::Scalar(255, 255, 255), 3);
+    // Create a black placeholder image
+    cv::Mat placeholder_cpu(cv::Size(1000, 1000), CV_8UC3, cv::Scalar(0, 0, 0));
 
     const cv::Scalar text_color(255, 255, 255);
     const double font_scale = 10;
@@ -57,6 +57,9 @@ void FrameReader::put_placeholder()
     cv::Point text_origin((placeholder_cpu.cols - text_size.width) / 2, (placeholder_cpu.rows + text_size.height) / 2);
 
     cv::putText(placeholder_cpu, text, text_origin, cv::FONT_HERSHEY_SIMPLEX, font_scale, text_color, font_thickness);
+
+    // Draw white border
+    cv::rectangle(placeholder_cpu, cv::Rect(0, 0, placeholder_cpu.cols, placeholder_cpu.rows), cv::Scalar(255, 255, 255), 3);
 
     cv::UMat placeholder;
     placeholder_cpu.copyTo(placeholder);
