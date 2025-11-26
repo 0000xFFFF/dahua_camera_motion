@@ -261,6 +261,11 @@ void FrameReader::connect_and_read()
         throw std::runtime_error("Failed to allocate AVFrame");
     }
 
+    // Cache sws context to avoid recreation per frame
+    SwsContext* swsCtx = nullptr;
+    int cached_w = 0, cached_h = 0;
+    AVPixelFormat cached_fmt = AV_PIX_FMT_NONE;
+
     std::cout << "connected: " << m_channel << " -- " << codecCtx->width << "x" << codecCtx->height << std::endl;
 
     // prepare an output cv::Mat placeholder (will be resized per-frame if needed)
@@ -318,94 +323,29 @@ void FrameReader::connect_and_read()
             int w = used_frame->width;
             int h = used_frame->height;
 
-            // --- Proper pixel format handling ---
-            if (used_frame->format == AV_PIX_FMT_NV12) {
-
-                SwsContext* swsCtx = sws_getContext(
-                    used_frame->width, used_frame->height, (AVPixelFormat)used_frame->format,
-                    used_frame->width, used_frame->height, AV_PIX_FMT_BGR24,
+            // Update cached sws context if format/dimensions changed
+            if (!swsCtx || w != cached_w || h != cached_h || (AVPixelFormat)used_frame->format != cached_fmt) {
+                if (swsCtx) sws_freeContext(swsCtx);
+                swsCtx = sws_getContext(
+                    w, h, (AVPixelFormat)used_frame->format,
+                    w, h, AV_PIX_FMT_BGR24,
                     SWS_BILINEAR, nullptr, nullptr, nullptr);
+                cached_w = w;
+                cached_h = h;
+                cached_fmt = (AVPixelFormat)used_frame->format;
+            }
 
-                image_cpu.create(used_frame->height, used_frame->width, CV_8UC3);
+            if (swsCtx) {
+                image_cpu.create(h, w, CV_8UC3);
                 uint8_t* dst[1] = {image_cpu.data};
                 int dst_linesize[1] = {static_cast<int>(image_cpu.step[0])};
-
-                sws_scale(swsCtx, used_frame->data, used_frame->linesize, 0, used_frame->height, dst, dst_linesize);
-                sws_freeContext(swsCtx);
+                sws_scale(swsCtx, used_frame->data, used_frame->linesize, 0, h, dst, dst_linesize);
 
                 m_frame_buffer.push(image_cpu.clone());
                 m_frame_dbuffer.update(image_cpu);
             }
-            else if (used_frame->format == AV_PIX_FMT_P010 || used_frame->format == AV_PIX_FMT_P016) {
-                // REQUIRED: 10/16-bit NV12 -> convert to 8-bit BGR with sws_scale
-                // OpenCV cannot directly handle P010/P016 -> use swscale to AV_PIX_FMT_BGR24 (8-bit)
-                SwsContext* swsCtx = sws_getContext(
-                    w, h,
-                    (AVPixelFormat)used_frame->format, // P010 / P016
-                    w, h,
-                    AV_PIX_FMT_BGR24,
-                    SWS_BILINEAR, NULL, NULL, NULL);
-
-                if (swsCtx) {
-                    image_cpu.create(h, w, CV_8UC3);
-                    uint8_t* dst[1] = {image_cpu.data};
-                    int dst_linesize[1] = {static_cast<int>(image_cpu.step[0])};
-
-                    sws_scale(swsCtx, used_frame->data, used_frame->linesize, 0, h, dst, dst_linesize);
-                    sws_freeContext(swsCtx);
-
-                    m_frame_buffer.push(image_cpu.clone());
-                    m_frame_dbuffer.update(image_cpu);
-                }
-                else {
-                    std::cerr << "Failed to create sws context for P010/P016 (channel " << m_channel << ")." << std::endl;
-                }
-            }
-            else if (used_frame->format == AV_PIX_FMT_YUV420P) {
-                // Common fallback: planar 4:2:0 -> use sws_scale to BGR24
-                SwsContext* swsCtx = sws_getContext(
-                    w, h,
-                    (AVPixelFormat)used_frame->format,
-                    w, h,
-                    AV_PIX_FMT_BGR24,
-                    SWS_BILINEAR, NULL, NULL, NULL);
-
-                if (swsCtx) {
-                    image_cpu.create(h, w, CV_8UC3);
-                    uint8_t* dst[1] = {image_cpu.data};
-                    int dst_linesize[1] = {static_cast<int>(image_cpu.step[0])};
-                    sws_scale(swsCtx, used_frame->data, used_frame->linesize, 0, h, dst, dst_linesize);
-                    sws_freeContext(swsCtx);
-
-                    m_frame_buffer.push(image_cpu.clone());
-                    m_frame_dbuffer.update(image_cpu);
-                }
-                else {
-                    std::cerr << "Failed to create sws context for YUV420P fallback (channel " << m_channel << ")." << std::endl;
-                }
-            }
             else {
-                // Generic fallback: attempt sws conversion from whatever format to BGR24
-                SwsContext* swsCtx = sws_getContext(
-                    w, h,
-                    (AVPixelFormat)used_frame->format,
-                    w, h,
-                    AV_PIX_FMT_BGR24,
-                    SWS_BILINEAR, NULL, NULL, NULL);
-
-                if (swsCtx) {
-                    image_cpu.create(h, w, CV_8UC3);
-                    uint8_t* dst[1] = {image_cpu.data};
-                    int dst_linesize[1] = {static_cast<int>(image_cpu.step[0])};
-                    sws_scale(swsCtx, used_frame->data, used_frame->linesize, 0, h, dst, dst_linesize);
-                    sws_freeContext(swsCtx);
-
-                    m_frame_buffer.push(image_cpu.clone());
-                    m_frame_dbuffer.update(image_cpu);
-                }
-                else {
-                    std::cerr << "Unsupported pixel format and sws_getContext failed for channel " << m_channel << "." << std::endl;
-                }
+                std::cerr << "Failed to create sws context for channel " << m_channel << "." << std::endl;
             }
 
             // cleanup cpu_frame if allocated during hw transfer
@@ -435,6 +375,7 @@ void FrameReader::connect_and_read()
     m_active = false;
 
     // cleanup
+    if (swsCtx) sws_freeContext(swsCtx);
     av_frame_free(&frame);
     avcodec_free_context(&codecCtx);
     if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);
