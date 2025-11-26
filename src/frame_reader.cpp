@@ -135,7 +135,6 @@ static enum AVPixelFormat get_vaapi_format(AVCodecContext* ctx, const enum AVPix
     return pix_fmts[0];
 }
 
-// Replacement for FrameReader::connect_and_read()
 void FrameReader::connect_and_read()
 {
     bool connected = false;
@@ -152,7 +151,7 @@ void FrameReader::connect_and_read()
     while (!connected) {
         AVDictionary* options = nullptr;
         av_dict_set(&options, "rtsp_transport", "tcp", 0);
-        av_dict_set(&options, "stimeout", "3000000", 0); // 3s timeout
+        av_dict_set(&options, "stimeout", "3000000", 0); // 3s timeout (microseconds)
         av_dict_set(&options, "fflags", "discardcorrupt", 0);
         av_dict_set(&options, "packet_buffer_size", "2048000", 0);
 
@@ -234,18 +233,15 @@ void FrameReader::connect_and_read()
         strcmp(decoder->name, "h264_vaapi") == 0 || strcmp(decoder->name, "hevc_vaapi") == 0) {
         if (av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_VAAPI, NULL, NULL, 0) == 0) {
             codecCtx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
-            codecCtx->get_format = get_vaapi_format;
+            codecCtx->get_format = get_vaapi_format; // helper must exist in TU
         }
         else {
-            // If VAAPI device creation fails, continue with software path (still better than nothing)
             std::cerr << "Warning: av_hwdevice_ctx_create(VAAPI) failed for channel " << m_channel << " -- falling back to software decode." << std::endl;
         }
     }
 
-    // codec options
+    // codec options (don't set encoder-only options)
     AVDictionary* codecOptions = nullptr;
-    // av_dict_set(&codecOptions, "tune", "zerolatency", 0);
-    // av_dict_set(&codecOptions, "preset", "ultrafast", 0);
 
     // open codec
     if (avcodec_open2(codecCtx, decoder, &codecOptions) < 0) {
@@ -267,8 +263,8 @@ void FrameReader::connect_and_read()
 
     std::cout << "connected: " << m_channel << " -- " << codecCtx->width << "x" << codecCtx->height << std::endl;
 
-    // prepare an output cv::Mat placeholder (will be updated each frame)
-    cv::Mat image_cpu; // will be resized per-frame if needed
+    // prepare an output cv::Mat placeholder (will be resized per-frame if needed)
+    cv::Mat image_cpu;
 
     int i = 0;
     int framesDecoded = 0;
@@ -306,105 +302,120 @@ void FrameReader::connect_and_read()
             }
             last_pts = frame->pts;
 
-            // If this is a hardware frame (VAAPI), transfer it to a CPU-accessible frame (likely NV12)
+            // If this is a hardware frame (VAAPI), transfer it to a CPU-accessible frame
             AVFrame* cpu_frame = nullptr;
-            bool did_hw_transfer = false;
             if (frame->format == AV_PIX_FMT_VAAPI) {
                 cpu_frame = av_frame_alloc();
                 if (av_hwframe_transfer_data(cpu_frame, frame, 0) < 0) {
-                    // transfer failed; free and fallback
                     av_frame_free(&cpu_frame);
-                    cpu_frame = nullptr;
-                }
-                else {
-                    did_hw_transfer = true;
+                    cpu_frame = nullptr; // fall back to using `frame` (software path) if transfer fails
                 }
             }
 
-            // If not a hw frame OR hw transfer failed, try to use the received frame directly (software decode)
             AVFrame* used_frame = cpu_frame ? cpu_frame : frame;
 
-            // At this point 'used_frame' should be a software frame (e.g., NV12 or YUV420P)
-            // Preferred path: if format is NV12 (common from VAAPI), use OpenCV UMat + cvtColor (OpenCL path)
-            if (used_frame->format == AV_PIX_FMT_NV12 ||
-                used_frame->format == AV_PIX_FMT_P010 ||
-                used_frame->format == AV_PIX_FMT_P016) {
-                int w = used_frame->width;
-                int h = used_frame->height;
+            // width/height for convenience
+            int w = used_frame->width;
+            int h = used_frame->height;
 
-                // Create a single-channel Mat with rows = h * 3 / 2 for NV12 layout (Y plane + interleaved UV)
-                if (used_frame->format == AV_PIX_FMT_NV12) {
-                    // NV12 layout: Y plane (h x w) followed by interleaved UV (h/2 x w)
-                    cv::Mat yuv(h + h / 2, w, CV_8UC1, used_frame->data[0], used_frame->linesize[0]);
-                    // copy to UMat (this uploads to GPU via OpenCL if available)
-                    cv::UMat yuvU;
-                    yuv.copyTo(yuvU);
+            // --- Proper pixel format handling ---
+            if (used_frame->format == AV_PIX_FMT_NV12) {
 
-                    // convert NV12 to BGR on GPU (if OpenCL enabled)
-                    cv::UMat bgrU;
-                    cv::cvtColor(yuvU, bgrU, cv::COLOR_YUV2BGR_NV12);
-
-                    // convert back to CPU Mat (only if your buffer expects CPU Mat)
-                    bgrU.copyTo(image_cpu);
-
-                    // push result
-                    m_frame_buffer.push(std::move(image_cpu));
-                    m_frame_dbuffer.update(image_cpu);
-                }
-                else { // AV_PIX_FMT_YUV420P
-                    // YUV420P: three separate planes; construct Mat and convert
-                    // Create a contiguous buffer in YUV420P packed form (rows = h * 3 / 2)
-                    // Simpler safe path: use sws_scale to convert YUV420P -> BGR24 into image_cpu
-                    SwsContext* tmp_sws = sws_getContext(
-                        used_frame->width, used_frame->height, (AVPixelFormat)used_frame->format,
-                        used_frame->width, used_frame->height, AV_PIX_FMT_BGR24,
-                        SWS_BILINEAR, NULL, NULL, NULL);
-
-                    if (!tmp_sws) {
-                        std::cerr << "Failed to create sws context for YUV420P fallback." << std::endl;
-                    }
-                    else {
-                        image_cpu.create(used_frame->height, used_frame->width, CV_8UC3);
-                        uint8_t* dst[1] = {image_cpu.data};
-                        int dst_linesize[1] = {static_cast<int>(image_cpu.step[0])};
-                        sws_scale(tmp_sws, used_frame->data, used_frame->linesize, 0, used_frame->height, dst, dst_linesize);
-                        sws_freeContext(tmp_sws);
-
-                        m_frame_buffer.push(image_cpu.clone());
-                        m_frame_dbuffer.update(image_cpu);
-                    }
-                }
-            }
-            else {
-                // If we get some other pixel format, convert with sws_scale to BGR24 (safe path)
                 SwsContext* swsCtx = sws_getContext(
                     used_frame->width, used_frame->height, (AVPixelFormat)used_frame->format,
                     used_frame->width, used_frame->height, AV_PIX_FMT_BGR24,
+                    SWS_BILINEAR, nullptr, nullptr, nullptr);
+
+                image_cpu.create(used_frame->height, used_frame->width, CV_8UC3);
+                uint8_t* dst[1] = {image_cpu.data};
+                int dst_linesize[1] = {static_cast<int>(image_cpu.step[0])};
+
+                sws_scale(swsCtx, used_frame->data, used_frame->linesize, 0, used_frame->height, dst, dst_linesize);
+                sws_freeContext(swsCtx);
+
+                m_frame_buffer.push(image_cpu.clone());
+                m_frame_dbuffer.update(image_cpu);
+            }
+            else if (used_frame->format == AV_PIX_FMT_P010 || used_frame->format == AV_PIX_FMT_P016) {
+                // REQUIRED: 10/16-bit NV12 -> convert to 8-bit BGR with sws_scale
+                // OpenCV cannot directly handle P010/P016 -> use swscale to AV_PIX_FMT_BGR24 (8-bit)
+                SwsContext* swsCtx = sws_getContext(
+                    w, h,
+                    (AVPixelFormat)used_frame->format, // P010 / P016
+                    w, h,
+                    AV_PIX_FMT_BGR24,
                     SWS_BILINEAR, NULL, NULL, NULL);
 
                 if (swsCtx) {
-                    image_cpu.create(used_frame->height, used_frame->width, CV_8UC3);
-                    uint8_t* data[1] = {image_cpu.data};
-                    int linesize[1] = {static_cast<int>(image_cpu.step[0])};
-                    sws_scale(swsCtx, used_frame->data, used_frame->linesize, 0, used_frame->height, data, linesize);
+                    image_cpu.create(h, w, CV_8UC3);
+                    uint8_t* dst[1] = {image_cpu.data};
+                    int dst_linesize[1] = {static_cast<int>(image_cpu.step[0])};
+
+                    sws_scale(swsCtx, used_frame->data, used_frame->linesize, 0, h, dst, dst_linesize);
                     sws_freeContext(swsCtx);
 
                     m_frame_buffer.push(image_cpu.clone());
                     m_frame_dbuffer.update(image_cpu);
                 }
                 else {
-                    std::cerr << "Unsupported pixel format and sws_getContext failed." << std::endl;
+                    std::cerr << "Failed to create sws context for P010/P016 (channel " << m_channel << ")." << std::endl;
+                }
+            }
+            else if (used_frame->format == AV_PIX_FMT_YUV420P) {
+                // Common fallback: planar 4:2:0 -> use sws_scale to BGR24
+                SwsContext* swsCtx = sws_getContext(
+                    w, h,
+                    (AVPixelFormat)used_frame->format,
+                    w, h,
+                    AV_PIX_FMT_BGR24,
+                    SWS_BILINEAR, NULL, NULL, NULL);
+
+                if (swsCtx) {
+                    image_cpu.create(h, w, CV_8UC3);
+                    uint8_t* dst[1] = {image_cpu.data};
+                    int dst_linesize[1] = {static_cast<int>(image_cpu.step[0])};
+                    sws_scale(swsCtx, used_frame->data, used_frame->linesize, 0, h, dst, dst_linesize);
+                    sws_freeContext(swsCtx);
+
+                    m_frame_buffer.push(image_cpu.clone());
+                    m_frame_dbuffer.update(image_cpu);
+                }
+                else {
+                    std::cerr << "Failed to create sws context for YUV420P fallback (channel " << m_channel << ")." << std::endl;
+                }
+            }
+            else {
+                // Generic fallback: attempt sws conversion from whatever format to BGR24
+                SwsContext* swsCtx = sws_getContext(
+                    w, h,
+                    (AVPixelFormat)used_frame->format,
+                    w, h,
+                    AV_PIX_FMT_BGR24,
+                    SWS_BILINEAR, NULL, NULL, NULL);
+
+                if (swsCtx) {
+                    image_cpu.create(h, w, CV_8UC3);
+                    uint8_t* dst[1] = {image_cpu.data};
+                    int dst_linesize[1] = {static_cast<int>(image_cpu.step[0])};
+                    sws_scale(swsCtx, used_frame->data, used_frame->linesize, 0, h, dst, dst_linesize);
+                    sws_freeContext(swsCtx);
+
+                    m_frame_buffer.push(image_cpu.clone());
+                    m_frame_dbuffer.update(image_cpu);
+                }
+                else {
+                    std::cerr << "Unsupported pixel format and sws_getContext failed for channel " << m_channel << "." << std::endl;
                 }
             }
 
-            // cleanup cpu_frame if we allocated one during hw transfer
+            // cleanup cpu_frame if allocated during hw transfer
             if (cpu_frame) {
                 av_frame_free(&cpu_frame);
             }
 
             av_frame_unref(frame);
 
-            // FPS tracking (same as your original logic)
+            // FPS tracking (same as original logic)
             i++;
             if (i % 30 == 0) {
                 auto end_time = std::chrono::high_resolution_clock::now();
