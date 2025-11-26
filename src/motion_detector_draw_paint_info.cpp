@@ -44,14 +44,14 @@ void MotionDetector::draw_paint_info_text()
 
 void MotionDetector::draw_paint_info_minimap()
 {
-    cv::Mat frame0 = m_frame_detection_dbuff.get();
+    cv::UMat frame0 = m_frame_detection_dbuff.get();
     if (frame0.empty()) { return; }
 
-    cv::Mat minimap;
+    cv::UMat minimap;
     cv::resize(frame0, minimap, cv::Size(MINIMAP_WIDTH, MINIMAP_HEIGHT));
 
     // Add white border
-    cv::Mat minimap_padded;
+    cv::UMat minimap_padded;
     cv::copyMakeBorder(minimap, minimap_padded, 2, 2, 2, 2, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
 
     // Place minimap on main display
@@ -86,7 +86,7 @@ void MotionDetector::draw_paint_info_line()
     }
 }
 
-void MotionDetector::draw_paint_info_motion_region(cv::Mat canv, size_t posX, size_t posY, size_t width, size_t height)
+void MotionDetector::draw_paint_info_motion_region(cv::UMat& canv, size_t posX, size_t posY, size_t width, size_t height)
 {
     if (!m_enable_info_rect || !m_motion_detected_min_ms) { return; }
     auto opt_region = m_motion_region.pop();

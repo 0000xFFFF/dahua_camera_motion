@@ -7,6 +7,25 @@
 #include <string>
 #include <thread>
 
+// UMat-based double buffer
+class DoubleBufferUMat {
+  public:
+    void update(const cv::UMat& mat)
+    {
+        std::lock_guard<std::mutex> lock(m_mtx);
+        mat.copyTo(m_buffer);
+    }
+    cv::UMat get()
+    {
+        std::lock_guard<std::mutex> lock(m_mtx);
+        return m_buffer.clone();
+    }
+
+  private:
+    cv::UMat m_buffer;
+    std::mutex m_mtx;
+};
+
 class FrameReader {
   public:
     FrameReader(int channel,
@@ -17,7 +36,7 @@ class FrameReader {
                 bool autostart,
                 bool has_placeholder);
 
-    cv::Mat get_latest_frame(bool no_empty_frame = false);
+    cv::UMat get_latest_frame(bool no_empty_frame = false);
     void disable_sleep();
     void enable_sleep();
     double get_fps();
@@ -44,8 +63,8 @@ class FrameReader {
     std::mutex m_mtx;
     std::condition_variable m_cv;
 
-    LockFreeRingBuffer<cv::Mat, 2> m_frame_buffer;
-    DoubleBufferMat m_frame_dbuffer;
+    LockFreeRingBuffer<cv::UMat, 2> m_frame_buffer;
+    DoubleBufferUMat m_frame_dbuffer;
     cv::VideoCapture m_cap;
     std::atomic<bool> m_running{false};
     std::atomic<bool> m_cleaning{false};

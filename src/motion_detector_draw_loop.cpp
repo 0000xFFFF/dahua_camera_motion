@@ -47,7 +47,7 @@ void MotionDetector::draw_loop()
 
             if (m_enable_tour) { do_tour_logic(); }
 
-            cv::Mat get;
+            cv::UMat get;
             if (m_enable_minimap_fullscreen || m_focus_channel != -1) {
                 get = m_frame_detection_dbuff.get();
             }
@@ -73,15 +73,13 @@ void MotionDetector::draw_loop()
 
             if (!get.empty()) {
                 if (!NO_RESIZE && get.size() != cv::Size(m_display_width, m_display_height)) {
-                    cv::UMat get_umat = get.getUMat(cv::ACCESS_READ);
-                    cv::resize(get_umat, m_main_display, cv::Size(m_display_width, m_display_height));
+                    cv::resize(get, m_main_display, cv::Size(m_display_width, m_display_height));
                 }
                 else {
                     get.copyTo(m_main_display);
                 }
 
-                // For imshow, convert back to Mat
-                cv::imshow(DEFAULT_WINDOW_NAME, m_main_display.getMat(cv::ACCESS_READ));
+                cv::imshow(DEFAULT_WINDOW_NAME, m_main_display);
 
                 if (m_display_width == 0) { m_display_width = m_main_display.size().width; }
                 if (m_display_height == 0) { m_display_height = m_main_display.size().height; }

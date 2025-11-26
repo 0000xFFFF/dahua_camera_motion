@@ -40,6 +40,9 @@ class LockFreeRingBuffer {
     }
 };
 
+// Ensure LockFreeRingBuffer works with cv::UMat
+// If it uses std::optional or similar, cv::UMat should work as-is since it's copyable
+
 class DoubleBufferMat {
   private:
     cv::Mat buffers[2];

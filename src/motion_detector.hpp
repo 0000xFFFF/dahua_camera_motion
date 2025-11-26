@@ -44,13 +44,13 @@ class MotionDetector {
     void draw_paint_info_minimap();
     void draw_paint_info_text();
     void draw_paint_info_line();
-    void draw_paint_info_motion_region(cv::Mat canv, size_t posX, size_t posY, size_t width, size_t height);
+    void draw_paint_info_motion_region(cv::UMat& canv, size_t posX, size_t posY, size_t width, size_t height);
 
-    cv::Mat draw_paint_main_mat_all();
-    cv::Mat draw_paint_main_mat_sort();
-    cv::Mat draw_paint_main_mat_multi();
-    cv::Mat draw_paint_main_mat_king();
-    cv::Mat draw_paint_main_mat_top();
+    cv::UMat draw_paint_main_mat_all();
+    cv::UMat draw_paint_main_mat_sort();
+    cv::UMat draw_paint_main_mat_multi();
+    cv::UMat draw_paint_main_mat_king();
+    cv::UMat draw_paint_main_mat_top();
 
     void parse_ignore_contours(const std::string& input);
     void parse_ignore_contours_file(const std::string& filename);
@@ -62,7 +62,7 @@ class MotionDetector {
 
     std::tuple<long, long, long, long> parse_area(const std::string& input);
 
-    cv::Mat get_frame(int channel, int layout_changed);
+    cv::UMat get_frame(int channel, int layout_changed);
 
     std::atomic<bool> m_running{true};
 
@@ -107,10 +107,10 @@ class MotionDetector {
     cv::Ptr<cv::BackgroundSubtractorKNN> m_fgbg; // 69% KNN
     // cv::Ptr<cv::bgsegm::BackgroundSubtractorCNT> m_fgbg; // 62% CNT
 
-    cv::Mat m_frame0;
-    DoubleBufferMat m_frame0_dbuff;
-    cv::Mat m_frame_detection;
-    DoubleBufferMat m_frame_detection_dbuff;
+    cv::UMat m_frame0;
+    DoubleBufferUMat m_frame0_dbuff; // Need to add this class or reuse from frame_reader.hpp
+    cv::UMat m_frame_detection;
+    DoubleBufferUMat m_frame_detection_dbuff;
     cv::UMat m_canv1;
     cv::UMat m_canv2;
     cv::UMat m_main_display;

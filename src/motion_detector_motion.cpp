@@ -12,7 +12,7 @@ void MotionDetector::update_ch0()
         auto motion_start = std::chrono::high_resolution_clock::now();
 #endif
 
-        cv::Mat frame0_get = m_readers[0]->get_latest_frame(false);
+        cv::UMat frame0_get = m_readers[0]->get_latest_frame(false);
         if (!frame0_get.empty() && frame0_get.size().width == W_0 && frame0_get.size().height == H_0) {
             m_frame0 = frame0_get;
             m_frame0_dbuff.update(m_frame0);
@@ -65,14 +65,14 @@ void MotionDetector::detect_motion()
         m_motion_detected = false;
         if (m_enable_motion) {
             if (m_focus_channel == -1) {
-                cv::Mat frame0_get = m_frame0_dbuff.get();
+                cv::UMat frame0_get = m_frame0_dbuff.get();
                 if (!frame0_get.empty() && frame0_get.size().width == W_0 && frame0_get.size().height == H_0) {
-                    m_frame_detection = frame0_get;
+                    frame0_get.copyTo(m_frame_detection);
                     detect_largest_motion_area_set_channel();
                 }
             }
             else {
-                cv::Mat frame0_get = m_readers[m_focus_channel]->get_latest_frame(false);
+                cv::UMat frame0_get = m_readers[m_focus_channel]->get_latest_frame(false);
 
                 if (!frame0_get.empty()) {
                     if (m_focus_channel_area_set.load()) { // Check if the area is set
@@ -87,7 +87,7 @@ void MotionDetector::detect_motion()
 
                         if (w > 0 && h > 0) {
                             // Crop the subregion
-                            cv::Mat roi = frame0_get(cv::Rect(x, y, w, h));
+                            cv::UMat roi = frame0_get(cv::Rect(x, y, w, h));
                             cv::resize(roi, m_frame_detection, cv::Size(m_display_width, m_display_height));
                             detect_largest_motion_area_set_channel();
                         }
@@ -127,12 +127,20 @@ void MotionDetector::detect_motion()
 
 void MotionDetector::detect_largest_motion_area_set_channel()
 {
+    // NOTE: Motion detection uses cv::Mat internally because:
+    // 1. BackgroundSubtractor works with Mat
+    // 2. findContours works with Mat
+    // 3. pointPolygonTest works with Mat
+    // Convert UMat to Mat for processing, then back
+
+    cv::Mat frame_cpu = m_frame_detection.getMat(cv::ACCESS_RW);
+
     // ignore area by blacking it out
     if (m_enable_ignore_contours) {
         auto ics = m_ignore_contours.get();
         auto ic = m_ignore_contour.get();
         std::vector<std::vector<cv::Point>> outline = {ic};
-        cv::polylines(m_frame_detection, outline, false, cv::Scalar(0));
+        cv::polylines(frame_cpu, outline, false, cv::Scalar(0));
 
         if (!ics.empty()) {
             // erase empty
@@ -144,13 +152,13 @@ void MotionDetector::detect_largest_motion_area_set_channel()
             }
 
             // blackout the ignored area
-            cv::fillPoly(m_frame_detection, ics, cv::Scalar(0));
+            cv::fillPoly(frame_cpu, ics, cv::Scalar(0));
         }
     }
 
     // finding motion contours
     cv::Mat fgmask;
-    m_fgbg->apply(m_frame_detection, fgmask);
+    m_fgbg->apply(frame_cpu, fgmask);
 
     cv::Mat thresh;
     cv::threshold(fgmask, thresh, 128, 255, cv::THRESH_BINARY);
@@ -165,7 +173,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     m_motion_detected = false;
 
     if ((m_enable_minimap || m_enable_minimap_fullscreen) && m_enable_info_rect)
-        cv::drawContours(m_frame_detection, contours, -1, cv::Scalar(255, 0, 0), 1);
+        cv::drawContours(frame_cpu, contours, -1, cv::Scalar(255, 0, 0), 1);
 
     for (const auto& contour : contours) {
         if (cv::contourArea(contour) >= m_motion_min_area) {
@@ -173,7 +181,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
             double area = rect.width * rect.height;
             if (area >= m_motion_min_rect_area) {
                 if ((m_enable_minimap || m_enable_minimap_fullscreen) && m_enable_info_rect)
-                    cv::rectangle(m_frame_detection, rect, cv::Scalar(0, 255, 0), 1);
+                    cv::rectangle(frame_cpu, rect, cv::Scalar(0, 255, 0), 1);
 
                 if (area > max_area) {
                     max_area = area;
@@ -189,7 +197,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
     if (m_motion_detected) {
 
         if ((m_enable_minimap || m_enable_minimap_fullscreen) && m_enable_info_rect)
-            cv::rectangle(m_frame_detection, motion_region, cv::Scalar(0, 0, 255), 2);
+            cv::rectangle(frame_cpu, motion_region, cv::Scalar(0, 0, 255), 2);
 
         m_motion_region.push(motion_region);
 
@@ -251,7 +259,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         if (!ap.empty()) {
             for (size_t i = 0; i < ap.size(); i++) {
                 cv::Point p = ap[i];
-                m_frame_detection.at<cv::Vec3b>(p.y, p.x) = cv::Vec3b(0, 0, 255); // BGR
+                frame_cpu.at<cv::Vec3b>(p.y, p.x) = cv::Vec3b(0, 0, 255); // BGR - use frame_cpu instead of m_frame_detection
 
                 if (!max_contour.empty()) {
                     if (cv::pointPolygonTest(max_contour, cv::Point2f(p.x, p.y), false) >= 0) {

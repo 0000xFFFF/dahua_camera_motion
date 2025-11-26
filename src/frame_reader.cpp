@@ -43,9 +43,8 @@ FrameReader::FrameReader(int channel,
 
 void FrameReader::put_placeholder()
 {
-
-    cv::Mat placeholder(cv::Size(1000, 1000), CV_8UC3);
-    cv::rectangle(placeholder, cv::Rect(0, 0, placeholder.size().width, placeholder.size().height), cv::Scalar(255, 255, 255), 3);
+    cv::Mat placeholder_cpu(cv::Size(1000, 1000), CV_8UC3);
+    cv::rectangle(placeholder_cpu, cv::Rect(0, 0, placeholder_cpu.size().width, placeholder_cpu.size().height), cv::Scalar(255, 255, 255), 3);
 
     const cv::Scalar text_color(255, 255, 255);
     const double font_scale = 10;
@@ -53,31 +52,23 @@ void FrameReader::put_placeholder()
 
     std::string text = std::to_string(m_channel);
 
-    // Get the text size to calculate the correct position
     int baseline = 0;
     cv::Size text_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, font_scale, font_thickness, &baseline);
+    cv::Point text_origin((placeholder_cpu.cols - text_size.width) / 2, (placeholder_cpu.rows + text_size.height) / 2);
 
-    // Calculate the position for the text to be centered
-    cv::Point text_origin((placeholder.cols - text_size.width) / 2, (placeholder.rows + text_size.height) / 2);
+    cv::putText(placeholder_cpu, text, text_origin, cv::FONT_HERSHEY_SIMPLEX, font_scale, text_color, font_thickness);
 
-    // Draw the text on the placeholder
-    cv::putText(placeholder,
-                text,
-                text_origin,
-                cv::FONT_HERSHEY_SIMPLEX,
-                font_scale,
-                text_color,
-                font_thickness);
-
+    cv::UMat placeholder;
+    placeholder_cpu.copyTo(placeholder);
     m_frame_buffer.push(placeholder);
     m_frame_dbuffer.update(placeholder);
 }
 
-cv::Mat FrameReader::get_latest_frame(bool no_empty_frame)
+cv::UMat FrameReader::get_latest_frame(bool no_empty_frame)
 {
     if (no_empty_frame) { return m_frame_dbuffer.get(); }
     auto frame = m_frame_buffer.pop();
-    return frame ? *frame : cv::Mat();
+    return frame ? *frame : cv::UMat();
 }
 
 void FrameReader::enable_sleep()
@@ -338,13 +329,20 @@ void FrameReader::connect_and_read()
             }
 
             if (swsCtx) {
-                image_cpu.create(h, w, CV_8UC3);
+                // Create Mat, do sws_scale, then upload to UMat once
+                if (image_cpu.rows != h || image_cpu.cols != w) {
+                    image_cpu.create(h, w, CV_8UC3);
+                }
                 uint8_t* dst[1] = {image_cpu.data};
                 int dst_linesize[1] = {static_cast<int>(image_cpu.step[0])};
                 sws_scale(swsCtx, used_frame->data, used_frame->linesize, 0, h, dst, dst_linesize);
 
-                m_frame_buffer.push(image_cpu.clone());
-                m_frame_dbuffer.update(image_cpu);
+                // Upload to GPU once
+                cv::UMat image_gpu;
+                image_cpu.copyTo(image_gpu);
+
+                m_frame_buffer.push(image_gpu);
+                m_frame_dbuffer.update(image_gpu);
             }
             else {
                 std::cerr << "Failed to create sws context for channel " << m_channel << "." << std::endl;
