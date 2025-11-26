@@ -244,9 +244,9 @@ void FrameReader::connect_and_read()
 
     // codec options
     AVDictionary* codecOptions = nullptr;
-    //av_dict_set(&codecOptions, "tune", "zerolatency", 0);
-    //av_dict_set(&codecOptions, "preset", "ultrafast", 0);
-    
+    // av_dict_set(&codecOptions, "tune", "zerolatency", 0);
+    // av_dict_set(&codecOptions, "preset", "ultrafast", 0);
+
     // open codec
     if (avcodec_open2(codecCtx, decoder, &codecOptions) < 0) {
         if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);
@@ -326,7 +326,9 @@ void FrameReader::connect_and_read()
 
             // At this point 'used_frame' should be a software frame (e.g., NV12 or YUV420P)
             // Preferred path: if format is NV12 (common from VAAPI), use OpenCV UMat + cvtColor (OpenCL path)
-            if (used_frame->format == AV_PIX_FMT_NV12 || used_frame->format == AV_PIX_FMT_YUV420P) {
+            if (used_frame->format == AV_PIX_FMT_NV12 ||
+                used_frame->format == AV_PIX_FMT_P010 ||
+                used_frame->format == AV_PIX_FMT_P016) {
                 int w = used_frame->width;
                 int h = used_frame->height;
 
