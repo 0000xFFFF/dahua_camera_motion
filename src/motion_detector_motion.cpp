@@ -52,6 +52,9 @@ void MotionDetector::detect_motion()
 
     D(std::cout << "starting motion detection" << std::endl);
 
+    int frame_skip_counter = 0;
+    constexpr int MOTION_FRAME_SKIP = 2; // Process every 3rd frame
+
     while (m_running) {
 
 #ifdef DEBUG_FPS
@@ -64,6 +67,12 @@ void MotionDetector::detect_motion()
 
         m_motion_detected = false;
         if (m_enable_motion) {
+            // Skip frames to reduce CPU usage
+            if (++frame_skip_counter % (MOTION_FRAME_SKIP + 1) != 0) {
+                // Still need to sleep
+                goto sleep_section;
+            }
+
             if (m_focus_channel == -1) {
                 cv::UMat frame0_get = m_frame0_dbuff.get();
                 if (!frame0_get.empty() && frame0_get.size().width == W_0 && frame0_get.size().height == H_0) {
@@ -100,6 +109,7 @@ void MotionDetector::detect_motion()
             }
         }
 
+    sleep_section:
 #ifndef SLEEP_MS_MOTION
         // Calculate sleep time based on measured FPS
         double fps = m_readers[0]->get_fps();
