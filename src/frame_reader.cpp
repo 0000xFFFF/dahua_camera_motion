@@ -205,21 +205,11 @@ void FrameReader::connect_and_read()
 
     AVCodecParameters* codecParams = formatCtx->streams[videoStreamIndex]->codecpar;
 
-    // choose VAAPI decoder name for common codecs; otherwise fallback
-    const AVCodec* decoder = nullptr;
-    if (codecParams->codec_id == AV_CODEC_ID_H264) {
-        decoder = avcodec_find_decoder_by_name("h264_vaapi");
-    }
-    else if (codecParams->codec_id == AV_CODEC_ID_HEVC) {
-        decoder = avcodec_find_decoder_by_name("hevc_vaapi");
-    }
+    // Use the standard decoder (not vaapi-specific decoder names)
+    const AVCodec* decoder = avcodec_find_decoder(codecParams->codec_id);
     if (!decoder) {
-        // fallback to generic decoder (may not be hw-accelerated)
-        decoder = avcodec_find_decoder(codecParams->codec_id);
-        if (!decoder) {
-            avformat_close_input(&formatCtx);
-            throw std::runtime_error("No suitable decoder found for channel " + std::to_string(m_channel));
-        }
+        avformat_close_input(&formatCtx);
+        throw std::runtime_error("No suitable decoder found for channel " + std::to_string(m_channel));
     }
 
     AVCodecContext* codecCtx = avcodec_alloc_context3(decoder);
@@ -231,19 +221,31 @@ void FrameReader::connect_and_read()
 
     // low-latency / threading hints
     codecCtx->flags |= AV_CODEC_FLAG_LOW_DELAY;
-    codecCtx->thread_count = 1; // safe low-latency
+    // Use more threads for software decoding
+    codecCtx->thread_count = 0; // 0 = auto-detect optimal thread count
+    codecCtx->thread_type = FF_THREAD_FRAME | FF_THREAD_SLICE;
     codecCtx->skip_frame = AVDISCARD_DEFAULT;
 
-    // Attempt to create a VAAPI device and negotiate VAAPI pixel format
+    // Attempt to create a VAAPI device for HW acceleration
     AVBufferRef* hw_device_ctx = nullptr;
-    if (decoder->id == AV_CODEC_ID_H264 || decoder->id == AV_CODEC_ID_HEVC ||
-        strcmp(decoder->name, "h264_vaapi") == 0 || strcmp(decoder->name, "hevc_vaapi") == 0) {
-        if (av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_VAAPI, NULL, NULL, 0) == 0) {
+    bool using_vaapi = false;
+
+    if (codecParams->codec_id == AV_CODEC_ID_H264 || codecParams->codec_id == AV_CODEC_ID_HEVC) {
+        // Try to create VAAPI device - specify your render node if needed
+        // Common paths: /dev/dri/renderD128 (first GPU), /dev/dri/renderD129 (second GPU)
+        int err = av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_VAAPI,
+                                         "/dev/dri/renderD128", NULL, 0);
+        if (err == 0) {
             codecCtx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
-            codecCtx->get_format = get_vaapi_format; // helper must exist in TU
+            codecCtx->get_format = get_vaapi_format;
+            using_vaapi = true;
+            std::cout << "VAAPI hardware acceleration enabled for channel " << m_channel << std::endl;
         }
         else {
-            std::cerr << "Warning: av_hwdevice_ctx_create(VAAPI) failed for channel " << m_channel << " -- falling back to software decode." << std::endl;
+            char errbuf[256];
+            av_strerror(err, errbuf, sizeof(errbuf));
+            std::cerr << "Warning: VAAPI init failed for channel " << m_channel
+                      << " (" << errbuf << ") -- using software decode." << std::endl;
         }
     }
 
