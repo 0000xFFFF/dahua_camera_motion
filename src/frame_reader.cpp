@@ -152,9 +152,9 @@ void FrameReader::connect_and_read()
     while (!connected) {
         AVDictionary* options = nullptr;
         av_dict_set(&options, "rtsp_transport", "tcp", 0);
-        av_dict_set(&options, "fflags", "nobuffer", 0);
-        av_dict_set(&options, "buffer_size", "1024000", 0);
-        av_dict_set(&options, "max_delay", "500000", 0);
+        av_dict_set(&options, "stimeout", "3000000", 0); // 3s timeout
+        av_dict_set(&options, "fflags", "discardcorrupt", 0);
+        av_dict_set(&options, "packet_buffer_size", "2048000", 0);
 
         if (avformat_open_input(&formatCtx, rtsp_url.c_str(), NULL, &options) == 0) {
             if (avformat_find_stream_info(formatCtx, NULL) >= 0) {
@@ -244,8 +244,9 @@ void FrameReader::connect_and_read()
 
     // codec options
     AVDictionary* codecOptions = nullptr;
-    av_dict_set(&codecOptions, "tune", "zerolatency", 0);
-    av_dict_set(&codecOptions, "preset", "ultrafast", 0);
+    //av_dict_set(&codecOptions, "tune", "zerolatency", 0);
+    //av_dict_set(&codecOptions, "preset", "ultrafast", 0);
+    
     // open codec
     if (avcodec_open2(codecCtx, decoder, &codecOptions) < 0) {
         if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);
@@ -345,7 +346,7 @@ void FrameReader::connect_and_read()
                     bgrU.copyTo(image_cpu);
 
                     // push result
-                    m_frame_buffer.push(image_cpu.clone());
+                    m_frame_buffer.push(std::move(image_cpu));
                     m_frame_dbuffer.update(image_cpu);
                 }
                 else { // AV_PIX_FMT_YUV420P
