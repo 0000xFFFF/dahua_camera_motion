@@ -218,10 +218,15 @@ void FrameReader::connect_and_read()
     bool using_vaapi = false;
 
     if (codecParams->codec_id == AV_CODEC_ID_H264 || codecParams->codec_id == AV_CODEC_ID_HEVC) {
-        // Try to create VAAPI device - specify your render node if needed
-        // Common paths: /dev/dri/renderD128 (first GPU), /dev/dri/renderD129 (second GPU)
+        // Try default first (NULL), then fall back to common paths
         int err = av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_VAAPI,
+                                         NULL, NULL, 0); // NULL = auto-detect
+        if (err < 0) {
+            // Try explicit paths if auto-detect fails
+            err = av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_VAAPI,
                                          "/dev/dri/renderD128", NULL, 0);
+        }
+
         if (err == 0) {
             codecCtx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
             codecCtx->get_format = get_vaapi_format;
