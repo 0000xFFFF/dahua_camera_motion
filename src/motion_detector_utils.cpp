@@ -1,4 +1,3 @@
-#include "debug.hpp"
 #include "motion_detector.hpp"
 #include <fstream>
 
