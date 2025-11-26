@@ -18,7 +18,6 @@ class FrameReader {
                 bool has_placeholder);
 
     cv::Mat get_latest_frame(bool no_empty_frame = false);
-    cv::UMat get_latest_frame_umat(bool no_empty_frame = false); // Add this
     void disable_sleep();
     void enable_sleep();
     double get_fps();
