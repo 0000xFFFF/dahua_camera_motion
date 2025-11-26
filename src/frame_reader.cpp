@@ -215,7 +215,6 @@ void FrameReader::connect_and_read()
 
     // Attempt to create a VAAPI device for HW acceleration
     AVBufferRef* hw_device_ctx = nullptr;
-    bool using_vaapi = false;
 
     if (codecParams->codec_id == AV_CODEC_ID_H264 || codecParams->codec_id == AV_CODEC_ID_HEVC) {
         // Try default first (NULL), then fall back to common paths
