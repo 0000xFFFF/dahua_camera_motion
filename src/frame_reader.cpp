@@ -118,6 +118,7 @@ std::string FrameReader::construct_rtsp_url(const std::string& ip, const std::st
 // Place this helper somewhere in the file scope (above the method)
 static enum AVPixelFormat get_vaapi_format(AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)
 {
+    UNUSED(ctx);
     const enum AVPixelFormat* p = pix_fmts;
     while (*p != AV_PIX_FMT_NONE) {
         if (*p == AV_PIX_FMT_VAAPI) {
@@ -229,7 +230,6 @@ void FrameReader::connect_and_read()
         if (err == 0) {
             codecCtx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
             codecCtx->get_format = get_vaapi_format;
-            using_vaapi = true;
             std::cout << "VAAPI hardware acceleration enabled for channel " << m_channel << std::endl;
         }
         else {
