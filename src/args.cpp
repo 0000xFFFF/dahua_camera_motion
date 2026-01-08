@@ -94,6 +94,18 @@ std::unique_ptr<argparse::ArgumentParser> parse_args() {
         .default_value(ENABLE_MOTION_ZOOM_LARGEST)
         .scan<'i', int>();
 
+    auto& options_sleep = program->add_group("Sleep Options");
+    options_sleep.add_argument("-smd", "--sleep_ms_draw")
+        .help("how long to sleep at the end of the draw loop (-1 == auto detect fps and use that)")
+        .metavar("NUMBER")
+        .default_value(-1)
+        .scan<'i', int>();
+    options_sleep.add_argument("-smm", "--sleep_ms_motion")
+        .help("how long to sleep at the end of the motion detection loop (-1 == auto detect fps and use that)")
+        .metavar("NUMBER")
+        .default_value(-1)
+        .scan<'i', int>();
+
     auto& options_tour = program->add_group("Tour Options");
     options_tour.add_argument("-et", "--enable_tour")
         .help("tour, switch channels every X ms (set with -tms)")

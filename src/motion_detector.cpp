@@ -40,7 +40,11 @@ MotionDetector::MotionDetector(const MotionDetectorParams& params)
       m_focus_channel_sound(params.focus_channel_sound),
       m_canv1(cv::UMat(cv::Size(params.width, params.height), CV_8UC3, cv::Scalar(0, 0, 0))),
       m_canv2(cv::UMat(cv::Size(params.width, params.height), CV_8UC3, cv::Scalar(0, 0, 0))),
-      m_main_display(cv::UMat(cv::Size(params.width, params.height), CV_8UC3, cv::Scalar(0, 0, 0)))
+      m_main_display(cv::UMat(cv::Size(params.width, params.height), CV_8UC3, cv::Scalar(0, 0, 0))),
+      m_sleep_ms_draw(params.sleep_ms_draw),
+      m_sleep_ms_draw_auto(params.sleep_ms_draw_auto),
+      m_sleep_ms_motion(params.sleep_ms_motion),
+      m_sleep_ms_motion_auto(params.sleep_ms_motion_auto)
 {
     // Check OpenCL availability
     if (cv::ocl::haveOpenCL()) {

@@ -128,9 +128,10 @@ class MotionDetector {
     bool m_motion_detect_linger_start_set;
 
     // draw & motion sleeps
-    long long int m_draw_sleep_ms{0};
-    long long int m_motion_sleep_ms{0};
-    long long int m_ch0_sleep_ms{0};
+    int64_t m_sleep_ms_draw{-1};
+    bool m_sleep_ms_draw_auto{true};
+    int64_t m_sleep_ms_motion{-1};
+    bool m_sleep_ms_motion_auto{true};
 
     // tour
     std::atomic<int> m_tour_current_channel{1};

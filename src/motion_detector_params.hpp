@@ -18,6 +18,10 @@ struct MotionDetectorParams {
     int current_channel;
     int enable_motion;
     int enable_motion_zoom_largest;
+    int sleep_ms_draw;
+    bool sleep_ms_draw_auto;
+    int sleep_ms_motion;
+    bool sleep_ms_motion_auto;
     int enable_tour;
     int tour_ms;
     int enable_info;

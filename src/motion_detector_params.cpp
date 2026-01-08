@@ -19,6 +19,8 @@ MotionDetectorParams::MotionDetectorParams(std::unique_ptr<argparse::ArgumentPar
     current_channel            {program->get<int>("current_channel")},
     enable_motion              {program->get<int>("enable_motion")},
     enable_motion_zoom_largest {program->get<int>("enable_motion_zoom_largest")},
+    sleep_ms_draw              {program->get<int>("sleep_ms_draw")},
+    sleep_ms_motion            {program->get<int>("sleep_ms_motion")},
     enable_tour                {program->get<int>("enable_tour")},
     tour_ms                    {program->get<int>("tour_ms")},
     enable_info                {program->get<int>("enable_info")},
@@ -72,6 +74,9 @@ MotionDetectorParams::MotionDetectorParams(std::unique_ptr<argparse::ArgumentPar
         low_cpu_hq_motion = 1;
     }
 
+    if (sleep_ms_draw == -1) { sleep_ms_draw_auto = true; }
+    if (sleep_ms_motion == -1) { sleep_ms_motion_auto = true; }
+
     // clang-format off
     D(std::cout << "ip                        = " << ip                         << std::endl);
     D(std::cout << "username                  = " << username                   << std::endl);
@@ -87,6 +92,8 @@ MotionDetectorParams::MotionDetectorParams(std::unique_ptr<argparse::ArgumentPar
     D(std::cout << "enable_motion             = " << enable_motion              << std::endl);
     D(std::cout << "enable_motion_zoom_larges = " << enable_motion_zoom_largest << std::endl);
     D(std::cout << "enable_tour               = " << enable_tour                << std::endl);
+    D(std::cout << "sleep_ms_draw             = " << sleep_ms_draw              << " (auto: " << sleep_ms_draw_auto << ")" << std::endl);
+    D(std::cout << "sleep_ms_motion           = " << sleep_ms_motion            << " (auto: " << sleep_ms_motion_auto << ")" << std::endl);
     D(std::cout << "tour_ms                   = " << tour_ms                    << std::endl);
     D(std::cout << "enable_info               = " << enable_info                << std::endl);
     D(std::cout << "enable_info_line          = " << enable_info_line           << std::endl);

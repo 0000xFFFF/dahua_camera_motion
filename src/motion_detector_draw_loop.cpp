@@ -25,25 +25,22 @@ void MotionDetector::draw_loop()
         cv::setWindowProperty(DEFAULT_WINDOW_NAME, cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
     }
 
-#ifdef SLEEP_MS_DRAW
-    m_draw_sleep_ms = SLEEP_MS_DRAW;
-#endif
-
     try {
 
 #ifdef DEBUG_FPS
         int i = 0;
 #endif
 
+        std::chrono::time_point<std::chrono::high_resolution_clock> draw_start;
+
         while (m_running) {
 
 #ifdef DEBUG_FPS
             i++;
 #endif
-
-#ifndef SLEEP_MS_DRAW
-            auto draw_start = std::chrono::high_resolution_clock::now();
-#endif
+            if (m_sleep_ms_draw_auto) {
+                draw_start = std::chrono::high_resolution_clock::now();
+            }
 
             if (m_enable_tour) { do_tour_logic(); }
 
@@ -87,15 +84,15 @@ void MotionDetector::draw_loop()
                 draw_loop_handle_keys();
             }
 
-#ifndef SLEEP_MS_DRAW
-            // Calculate sleep time based on measured FPS
-            double fps = m_readers[m_current_channel]->get_fps();
-            double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 30.0; // Default to 30 FPS if zero
-            auto draw_time = std::chrono::high_resolution_clock::now() - draw_start;
+            if (m_sleep_ms_draw_auto) {
+                // Calculate sleep time based on measured FPS
+                double fps = m_readers[m_current_channel]->get_fps();
+                double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 30.0; // Default to 30 FPS if zero
+                auto draw_time = std::chrono::high_resolution_clock::now() - draw_start;
 
-            auto sleep_time = std::chrono::duration<double>(frame_time) - draw_time;
-            m_draw_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
-#endif
+                auto sleep_time = std::chrono::duration<double>(frame_time) - draw_time;
+                m_sleep_ms_draw = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
+            }
 
 #ifdef DEBUG_FPS
             if (i % 300 == 0) {
@@ -105,7 +102,7 @@ void MotionDetector::draw_loop()
 
             {
                 std::unique_lock<std::mutex> lock(m_mtx_draw);
-                m_cv_draw.wait_for(lock, std::chrono::milliseconds(m_draw_sleep_ms), [&] { return !m_running; });
+                m_cv_draw.wait_for(lock, std::chrono::milliseconds(m_sleep_ms_draw), [&] { return !m_running; });
             }
         }
     }

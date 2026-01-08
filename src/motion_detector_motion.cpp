@@ -7,10 +7,13 @@ extern Mix_Chunk* g_sfx_8bit_clicky;
 
 void MotionDetector::update_ch0()
 {
+
+    std::chrono::time_point<std::chrono::high_resolution_clock> motion_start;
+
     while (m_running) {
-#ifndef SLEEP_MS_DRAW
-        auto motion_start = std::chrono::high_resolution_clock::now();
-#endif
+        if (m_sleep_ms_draw == -1) {
+            motion_start = std::chrono::high_resolution_clock::now();
+        }
 
         cv::UMat frame0_get = m_readers[0]->get_latest_frame(false);
         if (!frame0_get.empty() && frame0_get.size().width == W_0 && frame0_get.size().height == H_0) {
@@ -18,30 +21,25 @@ void MotionDetector::update_ch0()
             m_frame0_dbuff.update(m_frame0);
         }
 
-#ifndef SLEEP_MS_DRAW
-        // Calculate sleep time based on measured FPS
-        double fps = m_readers[0]->get_fps();
-        double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 20.0; // Default to 20 FPS if zero
-        auto detect_time = std::chrono::high_resolution_clock::now() - motion_start;
+        if (m_sleep_ms_draw == -1) {
+            // Calculate sleep time based on measured FPS
+            double fps = m_readers[0]->get_fps();
+            double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 20.0; // Default to 20 FPS if zero
+            auto detect_time = std::chrono::high_resolution_clock::now() - motion_start;
 
-        auto sleep_time = std::chrono::duration<double>(frame_time) - detect_time;
-        m_motion_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
-#endif
+            auto sleep_time = std::chrono::duration<double>(frame_time) - detect_time;
+            m_sleep_ms_motion = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
+        }
 
         {
             std::unique_lock<std::mutex> lock(m_mtx_ch0);
-            m_cv_ch0.wait_for(lock, std::chrono::milliseconds(m_motion_sleep_ms), [&] { return !m_running; });
+            m_cv_ch0.wait_for(lock, std::chrono::milliseconds(m_sleep_ms_motion), [&] { return !m_running; });
         }
     }
 }
 
 void MotionDetector::detect_motion()
 {
-
-#ifdef SLEEP_MS_MOTION
-    m_motion_sleep_ms = SLEEP_MS_MOTION;
-#endif
-
 #ifdef DEBUG_FPS
     int i = 0;
 #endif
@@ -50,6 +48,7 @@ void MotionDetector::detect_motion()
 
     int frame_skip_counter = 0;
     constexpr int MOTION_FRAME_SKIP = 2; // Process every 3rd frame
+    std::chrono::time_point<std::chrono::high_resolution_clock> motion_start;
 
     while (m_running) {
 
@@ -57,9 +56,9 @@ void MotionDetector::detect_motion()
         i++;
 #endif
 
-#ifndef SLEEP_MS_MOTION
-        auto motion_start = std::chrono::high_resolution_clock::now();
-#endif
+        if (m_sleep_ms_draw_auto) {
+            motion_start = std::chrono::high_resolution_clock::now();
+        }
 
         m_motion_detected = false;
         if (m_enable_motion) {
@@ -106,15 +105,15 @@ void MotionDetector::detect_motion()
         }
 
     sleep_section:
-#ifndef SLEEP_MS_MOTION
-        // Calculate sleep time based on measured FPS
-        double fps = m_readers[0]->get_fps();
-        double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 20.0; // Default to 20 FPS if zero
-        auto detect_time = std::chrono::high_resolution_clock::now() - motion_start;
+        if (m_sleep_ms_draw_auto) {
+            // Calculate sleep time based on measured FPS
+            double fps = m_readers[0]->get_fps();
+            double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 20.0; // Default to 20 FPS if zero
+            auto detect_time = std::chrono::high_resolution_clock::now() - motion_start;
 
-        auto sleep_time = std::chrono::duration<double>(frame_time) - detect_time;
-        m_motion_sleep_ms = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
-#endif
+            auto sleep_time = std::chrono::duration<double>(frame_time) - detect_time;
+            m_sleep_ms_motion = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
+        }
 
 #ifdef DEBUG_FPS
         if (i % 300 == 0) {
@@ -124,7 +123,7 @@ void MotionDetector::detect_motion()
 
         {
             std::unique_lock<std::mutex> lock(m_mtx_motion);
-            m_cv_motion.wait_for(lock, std::chrono::milliseconds(m_motion_sleep_ms), [&] { return !m_running; });
+            m_cv_motion.wait_for(lock, std::chrono::milliseconds(m_sleep_ms_motion), [&] { return !m_running; });
         }
     }
 
