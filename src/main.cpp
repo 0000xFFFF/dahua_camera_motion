@@ -1,4 +1,3 @@
-#include <iostream>
 #include <opencv2/opencv.hpp>
 #include <sched.h>
 
@@ -9,6 +8,10 @@
 #include "signal.hpp"
 #include "sound.hpp"
 
+#ifdef DEBUG
+#include <iostream>
+#endif
+
 #ifdef DEBUG_CPU
 #include "debug.hpp"
 #endif
@@ -17,7 +20,8 @@ std::unique_ptr<MotionDetector> motionDetector;
 
 int main(int argc, char* argv[])
 {
-    // Add near the start of main():
+
+#ifdef DEBUG
     std::cout << "OpenCV build info:\n"
               << cv::getBuildInformation() << std::endl;
     std::cout << "OpenCL available: " << cv::ocl::haveOpenCL() << std::endl;
@@ -29,6 +33,7 @@ int main(int argc, char* argv[])
             std::cout << "Platform: " << p.name() << std::endl;
         }
     }
+#endif
 
     init_signal();
 
