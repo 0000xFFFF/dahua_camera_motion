@@ -29,9 +29,5 @@ install:
 uninstall:
 	rm $(BINDIR)/$(EXEC)
 
-lowcpu:
-	$(CC) $(ARGS) $(RELEASE_ARGS) -DSLEEP_MS_DRAW=100 -DSLEEP_MS_MOTION=100 $(LIBS) $(FILES) -o $(EXEC)
-
-
 release:
 	$(CC) $(ARGS) $(RELEASE_ARGS) $(LIBS) $(FILES) -o $(EXEC)
