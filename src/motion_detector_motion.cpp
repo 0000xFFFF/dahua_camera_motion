@@ -195,7 +195,7 @@ void MotionDetector::detect_largest_motion_area_set_channel()
         if ((m_enable_minimap || m_enable_minimap_fullscreen) && m_enable_info_rect)
             cv::rectangle(frame_cpu, motion_region, cv::Scalar(0, 0, 255), 2);
 
-        m_motion_region.push(motion_region);
+        m_motion_region.update(motion_region);
 
         if (!m_motion_detect_start_set) {
             m_motion_detect_start = now;

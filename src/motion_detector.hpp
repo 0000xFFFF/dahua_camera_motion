@@ -116,7 +116,7 @@ class MotionDetector {
     cv::UMat m_main_display;
 
     // motion detecting / min frames
-    LockFreeRingBuffer<cv::Rect, 2> m_motion_region;
+    DoubleBuffer<cv::Rect> m_motion_region;
     std::atomic<bool> m_motion_detected{false};
     std::atomic<bool> m_motion_detected_min_ms{false};
     std::chrono::high_resolution_clock::time_point m_motion_detect_start;

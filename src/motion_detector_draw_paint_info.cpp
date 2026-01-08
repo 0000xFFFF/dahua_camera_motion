@@ -89,28 +89,27 @@ void MotionDetector::draw_paint_info_line()
 void MotionDetector::draw_paint_info_motion_region(cv::UMat& canv, size_t posX, size_t posY, size_t width, size_t height)
 {
     if (!m_enable_info_rect || !m_motion_detected_min_ms) { return; }
-    auto opt_region = m_motion_region.pop();
-    if (opt_region) {
-        int ch = m_current_channel;
-        cv::Rect region = *opt_region;
-        int row = (ch - 1) / 3;
-        int col = (ch - 1) % 3;
+    auto region = m_motion_region.get();
+    if (region.empty()) { return; }
 
-        constexpr int mini_ch_w = W_0 / 3;
-        constexpr int mini_ch_h = H_0 / 3;
+    int ch = m_current_channel;
+    int row = (ch - 1) / 3;
+    int col = (ch - 1) % 3;
 
-        float scaleX = static_cast<float>(width) / mini_ch_w;
-        float scaleY = static_cast<float>(height) / mini_ch_h;
+    constexpr int mini_ch_w = W_0 / 3;
+    constexpr int mini_ch_h = H_0 / 3;
 
-        int offsetX = col * mini_ch_w;
-        int offsetY = row * mini_ch_h;
+    float scaleX = static_cast<float>(width) / mini_ch_w;
+    float scaleY = static_cast<float>(height) / mini_ch_h;
 
-        cv::Rect new_motion_region(
-            (region.x - offsetX) * scaleX + posX,
-            (region.y - offsetY) * scaleY + posY,
-            region.width * scaleX,
-            region.height * scaleY);
+    int offsetX = col * mini_ch_w;
+    int offsetY = row * mini_ch_h;
 
-        cv::rectangle(canv, new_motion_region, cv::Scalar(0, 0, 255), m_motion_region_info_rect_width);
-    }
+    cv::Rect new_motion_region(
+        (region.x - offsetX) * scaleX + posX,
+        (region.y - offsetY) * scaleY + posY,
+        region.width * scaleX,
+        region.height * scaleY);
+
+    cv::rectangle(canv, new_motion_region, cv::Scalar(0, 0, 255), m_motion_region_info_rect_width);
 }
