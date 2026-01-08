@@ -46,10 +46,6 @@ void MotionDetector::detect_motion()
     int i = 0;
 #endif
 
-#ifdef SLEEP_MS_FRAME
-    m_readers[0]->disable_sleep();
-#endif
-
     D(std::cout << "starting motion detection" << std::endl);
 
     int frame_skip_counter = 0;

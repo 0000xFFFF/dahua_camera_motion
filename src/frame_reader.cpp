@@ -74,17 +74,6 @@ cv::UMat FrameReader::get_latest_frame(bool no_empty_frame)
     return frame ? *frame : cv::UMat();
 }
 
-void FrameReader::enable_sleep()
-{
-    m_sleep = true;
-}
-
-void FrameReader::disable_sleep()
-{
-    m_sleep = false;
-    m_cv.notify_one();
-}
-
 double FrameReader::get_fps()
 {
     return captured_fps.load();
@@ -216,7 +205,6 @@ void FrameReader::connect_and_read()
 
     // Attempt to create a VAAPI device for HW acceleration
     AVBufferRef* hw_device_ctx = nullptr;
-
     if (codecParams->codec_id == AV_CODEC_ID_H264 || codecParams->codec_id == AV_CODEC_ID_HEVC) {
         // Try default first (NULL), then fall back to common paths
         int err = av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_VAAPI,

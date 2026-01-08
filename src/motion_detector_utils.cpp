@@ -26,18 +26,6 @@ cv::UMat MotionDetector::get_frame(int channel, int layout_changed)
 
 void MotionDetector::change_channel(int ch)
 {
-
-#ifdef SLEEP_MS_FRAME
-    for (int i = 1; i <= 6; i++) {
-        if (ch == i) {
-            m_readers[i]->disable_sleep();
-        }
-        else {
-            m_readers[i]->enable_sleep();
-        }
-    }
-#endif
-
     int prev = m_current_channel;
 
     m_layout_changed = true;
