@@ -104,6 +104,7 @@ void MotionDetector::init_lowcpu(const MotionDetectorParams& params)
     }
 
     change_channel(params.current_channel);
+    m_motion_region_info_rect_width = 1;
 }
 
 void MotionDetector::init_focus(const MotionDetectorParams& params)

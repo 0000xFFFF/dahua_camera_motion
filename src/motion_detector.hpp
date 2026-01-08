@@ -121,6 +121,7 @@ class MotionDetector {
     std::atomic<bool> m_motion_detected_min_ms{false};
     std::chrono::high_resolution_clock::time_point m_motion_detect_start;
     bool m_motion_detect_start_set;
+    int m_motion_region_info_rect_width{2};
 
     // motion linger
     bool m_motion_detect_linger{false};

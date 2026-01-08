@@ -111,6 +111,6 @@ void MotionDetector::draw_paint_info_motion_region(cv::UMat& canv, size_t posX, 
             region.width * scaleX,
             region.height * scaleY);
 
-        cv::rectangle(canv, new_motion_region, cv::Scalar(0, 0, 255), 2);
+        cv::rectangle(canv, new_motion_region, cv::Scalar(0, 0, 255), m_motion_region_info_rect_width);
     }
 }
