@@ -11,7 +11,7 @@ void MotionDetector::update_ch0()
     std::chrono::time_point<std::chrono::high_resolution_clock> motion_start;
 
     while (m_running) {
-        if (m_sleep_ms_draw == -1) {
+        if (m_sleep_ms_draw_auto) {
             motion_start = std::chrono::high_resolution_clock::now();
         }
 
@@ -21,7 +21,7 @@ void MotionDetector::update_ch0()
             m_frame0_dbuff.update(m_frame0);
         }
 
-        if (m_sleep_ms_draw == -1) {
+        if (m_sleep_ms_draw_auto) {
             // Calculate sleep time based on measured FPS
             double fps = m_readers[0]->get_fps();
             double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 20.0; // Default to 20 FPS if zero
