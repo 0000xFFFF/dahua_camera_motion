@@ -113,13 +113,13 @@ void MotionDetector::detect_motion()
 
             auto sleep_time = std::chrono::duration<double>(frame_time) - detect_time;
             m_sleep_ms_motion = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
-        }
 
 #ifdef DEBUG_FPS
-        if (i % 300 == 0) {
-            std::cout << "Motion thread sleep time: " << m_motion_sleep_ms << " ms" << std::endl;
-        }
+            if (i % 300 == 0) {
+                std::cout << "Motion thread sleep time: " << m_sleep_ms_motion << " ms (fps: " << fps << " )" << std::endl;
+            }
 #endif
+        }
 
         {
             std::unique_lock<std::mutex> lock(m_mtx_motion);

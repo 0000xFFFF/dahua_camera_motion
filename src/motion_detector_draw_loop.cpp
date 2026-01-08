@@ -92,13 +92,13 @@ void MotionDetector::draw_loop()
 
                 auto sleep_time = std::chrono::duration<double>(frame_time) - draw_time;
                 m_sleep_ms_draw = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
-            }
 
 #ifdef DEBUG_FPS
-            if (i % 300 == 0) {
-                std::cout << "Draw thread sleep time: " << m_draw_sleep_ms << " ms" << std::endl;
-            }
+                if (i % 300 == 0) {
+                    std::cout << "Draw thread sleep time: " << m_sleep_ms_draw << " ms (fps: " << fps << " )" << std::endl;
+                }
 #endif
+            }
 
             {
                 std::unique_lock<std::mutex> lock(m_mtx_draw);
