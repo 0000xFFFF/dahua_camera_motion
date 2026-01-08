@@ -9,12 +9,8 @@ extern Mix_Chunk* g_sfx_8bit_clicky;
 void MotionDetector::update_ch0()
 {
 
-    std::chrono::time_point<std::chrono::high_resolution_clock> motion_start;
-
     while (m_running) {
-        if (m_sleep_ms_motion_auto) {
-            motion_start = std::chrono::high_resolution_clock::now();
-        }
+        auto update_ch0_start = std::chrono::high_resolution_clock::now();
 
         cv::UMat frame0_get = m_readers[0]->get_latest_frame(false);
         if (!frame0_get.empty() && frame0_get.size().width == W_0 && frame0_get.size().height == H_0) {
@@ -22,19 +18,17 @@ void MotionDetector::update_ch0()
             m_frame0_dbuff.update(m_frame0);
         }
 
-        if (m_sleep_ms_motion_auto) {
-            // Calculate sleep time based on measured FPS
-            double fps = m_readers[0]->get_fps();
-            double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 20.0; // Default to 20 FPS if zero
-            auto detect_time = std::chrono::high_resolution_clock::now() - motion_start;
+        // Calculate sleep time based on measured FPS
+        double fps = m_readers[0]->get_fps();
+        double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 20.0; // Default to 20 FPS if zero
+        auto detect_time = std::chrono::high_resolution_clock::now() - update_ch0_start;
 
-            auto sleep_time = std::chrono::duration<double>(frame_time) - detect_time;
-            m_sleep_ms_motion = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
-        }
+        auto sleep_time = std::chrono::duration<double>(frame_time) - detect_time;
+        m_sleep_ms_ch0 = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time).count();
 
         {
             std::unique_lock<std::mutex> lock(m_mtx_ch0);
-            m_cv_ch0.wait_for(lock, std::chrono::milliseconds(m_sleep_ms_motion), [&] { return !m_running; });
+            m_cv_ch0.wait_for(lock, std::chrono::milliseconds(m_sleep_ms_ch0), [&] { return !m_running; });
         }
     }
 }

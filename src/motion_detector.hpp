@@ -132,6 +132,7 @@ class MotionDetector {
     bool m_sleep_ms_draw_auto{true};
     int64_t m_sleep_ms_motion{-1};
     bool m_sleep_ms_motion_auto{true};
+    int64_t m_sleep_ms_ch0{-1};
 
     // tour
     std::atomic<int> m_tour_current_channel{1};
