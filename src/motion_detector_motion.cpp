@@ -1,4 +1,5 @@
 #include "debug.hpp"
+#include "globals.hpp"
 #include "motion_detector.hpp"
 #include "utils.hpp"
 #include <SDL2/SDL_mixer.h>
@@ -46,8 +47,6 @@ void MotionDetector::detect_motion()
 
     D(std::cout << "starting motion detection" << std::endl);
 
-    int frame_skip_counter = 0;
-    constexpr int MOTION_FRAME_SKIP = 2; // Process every 3rd frame
     std::chrono::time_point<std::chrono::high_resolution_clock> motion_start;
 
     while (m_running) {
@@ -62,11 +61,6 @@ void MotionDetector::detect_motion()
 
         m_motion_detected = false;
         if (m_enable_motion) {
-            // Skip frames to reduce CPU usage
-            if (++frame_skip_counter % (MOTION_FRAME_SKIP + 1) != 0) {
-                // Still need to sleep
-                goto sleep_section;
-            }
 
             if (m_focus_channel == -1) {
                 cv::UMat frame0_get = m_frame0_dbuff.get();
@@ -104,10 +98,13 @@ void MotionDetector::detect_motion()
             }
         }
 
-    sleep_section:
         if (m_sleep_ms_motion_auto) {
+
+            int fc = m_focus_channel.load();
+            int frame_to_check = (fc == -1) ? 0 : fc;
+
             // Calculate sleep time based on measured FPS
-            double fps = m_readers[0]->get_fps();
+            double fps = m_readers[frame_to_check]->get_fps();
             double frame_time = (fps > 0.0) ? (1.0 / fps) : 1.0 / 20.0; // Default to 20 FPS if zero
             auto detect_time = std::chrono::high_resolution_clock::now() - motion_start;
 
