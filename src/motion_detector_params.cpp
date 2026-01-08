@@ -74,8 +74,8 @@ MotionDetectorParams::MotionDetectorParams(std::unique_ptr<argparse::ArgumentPar
         low_cpu_hq_motion = 1;
     }
 
-    if (sleep_ms_draw == -1) { sleep_ms_draw_auto = true; }
-    if (sleep_ms_motion == -1) { sleep_ms_motion_auto = true; }
+    if (sleep_ms_draw == -1) { sleep_ms_draw = 10; sleep_ms_draw_auto = true; }
+    if (sleep_ms_motion == -1) { sleep_ms_motion = 10; sleep_ms_motion_auto = true; }
 
     // clang-format off
     D(std::cout << "ip                        = " << ip                         << std::endl);
