@@ -264,6 +264,7 @@ void FrameReader::connect_and_read()
     auto start_time = std::chrono::high_resolution_clock::now();
     int64_t last_pts = AV_NOPTS_VALUE;
 
+
     // main loop
     while (m_running) {
         if (av_read_frame(formatCtx, &packet) < 0) {
@@ -338,6 +339,7 @@ void FrameReader::connect_and_read()
 
                 m_frame_buffer.push(image_gpu);
                 m_frame_dbuffer.update(image_gpu);
+                m_active = true;
             }
             else {
                 std::cerr << "Failed to create sws context for channel " << m_channel << "." << std::endl;
