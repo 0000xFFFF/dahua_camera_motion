@@ -25,7 +25,7 @@ sudo make install
 ./dcm_master --help
 ```
 ```
-Usage: dcm_master [--help] [--version] --ip ip --username username --password password [--width NUMBER] [--height NUMBER] [--fullscreen] [--detect] [--resolution 0,1,2,...] [--subtype 0/1] [--display_mode 0-4] [--current_channel 1-8] [--enable_fullscreen_channel 0/1] [--enable_motion 0/1] [--area 0/1] [--rarea 0/1] [--motion_detect_min_ms NUMBER] [--enable_motion_zoom_largest 0/1] [--enable_tour 0/1] [--tour_ms NUMBER] [--enable_info 0/1] [--enable_info_line 0/1] [--enable_info_rect 0/1] [--enable_minimap 0/1] [--enable_minimap_fullscreen 0/1] [--ignore_alarm_make] [--enable_ignore_contours 0/1] [--ignore_contours "<x>x<y> ...,<x>x<y> ..."] [--ignore_contours_file ignore.txt] [--enable_alarm_pixels 0/1] [--alarm_pixels "<x>x<y> <x>x<y> ..."] [--alarm_pixels_file alarm.txt] [--focus_channel 1-8] [--focus_channel_area "<x>x<y> <w>x<h>"] [--focus_channel_sound 0/1] [--low_cpu 0/1] [--low_cpu_hq_motion 0/1] [--low_cpu_hq_motion_dual 0/1]
+Usage: dcm_master [--help] [--version] --ip ip --username username --password password [--width NUMBER] [--height NUMBER] [--fullscreen] [--detect] [--resolution 0,1,2,...] [--subtype 0/1] [--display_mode 0-4] [--current_channel 1-8] [--enable_fullscreen_channel 0/1] [--enable_motion 0/1] [--area 0/1] [--rarea 0/1] [--motion_detect_min_ms NUMBER] [--enable_motion_zoom_largest 0/1] [--sleep_ms_draw NUMBER] [--sleep_ms_motion NUMBER] [--enable_tour 0/1] [--tour_ms NUMBER] [--enable_info 0/1] [--enable_info_line 0/1] [--enable_info_rect 0/1] [--enable_minimap 0/1] [--enable_minimap_fullscreen 0/1] [--ignore_alarm_make] [--enable_ignore_contours 0/1] [--ignore_contours "<x>x<y> ...,<x>x<y> ..."] [--ignore_contours_file ignore.txt] [--enable_alarm_pixels 0/1] [--alarm_pixels "<x>x<y> <x>x<y> ..."] [--alarm_pixels_file alarm.txt] [--focus_channel 1-8] [--focus_channel_area "<x>x<y> <w>x<h>"] [--focus_channel_sound 0/1] [--low_cpu 0/1] [--low_cpu_hq_motion 0/1] [--low_cpu_hq_motion_dual 0/1]
 
 motion detection kiosk for dahua cameras
 
@@ -57,6 +57,10 @@ Motion Detection Options (detailed usage):
   -ra, --rarea                         min contour's bounding rectangle area for detection [nargs=0..1] [default: 0]
   -ms, --motion_detect_min_ms          minimum milliseconds of detected motion to switch channel [nargs=0..1] [default: 1000]
   -emzl, --enable_motion_zoom_largest  zoom channel on largest detected motion [nargs=0..1] [default: 1]
+
+Sleep Options (detailed usage):
+  -smd, --sleep_ms_draw                how long to sleep at the end of the draw loop (-1 == auto detect fps and use that) [nargs=0..1] [default: -1]
+  -smm, --sleep_ms_motion              how long to sleep at the end of the motion detection loop (-1 == auto detect fps and use that) [nargs=0..1] [default: -1]
 
 Tour Options (detailed usage):
   -et, --enable_tour                   tour, switch channels every X ms (set with -tms) [nargs=0..1] [default: 0]
