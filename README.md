@@ -4,7 +4,7 @@ motion detection kiosk for dahua cameras
 # Requirements
 * make
 * clang++
-* argparse
+* [argparse](https://github.com/p-ranav/argparse)
 * OpenCV (libopencv)
 * sdl2
 * sdl2_mixer
