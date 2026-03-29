@@ -1,2 +1,0 @@
-- info + minimap with is broken with uframe
-- add more strict compile flags and fix all the issues

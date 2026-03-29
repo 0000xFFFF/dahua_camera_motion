@@ -1,0 +1,6 @@
+- info + minimap with is broken with uframe
+- add more strict compile flags and fix all the issues
+- SOC motion detector
+- cleanup code to folders
+- add preview.gif
+- add web endpoint to watch output use mongoose
