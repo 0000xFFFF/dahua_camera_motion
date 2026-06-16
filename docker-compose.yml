@@ -1,0 +1,10 @@
+version: "3.9"  # Or whichever version of Docker Compose you have installed
+
+services:
+  dcm_master:
+    build: .  # Build from the current directory (where the Dockerfile is located)
+    container_name: dcm_master_container
+    volumes:
+      - .:/app   # Mounts your local project directory into the container.  Crucial for development. Remove for production builds.
+    working_dir: /app  # Sets the working directory inside the container (matches Dockerfile)
+    command: make release  # Specific command to run at startup. Change this based on which Makefile target you want.
