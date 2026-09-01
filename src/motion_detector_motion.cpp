@@ -3,6 +3,8 @@
 #include "motion_detector.hpp"
 #include "utils.hpp"
 #include <SDL2/SDL_mixer.h>
+#include <opencv2/geometry.hpp>
+#include <opencv2/geometry/2d.hpp>
 
 extern Mix_Chunk* g_sfx_8bit_clicky;
 
